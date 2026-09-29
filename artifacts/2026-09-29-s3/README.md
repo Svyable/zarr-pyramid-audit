@@ -82,6 +82,13 @@ outputs on PHercParis4 segments). All 70 audited clean with the v3 header
 path. Several v3 roots do not end in `.zarr` and were found only by the
 discovery crawl's header test — the catalogue would miss them.
 
+The 70 S3 v3 roots are a disjoint set from dl.ash2txt.org's 64 v3 roots
+(zero stem overlap): the bucket hosts both new v3 publishes and v2
+rechunked migrations of older dl volumes. See `MIRROR_FIDELITY.md` — the
+64 same-named volumes in both stores are format migrations, not copies
+(dl: v3 / 1024³ sharded / volcomp; S3: v2 / 128³ / raw), with identical
+voxel grids at all levels.
+
 ## Code changes in this fork (vs upstream `sgsllc-jr/zarr-pyramid-audit`)
 
 1. **`lib/httpstore.py` — S3 endpoint configurability.** `S3Store` now accepts
