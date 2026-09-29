@@ -54,6 +54,7 @@ group) and are never counted as defects.
 | `bin/discover_zarr.py` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
 | `bin/audit_pyramid.py` | 21 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `bin/count_chunks.py` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
+| `bin/gate.py` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
 
 ### Check codes
 
@@ -99,6 +100,13 @@ are audited like v2 pyramids, and a v3 bare array at a root is reported as
 
 ```bash
 ./.venv/bin/python bin/count_chunks.py --base https://dl.ash2txt.org/ --roots-csv shortlist.csv --out-dir tmp
+```
+
+Gate a publish (fails closed on high-severity findings; exit 0 = clean):
+
+```bash
+./.venv/bin/python bin/gate.py --base s3://my-bucket/staging/ --roots manifest.jsonl --fail-on high
+./.venv/bin/python bin/gate.py --base s3://my-bucket/staging/ --root path/to/volume.zarr --format github
 ```
 
 Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.levels.jsonl`,
