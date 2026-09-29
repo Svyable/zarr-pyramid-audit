@@ -87,7 +87,11 @@ python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python bin/discover_zarr.py --base https://dl.ash2txt.org/ --max-depth 10 --out-dir tmp
 ```
 
-`--max-depth 10` is not optional for this host: the default (6) stops short of the roots under `community-uploads/bruniss/scrolls/s1/…/old/…` and `Scroll5/…/representations/predictions/fibers/`, which sit 7–8 path segments deep (a depth-6 run finds 229 roots instead of 241). Zarr **v3** stores (`zarr.json`) are not yet parsed and are reported as `NOT_A_ZARR_GROUP` (info).
+`--max-depth 10` is not optional for this host: the default (6) stops short of the roots under `community-uploads/bruniss/scrolls/s1/…/old/…` and `Scroll5/…/representations/predictions/fibers/`, which sit 7–8 path segments deep (a depth-6 run finds 229 roots instead of 241).
+
+Zarr **v3** headers (`zarr.json`) are parsed: v3 groups with OME `multiscales`
+are audited like v2 pyramids, and a v3 bare array at a root is reported as
+`BARE_ARRAY` (info) rather than `NOT_A_ZARR_GROUP`.
 
 ```bash
 ./.venv/bin/python bin/audit_pyramid.py --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl --max-rps 25 --out-dir tmp
@@ -99,6 +103,27 @@ python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
 
 Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.levels.jsonl`,
 `*.pyramids.jsonl`, `*.summary.json`, `*.manifest.json`.
+
+### Auditing the S3 open-data bucket
+
+The same tools run against `s3://vesuvius-challenge-open-data/` (anonymous —
+no credentials). The `s3://` scheme selects the `S3Store` backend, which needs
+`s3fs` (`pip install -r requirements.txt` includes it):
+
+```bash
+export AWS_ENDPOINT_URL_S3=https://s3.us-east-1.amazonaws.com
+./.venv/bin/python bin/discover_zarr.py --base s3://vesuvius-challenge-open-data/ --max-depth 10 --out-dir tmp/s3
+./.venv/bin/python bin/audit_pyramid.py --base s3://vesuvius-challenge-open-data/ --roots tmp/s3/discover_zarr.roots.jsonl --workers 16 --out-dir tmp/s3audit
+```
+
+`S3Store` also accepts `endpoint_url=` / `region_name=` keyword arguments via
+`open_store()` for programmatic use. The regional endpoint matters: the global
+`s3.amazonaws.com` endpoint is unreachable from some networks, and without an
+explicit endpoint the S3 backend cannot connect at all there.
+
+Full artifacts of the 2026-09-29 S3 run (957 roots discovered, 957 audited,
+one confirmed header-only pyramid) are in
+[`artifacts/2026-09-29-s3/`](artifacts/2026-09-29-s3/).
 
 ## Results on dl.ash2txt.org (run of 2026-09-09)
 

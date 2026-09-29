@@ -9,5 +9,6 @@ requests>=2.31          # HTTP store transport
 numpy>=1.24             # chunk sample analysis (count_chunks.py)
 numcodecs>=0.12         # Blosc round-trip for measured compression ratios
 
-# Optional: only needed for s3:// bases. HTTP(S) bases need nothing extra.
-# s3fs>=2024.1
+# Needed for s3:// bases (the S3 open-data bucket audit). HTTP(S) bases work
+# without it.
+s3fs>=2024.1

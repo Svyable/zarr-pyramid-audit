@@ -330,6 +330,16 @@ def read_pyramid(store, root: str, *, probe_extra_levels: int = 3,
             pm.is_group = (z3.get("node_type") == "group")
             pm.zarr_format = int(z3.get("zarr_format") or 3)
             attrs = z3.get("attributes") or {}
+            if not pm.is_group and z3.get("node_type") == "array":
+                # A v3 bare array at the root: valid single-scale data, not
+                # a pyramid. Classify it like the v2 BARE_ARRAY case instead
+                # of leaving node_kind "unknown" (which audit_one would
+                # report as NOT_A_ZARR_GROUP).
+                arr = _parse_v3_array(z3)
+                pm.node_kind = "array"
+                pm.node_detail = (f"bare zarr v3 array shape={arr.get('shape')} "
+                                  f"chunks={arr.get('chunks')} "
+                                  f"dtype={arr.get('dtype')}")
         else:
             pm.errors.append(f"no .zgroup ({e_zg}) and no zarr.json ({e_z3})")
             _classify_non_group(store, root, pm)

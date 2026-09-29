@@ -1,0 +1,73 @@
+{
+  "run_name": "discover_zarr",
+  "started_utc": "2026-09-29T17:57:56.678670+00:00",
+  "argv": [
+    "bin/discover_zarr.py",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--max-depth",
+    "10",
+    "--workers",
+    "16",
+    "--out-dir",
+    "/home/hatch/workspace/vesuvius-sprint/s3-discovery"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python3",
+  "packages": {
+    "numpy": "<not installed>",
+    "zarr": "<not installed>",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {
+    "dirs_listed": 7487,
+    "zarr_roots": 957,
+    "pruned_coordinate_dir": 224,
+    "pruned_leaf_format": 857,
+    "depth_capped": 6
+  },
+  "outputs": [
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-discovery/discover_zarr.roots.jsonl",
+      "exists": true,
+      "bytes": 156244,
+      "desc": "one record per Zarr root"
+    },
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-discovery/discover_zarr.dirs.jsonl",
+      "exists": true,
+      "bytes": 1299359,
+      "desc": "one record per directory listed"
+    }
+  ],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "prefix": "",
+  "max_depth": 10,
+  "crawl_segments": false,
+  "skip_names": [
+    ".git",
+    ".github",
+    ".ipynb_checkpoints",
+    "__pycache__",
+    "logs",
+    "node_modules",
+    "old_files",
+    "thaumato_outputs",
+    "working"
+  ],
+  "leaf_dir_suffixes": [
+    ".tifxyz"
+  ],
+  "crawl_leaf_formats": false,
+  "zarr_roots_found": 957,
+  "ended_utc": "2026-09-29T18:04:38.277091+00:00",
+  "wall_seconds": 401.599
+}

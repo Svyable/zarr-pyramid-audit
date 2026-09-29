@@ -1,0 +1,80 @@
+{
+  "run_name": "audit_pyramid",
+  "started_utc": "2026-09-29T18:04:52.935041+00:00",
+  "argv": [
+    "bin/audit_pyramid.py",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--roots",
+    "/home/hatch/workspace/vesuvius-sprint/s3-discovery/discover_zarr.roots.jsonl",
+    "--workers",
+    "16",
+    "--out-dir",
+    "/home/hatch/workspace/vesuvius-sprint/s3-audit"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python3",
+  "packages": {
+    "numpy": "<not installed>",
+    "zarr": "<not installed>",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {},
+  "outputs": [
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-audit/audit_pyramid.levels.jsonl",
+      "exists": true,
+      "bytes": 2483466,
+      "desc": "per-level records"
+    },
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-audit/audit_pyramid.pyramids.jsonl",
+      "exists": true,
+      "bytes": 420548,
+      "desc": "per-pyramid records"
+    },
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-audit/audit_pyramid.findings.csv",
+      "exists": true,
+      "bytes": 0,
+      "desc": "findings"
+    },
+    {
+      "path": "/home/hatch/workspace/vesuvius-sprint/s3-audit/audit_pyramid.summary.json",
+      "exists": true,
+      "bytes": 355,
+      "desc": "summary"
+    }
+  ],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "n_roots": 957,
+  "chunk_presence_check": true,
+  "max_flat_keys": 250000,
+  "summary": {
+    "base": "s3://vesuvius-challenge-open-data/",
+    "roots_requested": 957,
+    "pyramids_audited": 957,
+    "pyramids_with_findings": 1,
+    "pyramids_clean": 956,
+    "findings_total": 6,
+    "findings_actionable": 6,
+    "findings_informational": 0,
+    "pyramids_with_defects": 1,
+    "by_code": {
+      "LEVEL_NO_CHUNKS": 6
+    },
+    "by_severity": {
+      "high": 6
+    }
+  },
+  "ended_utc": "2026-09-29T18:09:56.871954+00:00",
+  "wall_seconds": 303.937
+}

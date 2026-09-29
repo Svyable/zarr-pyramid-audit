@@ -252,12 +252,32 @@ class S3Store:
     Anonymous s3:// backend exposing the same surface as HttpStore, for
     corpora published to S3 rather than an autoindex. Imported lazily so the
     toolkit works with no s3fs installed.
+
+    The S3 API endpoint is configurable because the global
+    s3.amazonaws.com endpoint is not reachable from every network. Pass
+    ``endpoint_url`` explicitly, or set ``AWS_ENDPOINT_URL_S3``; the
+    regional endpoint (e.g. https://s3.us-east-1.amazonaws.com) is the
+    usual right choice for a bucket known to live in one region.
     """
 
-    def __init__(self, base_url: str = "", *, anon: bool = True, **_ignored):
+    def __init__(self, base_url: str = "", *, anon: bool = True,
+                 endpoint_url: str | None = None,
+                 region_name: str | None = None, **_ignored):
+        import os
         import s3fs  # lazy
-        self.fs = s3fs.S3FileSystem(anon=anon)
+        endpoint_url = endpoint_url or os.environ.get("AWS_ENDPOINT_URL_S3")
+        region_name = region_name or os.environ.get("AWS_REGION",
+                                                    os.environ.get("AWS_DEFAULT_REGION"))
+        client_kwargs: dict[str, Any] = {}
+        if endpoint_url:
+            client_kwargs["endpoint_url"] = endpoint_url
+        if region_name:
+            client_kwargs["region_name"] = region_name
+        self.fs = s3fs.S3FileSystem(
+            anon=anon, client_kwargs=client_kwargs or None)
         self.base_url = base_url.rstrip("/") + "/" if base_url else ""
+        self.endpoint_url = endpoint_url
+        self.region_name = region_name
 
     def _p(self, path: str) -> str:
         if path.startswith("s3://"):
