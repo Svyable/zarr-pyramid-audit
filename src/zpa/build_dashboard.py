@@ -138,6 +138,8 @@ a:focus-visible,button:focus-visible,input:focus-visible{{outline:2px solid var(
   word-break:break-all;color:var(--warn);margin:.8rem 0}}
 .gatebox{{border-left:3px solid var(--ember);padding:.6rem 1rem;background:#171208;
   border-radius:0 8px 8px 0;color:var(--muted);line-height:1.65;font-size:.93rem;margin-top:1rem}}
+.recheck{{border-left:3px solid var(--gold);padding:.6rem 1rem;background:#14110a;
+  border-radius:0 8px 8px 0;color:var(--muted);line-height:1.65;font-size:.93rem;margin-top:1rem}}
 table{{border-collapse:collapse;width:100%;font-size:.86rem}}
 thead th{{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
   color:var(--muted);padding:.6rem .5rem;border-bottom:1px solid var(--line);
@@ -257,7 +259,11 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <div class="gatebox"><b>The fix ships with the repo:</b> <code>zpa-gate</code> is a
   publish-time metadata gate that audits roots <i>before</i> they publish and fails
   closed (exit 1) on any finding at or above the severity threshold — with GitHub
-  Actions annotations for CI. This defect class can never ship again.</div>
+  Actions annotations for CI. When used, the gate blocks this defect class
+  before publication.</div>
+  <p class="recheck"><b>Still live:</b> re-audited 2026-09-30 ~22:25 UTC —
+  6 high-severity <code>LEVEL_NO_CHUNKS</code> findings, identical signature.
+  Unrepaired for the full September window.</p>
 </div>
 
 <div class="panel" id="findings"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity · S3 = open-data bucket, dl = dl.ash2txt.org</span></h2>
