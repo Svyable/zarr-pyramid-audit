@@ -1,146 +1,273 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vesuvius Open Data — Zarr Pyramid Health Dashboard</title>
+<title>zarr-pyramid-audit — Don't train on lies</title>
+<meta name="description" content="Independent integrity audit of the Vesuvius open-data Zarr stores. 957 S3 roots audited, one defective pyramid found.">
 <style>
-:root{--ink:#111827;--mut:#6b7280;--line:#e5e7eb;--ok:#16a34a;--bad:#dc2626;--acc:#2563eb}
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);margin:0;background:#fafafa}
-.wrap{max-width:960px;margin:0 auto;padding:32px 20px 64px}
-header{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:24px}
-h1{font-size:28px;margin:0 0 6px}.sub{color:var(--mut);font-size:14px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:24px 0}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
-.kpi .n{font-size:30px;font-weight:700}.kpi .l{font-size:12px;color:var(--mut);margin-top:4px}
-.ok{color:var(--ok)}.bad{color:var(--bad)}
-section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin:16px 0}
-h2{font-size:18px;margin:0 0 12px}p{font-size:14px;line-height:1.6;color:#374151}
-code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-size:12.5px;word-break:break-all}
-.brow{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
-.blab{width:220px;flex-shrink:0;font-family:ui-monospace,monospace;font-size:12px}
-.btrack{flex:1;background:#f3f4f6;border-radius:4px;height:14px;position:relative;overflow:hidden}
-.bfill{height:14px;border-radius:4px}.bfill.dl{margin-top:2px;height:6px;opacity:.85}
-.bval{width:110px;text-align:right;color:var(--mut);font-size:12px;flex-shrink:0}
-.legend{font-size:12px;color:var(--mut);margin-bottom:8px}
-.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 12px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--mut);font-weight:600;font-size:12px}
-footer{color:var(--mut);font-size:12.5px;margin-top:24px;line-height:1.7}
-a{color:var(--acc)}
-.path{font-family:ui-monospace,monospace;font-size:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px;word-break:break-all;color:#7f1d1d}
-.note{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:13px;color:#92400e;margin-top:12px}
-</style>
-</head>
-<body><div class="wrap">
-<header>
-<h1>Vesuvius Open Data — Zarr Pyramid Health</h1>
-<div class="sub">Independent integrity audit of the public Vesuvius Challenge data stores &middot; updated 2026-09-30 &middot; <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable/zarr-pyramid-audit</a> (MIT) &middot; <a href="september-2026.html">September 2026 Progress Prize submission</a></div>
-</header>
+:root{
+  --bg:#0d0b08; --panel:#161310; --panel2:#1c1813; --line:#2c251b;
+  --ink:#ece3d2; --muted:#a89880; --dim:#6f6350;
+  --ember:#ff7a1a; --gold:#ffd166; --amber:#ffb347;
+  --good:#8fd694; --warn:#ff9e5e; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased}
+a{color:var(--amber)}
+.wrap{max-width:1200px;margin:0 auto;padding:0 1.25rem}
+.hero{position:relative;overflow:hidden;padding:4.5rem 0 3rem;
+  background:
+    radial-gradient(1200px 500px at 70% -10%, rgba(255,122,26,.14), transparent 60%),
+    radial-gradient(800px 400px at 15% 110%, rgba(255,209,102,.08), transparent 60%),
+    var(--bg)}
+.eyebrow{letter-spacing:.28em;font-size:.72rem;color:var(--ember);font-weight:700}
+.hero h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2.4rem,6vw,4.2rem);
+  margin:.4rem 0 .2rem;font-weight:700;letter-spacing:-.02em}
+.hero h1 .q{color:var(--ember)}
+.tagline{font-size:1.3rem;margin:.2rem 0 1rem}
+.tagline em{color:var(--amber);font-style:normal;font-weight:600}
+.lede{color:var(--muted);max-width:46rem;line-height:1.65;font-size:1.0rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:.75rem;margin-top:2rem}
+.stat{background:rgba(22,19,16,.85);border:1px solid var(--line);border-radius:12px;
+  padding:1rem 1.1rem}
+.stat .n{font-size:1.9rem;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+.stat .n.bad{color:var(--bad)} .stat .n.good{color:var(--good)}
+.stat .l{font-size:.78rem;color:var(--muted);margin-top:.25rem;line-height:1.4}
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:.9rem;margin:2.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:1.25rem 1.35rem}
+.card h3{margin:0 0 .5rem;font-size:.8rem;letter-spacing:.14em;color:var(--ember);
+  text-transform:uppercase}
+.card p{margin:.35rem 0;color:var(--muted);line-height:1.6;font-size:.94rem}
+.card p b{color:var(--ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:1.5rem;margin:0 0 2rem}
+.panel h2{margin:.1rem 0 1rem;font-family:Georgia,serif;font-size:1.6rem}
+.panel h2 .sub{display:block;font-size:.85rem;color:var(--muted);
+  font-weight:400;margin-top:.3rem;font-family:inherit}
+.panel p{color:var(--muted);line-height:1.65;font-size:.95rem}
+.panel p b{color:var(--ink)}
+.path{font-family:ui-monospace,monospace;font-size:.8rem;background:#1a0f08;
+  border:1px solid #5a2c12;border-radius:8px;padding:.8rem 1rem;
+  word-break:break-all;color:var(--warn);margin:.8rem 0}
+.gatebox{border-left:3px solid var(--ember);padding:.6rem 1rem;background:#171208;
+  border-radius:0 8px 8px 0;color:var(--muted);line-height:1.65;font-size:.93rem;margin-top:1rem}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+thead th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding:.6rem .5rem;border-bottom:1px solid var(--line);
+  cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--ink)}
+thead th .arr{color:var(--ember)}
+tbody td{padding:.55rem .5rem;border-bottom:1px solid #211c14;vertical-align:top}
+tbody tr:hover td{background:#1e1913}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.sev{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.08em;
+  border-radius:6px;padding:.18rem .5rem;text-transform:uppercase}
+.sev.high{background:rgba(255,107,107,.12);color:var(--bad);border:1px solid rgba(255,107,107,.4)}
+.sev.medium{background:rgba(255,158,94,.12);color:var(--warn);border:1px solid rgba(255,158,94,.35)}
+.sev.low,.sev.info{background:rgba(168,152,128,.10);color:var(--muted);border:1px solid rgba(168,152,128,.3)}
+.cbar{display:flex;height:10px;border-radius:5px;overflow:hidden;min-width:120px;background:#0a0906}
+.cbar span{display:block;height:100%}
+.cb-s3{background:#ff7a1a} .cb-dl{background:#7a4fd0}
+code{font-size:.8rem;color:var(--amber)}
+.controls{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.sevbtn{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:.45rem .9rem;font-size:.82rem;cursor:pointer}
+.sevbtn.on{border-color:var(--ember);color:var(--ink);background:#241a10}
+.method{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.suite{display:flex;gap:1rem;flex-wrap:wrap;align-items:stretch}
+.suite .card{flex:1;min-width:260px}
+footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
+  color:var(--dim);font-size:.82rem;line-height:1.7}
+.hidden{display:none!important}
+@media(max-width:700px){.cbar{min-width:70px}}
+</style></head><body>
 
-<div class="kpis">
-<div class="kpi"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>2026-09-29, header-only, ~5 min</div></div>
-<div class="kpi"><div class="n ok">956</div><div class="l">clean</div></div>
-<div class="kpi"><div class="n bad">1</div><div class="l">defective pyramid<br>(6 header-only levels)</div></div>
-<div class="kpi"><div class="n">241</div><div class="l">dl.ash2txt.org roots<br>re-audited 2026-09-29</div></div>
-<div class="kpi"><div class="n bad">0</div><div class="l">defects fixed in 20 days<br>(strict diff: 0 fixed, 0 new)</div></div>
-<div class="kpi"><div class="n ok">788</div><div class="l">chunks content-probed<br>291 levels, all populated</div></div>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER 2026</div>
+  <h1>zarr-pyramid-audit</h1>
+  <p class="tagline">Corruption detection for OME-Zarr pyramids. <em>Don't train on lies.</em></p>
+  <p class="lede">An independent integrity audit of the public Vesuvius Challenge
+  data stores. Every pyramid is judged from its headers — a few KB per pyramid,
+  no full downloads — plus sampled chunk-content probes that decode real voxels.
+  Every number below is read from committed audit artifacts; nothing is hand-typed.
+  <a href="https://github.com/Svyable/zarr-pyramid-audit">Repo (MIT)</a> · <a href="./september-2026.html">September 2026 writeup →</a></p>
+  <div class="stats">
+    <div class="stat"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
+    <div class="stat"><div class="n good">956</div><div class="l">clean</div></div>
+    <div class="stat"><div class="n bad">1</div><div class="l">defective pyramid<br>6 header-only levels</div></div>
+    <div class="stat"><div class="n">241</div><div class="l">dl.ash2txt.org roots<br>re-audited 2026-09-29</div></div>
+    <div class="stat"><div class="n bad">0</div><div class="l">defects fixed in 20 days<br>strict diff: 0 fixed, 0 new</div></div>
+    <div class="stat"><div class="n good">4355</div><div class="l">chunks content-probed<br>sampled + decoded</div></div>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<div class="insights">
+  <div class="card"><h3>The live defect</h3>
+    <p>A <b>PHerc0814</b> surface-volume pyramid in the open-data S3 bucket has
+    <b>valid headers at all six levels and zero chunk objects</b>. Every reader
+    opens it fine and gets plausible all-zero voxels — no error, no warning.
+    Proven by direct read; independently confirms
+    <a href="https://github.com/scrollprize/villa/issues/1892">villa #1892</a>.</p></div>
+  <div class="card"><h3>20-day regression</h3>
+    <p>The identical audit re-ran over the identical 241-root dl list on
+    2026-09-29. Strict diff on every finding field: <b>empty</b>. 18 defective
+    pyramids, 50 actionable findings — <b>zero fixed, zero new</b>. Published
+    defects don't get fixed after the fact; the publish-time gate is the lever.</p></div>
+  <div class="card"><h3>Training volumes probed</h3>
+    <p><b>548</b> volcomp inner chunks decoded with real content across all
+    64 scroll volumes, <b>1795</b> raw/Blosc chunks across 128 dl roots —
+    <b>0 all-empty levels</b> in the training data. One present-but-empty mesh
+    derivative caught in <code>other/dev/</code> (medium, human review).</p></div>
 </div>
 
-<section>
-<h2>&#x1f6a8; The one defective pyramid (S3)</h2>
-<div class="path">PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr</div>
-<p>All six pyramid levels carry <strong>valid array headers but zero chunk objects</strong>.
-Any reader — viewer, registration, model — opens it successfully and gets back
-plausible all-zero voxels. No exception, no warning. We proved it empirically:
-a full-extent read returned all zeros while a control region on a sibling volume
-returned <strong>64,498 nonzero voxels</strong>.</p>
-<p>This independently confirms <a href="https://github.com/scrollprize/villa/issues/1892">villa #1892</a>.
-The defect is isolated with unusual sharpness: the same filename stem exists in
-<strong>19 segment runs</strong> and exactly one copy — the
-<code>20260226123353</code> run — is header-only. The other 18 are clean, and a
-sampled chunk-content probe (788 chunks across 291 levels) confirmed they hold
-real data, not present-but-empty shells.</p>
-<div class="note"><strong>Impact:</strong> silent zeros waste GPU time and mislead every
-downstream model. The repo ships <code>bin/gate.py</code>, a publish-time metadata gate
-that fails closed on this defect class so it can never ship again.</div>
-</section>
+<div class="panel"><h2>🚨 The defective pyramid<span class="sub">s3://vesuvius-challenge-open-data</span></h2>
+  <div class="path">PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr</div>
+  <p>All six pyramid levels carry <b>valid array headers but zero chunk objects</b>.
+  Any reader — viewer, registration, model — opens it successfully and gets back
+  plausible all-zero voxels. We proved it empirically: a full-extent read returned
+  all zeros while a control region on a sibling volume returned
+  <b>64,498 nonzero voxels</b>.</p>
+  <p>The defect is isolated with unusual sharpness: the same filename stem exists in
+  <b>19 segment runs</b> and exactly one copy — the <code>20260226123353</code> run —
+  is header-only. The other 18 are clean, and a sampled chunk-content probe confirmed
+  they hold real data, not present-but-empty shells.</p>
+  <div class="gatebox"><b>The fix ships with the repo:</b> <code>zpa-gate</code> is a
+  publish-time metadata gate that audits roots <i>before</i> they publish and fails
+  closed (exit 1) on any finding at or above the severity threshold — with GitHub
+  Actions annotations for CI. This defect class can never ship again.</div>
+</div>
 
-<section>
-<h2>Findings by check code</h2>
-<div class="legend"><span class="dot" style="background:#2563eb"></span>S3 bucket (2026-09-29)<span class="dot" style="background:#9333ea"></span>dl.ash2txt.org (2026-09-29 regression)</div>
-<div class="brow"><span class="blab">CHUNK_EXCEEDS_SHAPE</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:100.0%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 78</span></div><div class="brow"><span class="blab">BARE_ARRAY</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:51.3%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 40</span></div><div class="brow"><span class="blab">LEVEL_NO_CHUNKS</span><div class="btrack"><div class="bfill" style="width:7.7%;background:#2563eb"></div><div class="bfill dl" style="width:14.1%;background:#9333ea"></div></div><span class="bval">S3 6 · dl 11</span></div><div class="brow"><span class="blab">SCALE_SHAPE_MISMATCH</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:19.2%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 15</span></div><div class="brow"><span class="blab">LEVEL_MISSING</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:16.7%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 13</span></div><div class="brow"><span class="blab">COMPRESSOR_DRIFT</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:11.5%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 9</span></div><div class="brow"><span class="blab">NOT_MULTISCALE</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:7.7%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 6</span></div><div class="brow"><span class="blab">HEADERLESS_CHUNK_STORE</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:1.3%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 1</span></div><div class="brow"><span class="blab">NOT_A_ZARR_GROUP</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:1.3%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 1</span></div><div class="brow"><span class="blab">CONTAINER_NO_GROUP_HEADER</span><div class="btrack"><div class="bfill" style="width:0.0%;background:#2563eb"></div><div class="bfill dl" style="width:1.3%;background:#9333ea"></div></div><span class="bval">S3 0 · dl 1</span></div>
-<p style="margin-top:12px">S3: <strong>6 actionable findings</strong>
-(all <code>LEVEL_NO_CHUNKS</code> — the six levels of the defective pyramid),
-0 informational. dl: 50 actionable,
-125 informational across 18 defective pyramids (villa #1755–#1760).</p>
-</section>
+<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity</span></h2>
+  <div class="controls">
+    <button class="sevbtn on" data-s="">all</button>
+    <button class="sevbtn" data-s="high">high</button>
+    <button class="sevbtn" data-s="medium">medium</button>
+    <button class="sevbtn" data-s="low">low</button>
+    <button class="sevbtn" data-s="info">info</button>
+  </div>
+  <div style="overflow-x:auto"><table id="codes"><thead><tr>
+    <th data-k="code">check code</th><th data-k="sev">severity</th>
+    <th data-k="s3">S3</th><th data-k="dl">dl</th><th>distribution</th><th>meaning</th>
+  </tr></thead><tbody><tr data-code="CHUNK_EXCEEDS_SHAPE" data-sev="info" data-s3="0" data-dl="78" data-total="78"><td><code>CHUNK_EXCEEDS_SHAPE</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">78</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:100.0%"></span></div></td><td style="color:var(--muted)">fixed chunk shape carried below the array — informational</td></tr>
+<tr data-code="BARE_ARRAY" data-sev="info" data-s3="0" data-dl="40" data-total="40"><td><code>BARE_ARRAY</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">40</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:51.3%"></span></div></td><td style="color:var(--muted)">valid single-scale Zarr array, not a pyramid</td></tr>
+<tr data-code="LEVEL_NO_CHUNKS" data-sev="high" data-s3="6" data-dl="11" data-total="17"><td><code>LEVEL_NO_CHUNKS</code></td><td><span class="sev high">high</span></td><td class="num">6</td><td class="num">11</td><td><div class="cbar"><span class="cb-s3" style="width:7.7%"></span><span class="cb-dl" style="width:14.1%"></span></div></td><td style="color:var(--muted)">valid header, zero chunk objects — reads return fill_value silently</td></tr>
+<tr data-code="SCALE_SHAPE_MISMATCH" data-sev="high" data-s3="0" data-dl="15" data-total="15"><td><code>SCALE_SHAPE_MISMATCH</code></td><td><span class="sev high">high</span></td><td class="num">0</td><td class="num">15</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:19.2%"></span></div></td><td style="color:var(--muted)">level shape matches neither ceil nor floor of base/factor</td></tr>
+<tr data-code="LEVEL_MISSING" data-sev="high" data-s3="0" data-dl="13" data-total="13"><td><code>LEVEL_MISSING</code></td><td><span class="sev high">high</span></td><td class="num">0</td><td class="num">13</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:16.7%"></span></div></td><td style="color:var(--muted)">declared level has no readable array header</td></tr>
+<tr data-code="COMPRESSOR_DRIFT" data-sev="low" data-s3="0" data-dl="9" data-total="9"><td><code>COMPRESSOR_DRIFT</code></td><td><span class="sev low">low</span></td><td class="num">0</td><td class="num">9</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:11.5%"></span></div></td><td style="color:var(--muted)">codec changes between levels</td></tr>
+<tr data-code="NOT_MULTISCALE" data-sev="info" data-s3="0" data-dl="6" data-total="6"><td><code>NOT_MULTISCALE</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">6</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:7.7%"></span></div></td><td style="color:var(--muted)">valid Zarr group, never claimed to be a pyramid</td></tr>
+<tr data-code="NOT_A_ZARR_GROUP" data-sev="info" data-s3="0" data-dl="1" data-total="1"><td><code>NOT_A_ZARR_GROUP</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">no .zgroup / zarr.json and nothing Zarr-like inside</td></tr>
+<tr data-code="HEADERLESS_CHUNK_STORE" data-sev="high" data-s3="0" data-dl="1" data-total="1"><td><code>HEADERLESS_CHUNK_STORE</code></td><td><span class="sev high">high</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">chunk keys present but no decodable header</td></tr>
+<tr data-code="CONTAINER_NO_GROUP_HEADER" data-sev="low" data-s3="0" data-dl="1" data-total="1"><td><code>CONTAINER_NO_GROUP_HEADER</code></td><td><span class="sev low">low</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">children are Zarr nodes but root has no group header</td></tr></tbody></table></div>
+  <p style="margin-top:1rem">S3: <b>6 actionable findings</b>
+  (all <code>LEVEL_NO_CHUNKS</code> — the six levels of the defective pyramid),
+  0 informational. dl: 50 actionable,
+  125 informational across 18 defective pyramids (villa #1755–#1760).</p>
+</div>
 
-<section>
-<h2>20-day defect regression (dl.ash2txt.org)</h2>
-<p>On 2026-09-09 the audit published 18 structurally defective pyramids with
-per-finding reproduction evidence. On 2026-09-29 we re-ran the identical audit
-over the identical 241-root list. The strict diff on
-(root, level, code, detail, observed, expected) is <strong>empty</strong>:</p>
-<table><tr><th></th><th>2026-09-09</th><th>2026-09-29</th></tr>
-<tr><td>pyramids audited</td><td>241</td><td>241</td></tr>
-<tr><td>pyramids with defects</td><td>18</td><td>18</td></tr>
-<tr><td>actionable findings</td><td>50</td><td>50</td></tr>
-<tr><td>total findings</td><td>175</td><td>175</td></tr></table>
-<p><strong>Published data defects do not get fixed after the fact</strong> — even with
-precise reproduction evidence filed as public issues. Prevention (the publish-time
-gate) is the only lever that works.</p>
-</section>
+<div class="panel"><h2>Chunk-content probe<span class="sub">2026-09-30 · sampled decode, not just headers</span></h2>
+  <p>The header-only audit answers "are chunk keys present?" — the probe answers the
+  next question: <b>"do the present chunks hold data?"</b> This closes the next
+  silent-corruption class: chunks that exist but decode to all fill_value.</p>
+  <table><thead><tr><th>campaign</th><th class="num">roots</th><th class="num">levels</th>
+  <th class="num">chunks decoded</th><th class="num">populated</th><th class="num">all-empty levels</th></tr></thead>
+  <tbody><tr><td>S3 v2 (zarr-python windows)</td><td class="num">58</td><td class="num">291</td><td class="num">788</td><td class="num" style="color:var(--good)"><b>788</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>S3 v3 sharded (zarr-python windows)</td><td class="num">70</td><td class="num">420</td><td class="num">1260</td><td class="num" style="color:var(--good)"><b>1224</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl volcomp (vendored libvolcomp, HTTP byte ranges)</td><td class="num">64</td><td class="num">384</td><td class="num">2666</td><td class="num" style="color:var(--good)"><b>548</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl v2 raw/Blosc</td><td class="num">128</td><td class="num">748</td><td class="num">1812</td><td class="num" style="color:var(--good)"><b>1795</b></td><td class="num" style="color:var(--bad)"><b>7</b></td></tr></tbody></table>
+  <div class="gatebox"><b>One real catch:</b> <code>other/dev/meshes/20231022170900-ome.zarr</code> L1–L7 decode to all zeros while L0 holds mesh data — a dev-directory mesh derivative, not a scroll. Flagged <b>medium</b> for human review, with caveats. This is the probe working as designed.</div>
+  <p>The present-but-empty class was not observed in the S3 or training-volume samples —
+  reported as evidence of absence in the sample, not proof of absence in the corpus.
+  The tool is published for anyone to rerun at larger sample sizes.</p>
+</div>
 
-<section>
-<h2>Mirror fidelity: S3 vs dl.ash2txt.org</h2>
-<p>64 same-named volumes exist in both stores. They are <strong>not copies</strong> —
-they are format migrations of identical voxel grids at all six levels:</p>
-<table><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr>
-<tr><td>Zarr format</td><td>v3</td><td>v2</td></tr>
-<tr><td>chunking</td><td>1024&sup3; shards</td><td>128&sup3; raw</td></tr>
-<tr><td>codec</td><td>sharding_indexed + lossy volcomp (q=1.0)</td><td>none (raw uint8)</td></tr></table>
-<p>Byte-level comparison (volcomp decoded from source) shows quantization noise
-only: max absolute difference 30–35, mean below 0.1, ~2–4% of voxels differ.
-<strong>Reproducibility work must pin the store, not just the filename.</strong></p>
-</section>
+<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
+  <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
+  identical voxel grids at all six levels:</p>
+  <table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
+  <tr><td>Zarr format</td><td>v3</td><td>v2</td></tr>
+  <tr><td>chunking</td><td>1024³ shards</td><td>128³ raw</td></tr>
+  <tr><td>codec</td><td>sharding_indexed + lossy volcomp (q=1.0)</td><td>none (raw uint8)</td></tr>
+  </tbody></table>
+  <p>Byte-level comparison (volcomp decoded from source) shows quantization noise only:
+  max absolute difference 30–35, mean below 0.1, ~2–4% of voxels differ.
+  <b>Reproducibility work must pin the store, not just the filename.</b></p>
+</div>
 
-<section>
-<h2>Chunk-content probe (2026-09-30)</h2>
-<p>The header-only audit answers "are chunk keys present?". The new
-<code>bin/scan_empty_chunks.py</code> answers the next question — "do the present
-chunks hold data?" — by sampling and decoding chunks per level. This closes the
-next silent-corruption class: chunks that exist but decode to all fill_value.</p>
-<table><tr><th>roots</th><th>levels</th><th>chunks decoded</th><th>populated</th><th>all-empty levels</th></tr>
-<tr><td>58</td><td>291</td>
-<td>788</td>
-<td class="ok"><strong>788</strong></td>
-<td class="ok"><strong>0</strong></td></tr></table>
-<p>The present-but-empty class was not observed in this sample — reported as
-evidence of absence in the sample, not proof of absence in the corpus. The tool
-is published for anyone to rerun at larger sample sizes.</p>
-<p><strong>v3 sharded levels</strong> (70 roots, 420 levels, 1260 windows via zarr-python): 1224 populated, 36 background-empty, <strong>0 all-empty levels</strong>. Every decodable level class in the bucket is now covered by a content probe.</p>
-<p><strong>volcomp scroll volumes</strong> (dl.ash2txt.org, 64 volumes, 384 levels): 548 inner chunks decoded with real content, 2118 legitimately missing (masked background is unstored, not zero-filled), <strong>0 all-empty levels</strong>. The training volumes themselves are now content-probed — decoded with a vendored libvolcomp over HTTP byte ranges.</p>
-<p><strong>dl v2 content probe</strong> (dl.ash2txt.org, 128 roots, 748 levels, raw/Blosc): 1795 chunks decoded with real content, 11 audit-flagged chunkless levels confirmed, 59 sparse mask levels honestly reported as uncoverable — and <strong class="bad">7 present-but-empty levels found</strong> in <code>other/dev/meshes/20231022170900-ome.zarr</code> (L1–L7 decode to all zeros while L0 holds mesh data).</p>
-</section>
+<div class="panel"><h2>Known silent-zero volumes<span class="sub">dl.ash2txt.org · header-only levels confirmed by direct read</span></h2>
+  <table><thead><tr><th>volume</th><th>header-only levels</th></tr></thead><tbody>
+  <tr><td><code>community-uploads/bruniss/labels/surfaces/archive/1-voxel-sheet_slices-closed.zarr</code></td><td>1–5 (level 0 populated)</td></tr>
+  <tr><td><code>other/dev/inked_zarrs/3336_predictions.zarr</code></td><td>all six</td></tr>
+  </tbody></table>
+  <p>Unchanged between the 2026-09-09 and 2026-09-29 audits. Full machine-readable
+  kill list: <code>data/known-defects.json</code> (19 entries).</p>
+</div>
 
-<section>
-<h2>Known silent-zero volumes (dl.ash2txt.org)</h2>
-<p>Header-only levels confirmed by direct read — every read returns zeros with no error:</p>
-<table><tr><th>volume</th><th>header-only levels</th></tr>
-<tr><td><code>community-uploads/bruniss/labels/surfaces/archive/1-voxel-sheet_slices-closed.zarr</code></td><td>1–5 (level 0 populated)</td></tr>
-<tr><td><code>other/dev/inked_zarrs/3336_predictions.zarr</code></td><td>all six</td></tr></table>
-<p style="color:var(--mut)">Unchanged between the 2026-09-09 and 2026-09-29 audits.</p>
-</section>
+<div class="panel"><h2>One suite, two halves</h2>
+<div class="suite">
+  <div class="card"><h3>ScrollQ</h3>
+    <p><b>Train on the best first.</b> Quality scoring 0–100 for every scroll volume,
+    resampling-stability proof, and the label-coverage join that flags
+    "🎯 label next" targets.</p>
+    <p><a href="https://github.com/Svyable/scrollq">repo</a> ·
+    <a href="https://svyable.github.io/scrollq/">leaderboard</a></p></div>
+  <div class="card"><h3>scrollq-health</h3>
+    <p>Runs the integrity audit <b>and</b> the quality score on any volume and
+    issues one verdict: <b>TRAIN / CAUTION / DO NOT TRAIN</b>.</p>
+    <p><code>scrollq-health --root &lt;volume&gt;</code></p></div>
+</div></div>
 
-<footer>
-<strong>Method.</strong> Header-only pyramid audit (<code>bin/audit_pyramid.py</code>):
-21 check codes over <code>.zattrs</code> + one <code>.zarray</code> per level — a few KB
-per pyramid regardless of array size. Chunk-presence via one listing per level.
-Chunk-content via sampled decode. Full evidence, manifests, and runbooks in
-<code>artifacts/</code> in the repo.<br>
-Built with <a href="https://github.com/Svyable/zarr-pyramid-audit">zarr-pyramid-audit</a>
-(MIT fork of sgsllc-jr/zarr-pyramid-audit) by Sven + Muse. Upstream credit retained.
-</footer>
-</div></body></html>
+</div><!-- /wrap -->
+
+<footer><div class="wrap">
+  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 21 check codes over
+  <code>.zattrs</code> + one <code>.zarray</code> per level — a few KB per pyramid
+  regardless of array size. Chunk-presence via one listing per level. Chunk-content via
+  sampled decode (vendored libvolcomp for the sharded volcomp levels). Full evidence,
+  manifests, and runbooks in <code>artifacts/</code> in the
+  <a href="https://github.com/Svyable/zarr-pyramid-audit">repo</a> (MIT fork of sgsllc-jr/zarr-pyramid-audit; upstream credit retained).<br>
+  Built by Sven + Muse · updated 2026-09-30.
+</div></footer>
+
+<script>
+(function(){
+  const tb = document.querySelector("#codes tbody");
+  const rows = Array.from(tb.querySelectorAll("tr"));
+  let sortK = "total", asc = false, sevF = "";
+  function apply(){
+    let vis = rows.filter(r => !sevF || r.dataset.sev === sevF);
+    vis.sort((a, b) => {
+      let x, y;
+      if (sortK === "code" || sortK === "sev") {
+        x = a.dataset[sortK]; y = b.dataset[sortK];
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+      }
+      x = parseFloat(a.dataset[sortK]); y = parseFloat(b.dataset[sortK]);
+      return asc ? x - y : y - x;
+    });
+    const frag = document.createDocumentFragment();
+    vis.forEach(r => frag.append(r));
+    rows.forEach(r => r.classList.add("hidden"));
+    vis.forEach(r => r.classList.remove("hidden"));
+    tb.append(frag);
+  }
+  document.querySelectorAll("#codes thead th[data-k]").forEach(th => {
+    th.addEventListener("click", () => {
+      const k = th.dataset.k;
+      if (sortK === k) asc = !asc; else { sortK = k; asc = (k === "code" || k === "sev"); }
+      document.querySelectorAll("#codes thead th .arr").forEach(e => e.remove());
+      const s = document.createElement("span"); s.className = "arr";
+      s.textContent = asc ? " ▲" : " ▼"; th.appendChild(s);
+      apply();
+    });
+  });
+  document.querySelectorAll(".sevbtn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".sevbtn").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); sevF = b.dataset.s; apply();
+  }));
+  apply();
+})();
+</script>
+</body></html>
