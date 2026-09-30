@@ -201,3 +201,72 @@ def probe_level(store, root: str, level_rec: dict,
             continue
         out.append(s)
     return out
+
+
+def probe_level_v3_sharded(bucket: str, root: str, level_rec: dict,
+                           samples_per_level: int = 3,
+                           endpoint_url: str | None = None) -> list[ChunkSample]:
+    """Probe a v3 sharded level via zarr-python + s3fs.
+
+    Opens the array and reads small windows at spread positions. A window
+    with any non-fill value proves population. Used for levels whose
+    chunks are sharded (sharding_indexed) and not directly addressable.
+    Only supports s3:// buckets (anonymous).
+    """
+    import warnings
+    warnings.filterwarnings("ignore")
+    shape = level_rec.get("shape") or []
+    if not shape:
+        return []
+    level = str(level_rec.get("level"))
+    fill_value = level_rec.get("fill_value")
+    if fill_value is None:
+        fill_value = 0
+    out: list[ChunkSample] = []
+    try:
+        import s3fs
+        from zarr.storage import FsspecStore
+        import zarr
+        kw: dict = {"anon": True}
+        if endpoint_url:
+            kw["client_kwargs"] = {"endpoint_url": endpoint_url}
+        fs = s3fs.S3FileSystem(**kw)
+        prefix = f"{bucket}/{root}/{level}".replace("s3://", "")
+        mapper = fs.get_mapper(prefix, check=False)
+        arr = zarr.open_array(store=FsspecStore.from_mapper(mapper), mode="r")
+    except Exception as exc:
+        out.append(ChunkSample(root=root, level=level, chunk_index=(),
+                               key=f"{level}/<shards>",
+                               status="undecodable",
+                               detail=f"zarr open failed: {exc}"))
+        return out
+    # window size: small but meaningful; spread positions across the array
+    wins = [min(64, s) for s in shape]
+    if len(wins) > 3:
+        wins = wins[:3]
+    positions = []
+    k = samples_per_level
+    for i in range(k):
+        pos = []
+        for dim, (s, w) in enumerate(zip(shape[: len(wins)], wins)):
+            span = max(0, s - w)
+            # spread: 15%, 50%, 85% along each axis, cycled per sample
+            frac = (0.15, 0.5, 0.85)[i % 3] if k > 1 else 0.5
+            # offset the fraction per dimension so samples don't line up
+            frac = (frac + 0.23 * dim) % 1.0
+            pos.append(int(span * frac))
+        positions.append(tuple(pos))
+    for p in positions:
+        sl = tuple(slice(o, o + w) for o, w in zip(p, wins))
+        try:
+            data = arr[sl]
+            nz = int((data != fill_value).sum())
+            status = "populated" if nz else "empty"
+            detail = (f"window {p}+{tuple(wins)}: {nz}/{data.size} values "
+                      f"differ from fill_value ({fill_value!r})")
+        except Exception as exc:
+            status, nz, detail = "fetch_error", 0, f"window read failed: {exc}"
+        out.append(ChunkSample(root=root, level=level, chunk_index=p,
+                               key=f"{level}/<shard-window>",
+                               status=status, detail=detail))
+    return out

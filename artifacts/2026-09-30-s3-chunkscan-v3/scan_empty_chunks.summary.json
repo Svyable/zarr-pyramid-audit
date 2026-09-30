@@ -1,0 +1,11 @@
+{
+  "roots_scanned": 70,
+  "levels_scanned": 420,
+  "levels_all_empty": [],
+  "n_levels_all_empty": 0,
+  "bytes_fetched": 0,
+  "by_code": {
+    "CHUNK_SAMPLE_POPULATED": 1224,
+    "CHUNK_SAMPLE_EMPTY": 36
+  }
+}

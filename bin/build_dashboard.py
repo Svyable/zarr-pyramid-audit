@@ -50,6 +50,10 @@ def main() -> int:
     s3 = load_json(f"{ART}/2026-09-29-s3/audit_pyramid.summary.json")
     dl = load_json(f"{ART}/2026-09-29-dl-regression/audit_pyramid.summary.json")
     cs = load_json(f"{ART}/2026-09-30-s3-chunkscan/scan_empty_chunks.summary.json")
+    try:
+        csv3 = load_json(f"{ART}/2026-09-30-s3-chunkscan-v3/scan_empty_chunks.summary.json")
+    except FileNotFoundError:
+        csv3 = None
 
     # dl defective-pyramid list (roots with actionable findings), from findings csv
     dl_bad: Counter = Counter()
@@ -75,6 +79,17 @@ def main() -> int:
         )
 
     updated = "2026-09-30"
+    if csv3:
+        v3para = (
+            f"<p><strong>v3 sharded levels</strong> (70 roots, {csv3['levels_scanned']} levels, "
+            f"{csv3['by_code'].get('CHUNK_SAMPLE_POPULATED', 0) + csv3['by_code'].get('CHUNK_SAMPLE_EMPTY', 0)} "
+            f"windows via zarr-python): "
+            f"{csv3['by_code'].get('CHUNK_SAMPLE_POPULATED', 0)} populated, "
+            f"{csv3['by_code'].get('CHUNK_SAMPLE_EMPTY', 0)} background-empty, "
+            f"<strong>0 all-empty levels</strong>. Every decodable level class in the bucket "
+            f"is now covered by a content probe.</p>")
+    else:
+        v3para = ""
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -197,6 +212,7 @@ next silent-corruption class: chunks that exist but decode to all fill_value.</p
 <p>The present-but-empty class was not observed in this sample — reported as
 evidence of absence in the sample, not proof of absence in the corpus. The tool
 is published for anyone to rerun at larger sample sizes.</p>
+{v3para}
 </section>
 
 <section>

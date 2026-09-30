@@ -36,7 +36,7 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from lib.chunkscan import probe_level                       # noqa: E402
+from lib.chunkscan import probe_level, probe_level_v3_sharded  # noqa: E402
 from lib.httpstore import open_store                        # noqa: E402
 from lib.pool import parallel_map                           # noqa: E402
 from lib.runio import RunManifest, write_json               # noqa: E402
@@ -59,6 +59,8 @@ def main() -> int:
     ap.add_argument("--samples-per-level", type=int, default=3)
     ap.add_argument("--workers", type=int, default=None)
     ap.add_argument("--limit-roots", type=int, default=None)
+    ap.add_argument("--only-sharded", action="store_true",
+                    help="only probe v3 sharded (sharding_indexed) levels")
     ap.add_argument("--out-dir", default=None)
     args = ap.parse_args()
 
@@ -78,6 +80,9 @@ def main() -> int:
             if not r.get("present") or r.get("has_chunks") is False:
                 continue
             if not r.get("shape") or not r.get("chunks"):
+                continue
+            if args.only_sharded and \
+                    (r.get("compressor") or "").lower() != "sharding_indexed":
                 continue
             by_root.setdefault(r["root"], []).append(r)
 
@@ -111,12 +116,27 @@ def main() -> int:
         man.set("n_roots", len(roots))
         man.set("samples_per_level", args.samples_per_level)
 
+        import os as _os
+        s3_endpoint = _os.environ.get("AWS_ENDPOINT_URL_S3")
+        bucket = args.base[5:].rstrip("/") if args.base.startswith("s3://") \
+            else ""
+
+        def probe_rec(root: str, rec: dict):
+            # v3 sharded levels are not directly addressable: probe windows
+            # through zarr-python instead of individual chunk keys.
+            if (rec.get("compressor") or "").lower() == "sharding_indexed" \
+                    and bucket:
+                return probe_level_v3_sharded(
+                    bucket, root, rec,
+                    samples_per_level=args.samples_per_level,
+                    endpoint_url=s3_endpoint)
+            return probe_level(store, root, rec,
+                               samples_per_level=args.samples_per_level)
+
         def work(root: str):
             return root, [s for rec in sorted(by_root[root],
                                              key=lambda r: r.get("index", 0))
-                          for s in probe_level(
-                              store, root, rec,
-                              samples_per_level=args.samples_per_level)]
+                          for s in probe_rec(root, rec)]
 
         def emit(code, severity, root, level, chunk, detail, bf):
             w.writerow({"code": code, "severity": severity, "root": root,

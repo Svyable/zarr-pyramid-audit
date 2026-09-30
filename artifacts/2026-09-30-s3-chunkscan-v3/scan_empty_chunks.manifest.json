@@ -1,0 +1,51 @@
+{
+  "run_name": "scan_empty_chunks",
+  "started_utc": "2026-09-30T12:27:01.972724+00:00",
+  "argv": [
+    "bin/scan_empty_chunks.py",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--levels-jsonl",
+    "artifacts/2026-09-29-s3/audit_pyramid.levels.jsonl",
+    "--only-sharded",
+    "--samples-per-level",
+    "3",
+    "--workers",
+    "8",
+    "--out-dir",
+    "artifacts/2026-09-30-s3-chunkscan-v3"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-39-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python3",
+  "packages": {
+    "numpy": "2.5.3",
+    "zarr": "3.4.0",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {},
+  "outputs": [],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "n_roots": 70,
+  "samples_per_level": 3,
+  "summary": {
+    "roots_scanned": 70,
+    "levels_scanned": 420,
+    "levels_all_empty": [],
+    "n_levels_all_empty": 0,
+    "bytes_fetched": 0,
+    "by_code": {
+      "CHUNK_SAMPLE_POPULATED": 1224,
+      "CHUNK_SAMPLE_EMPTY": 36
+    }
+  },
+  "ended_utc": "2026-09-30T12:29:51.398821+00:00",
+  "wall_seconds": 169.426
+}
