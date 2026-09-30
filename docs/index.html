@@ -143,7 +143,7 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   Actions annotations for CI. This defect class can never ship again.</div>
 </div>
 
-<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity</span></h2>
+<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity · S3 = open-data bucket, dl = dl.ash2txt.org</span></h2>
   <div class="controls">
     <button class="sevbtn on" data-s="">all</button>
     <button class="sevbtn" data-s="high">high</button>
@@ -162,8 +162,8 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 <tr data-code="COMPRESSOR_DRIFT" data-sev="low" data-s3="0" data-dl="9" data-total="9"><td><code>COMPRESSOR_DRIFT</code></td><td><span class="sev low">low</span></td><td class="num">0</td><td class="num">9</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:11.5%"></span></div></td><td style="color:var(--muted)">codec changes between levels</td></tr>
 <tr data-code="NOT_MULTISCALE" data-sev="info" data-s3="0" data-dl="6" data-total="6"><td><code>NOT_MULTISCALE</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">6</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:7.7%"></span></div></td><td style="color:var(--muted)">valid Zarr group, never claimed to be a pyramid</td></tr>
 <tr data-code="NOT_A_ZARR_GROUP" data-sev="info" data-s3="0" data-dl="1" data-total="1"><td><code>NOT_A_ZARR_GROUP</code></td><td><span class="sev info">info</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">no .zgroup / zarr.json and nothing Zarr-like inside</td></tr>
-<tr data-code="HEADERLESS_CHUNK_STORE" data-sev="high" data-s3="0" data-dl="1" data-total="1"><td><code>HEADERLESS_CHUNK_STORE</code></td><td><span class="sev high">high</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">chunk keys present but no decodable header</td></tr>
-<tr data-code="CONTAINER_NO_GROUP_HEADER" data-sev="low" data-s3="0" data-dl="1" data-total="1"><td><code>CONTAINER_NO_GROUP_HEADER</code></td><td><span class="sev low">low</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">children are Zarr nodes but root has no group header</td></tr></tbody></table></div>
+<tr data-code="CONTAINER_NO_GROUP_HEADER" data-sev="low" data-s3="0" data-dl="1" data-total="1"><td><code>CONTAINER_NO_GROUP_HEADER</code></td><td><span class="sev low">low</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">children are Zarr nodes but root has no group header</td></tr>
+<tr data-code="HEADERLESS_CHUNK_STORE" data-sev="high" data-s3="0" data-dl="1" data-total="1"><td><code>HEADERLESS_CHUNK_STORE</code></td><td><span class="sev high">high</span></td><td class="num">0</td><td class="num">1</td><td><div class="cbar"><span class="cb-s3" style="width:0.0%"></span><span class="cb-dl" style="width:1.3%"></span></div></td><td style="color:var(--muted)">chunk keys present but no decodable header</td></tr></tbody></table></div>
   <p style="margin-top:1rem">S3: <b>6 actionable findings</b>
   (all <code>LEVEL_NO_CHUNKS</code> — the six levels of the defective pyramid),
   0 informational. dl: 50 actionable,

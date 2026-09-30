@@ -199,7 +199,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   Actions annotations for CI. This defect class can never ship again.</div>
 </div>
 
-<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity</span></h2>
+<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity · S3 = open-data bucket, dl = dl.ash2txt.org</span></h2>
   <div class="controls">
     <button class="sevbtn on" data-s="">all</button>
     <button class="sevbtn" data-s="high">high</button>
