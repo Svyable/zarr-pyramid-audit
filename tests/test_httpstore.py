@@ -54,3 +54,61 @@ def test_zero_length_range_is_empty_without_io(monkeypatch):
     )
 
     assert store.get_range("object", 5, 0) == b""
+
+
+def test_http_get_range_accepts_matching_content_range(monkeypatch):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(
+        status_code=206,
+        content=b"234",
+        headers={"Content-Range": "bytes 2-4/10"},
+    )
+    monkeypatch.setattr(store, "_request", lambda *args, **kwargs: response)
+
+    assert store.get_range("object", 2, 3) == b"234"
+
+
+@pytest.mark.parametrize(
+    "content_range",
+    [
+        "",
+        "bytes 1-3/10",
+        "bytes 2-5/10",
+        "items 2-4/10",
+    ],
+)
+def test_http_get_range_rejects_wrong_content_range(monkeypatch, content_range):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(
+        status_code=206,
+        content=b"234",
+        headers={"Content-Range": content_range},
+    )
+    monkeypatch.setattr(store, "_request", lambda *args, **kwargs: response)
+
+    with pytest.raises(StoreError, match="invalid Content-Range"):
+        store.get_range("object", 2, 3)
+
+
+@pytest.mark.parametrize("header", ["bytes 2-4/6", "bytes 2-4/*", "BYTES 2-4/5"])
+def test_http_range_accepts_exact_content_range(monkeypatch, header):
+    store = HttpStore("https://example.test")
+    def request(method, path, **kwargs):
+        assert kwargs["headers"]["Range"] == "bytes=2-4"
+        return SimpleNamespace(status_code=206, content=b"234",
+                               headers={"Content-Range": header})
+    monkeypatch.setattr(store, "_request", request)
+    assert store.get_range("object", 2, 3) == b"234"
+
+
+@pytest.mark.parametrize("header", [
+    "", "bytes 0-2/6", "bytes 2-5/6", "bytes 2-4/4", "bytes 2-4/0",
+    "bytes */6", "items 2-4/6", "bytes 2-4/6 junk", "bytes 2-4/6\n",
+])
+def test_http_range_rejects_invalid_content_range(monkeypatch, header):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(status_code=206, content=b"234",
+                               headers={"Content-Range": header})
+    monkeypatch.setattr(store, "_request", lambda *a, **kw: response)
+    with pytest.raises(StoreError, match="invalid Content-Range"):
+        store.get_range("object", 2, 3)
