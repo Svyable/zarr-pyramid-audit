@@ -15,6 +15,9 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      AWS_ENDPOINT_URL_S3: https://s3.us-east-1.amazonaws.com
+      AWS_REGION: us-east-1
     steps:
       - uses: actions/checkout@v7
 
