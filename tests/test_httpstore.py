@@ -6,6 +6,56 @@ import pytest
 from zpa.httpstore import HttpStore, S3Store, StoreError
 
 
+class _RetryResponse:
+    def __init__(self, status_code, headers=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+
+def test_http_retry_honors_retry_after_and_closes_response(monkeypatch):
+    store = HttpStore("https://example.test", tries=2)
+    rate_limited = _RetryResponse(429, {"Retry-After": "3"})
+    responses = [
+        rate_limited,
+        _RetryResponse(200),
+    ]
+    monkeypatch.setattr(
+        store, "_session",
+        lambda: SimpleNamespace(request=lambda *args, **kwargs: responses.pop(0)),
+    )
+    monkeypatch.setattr(store.retry, "sleep_for", lambda attempt: 0.25)
+    sleeps = []
+    monkeypatch.setattr("zpa.httpstore.time.sleep", sleeps.append)
+
+    response = store._request("GET", "object")
+
+    assert response.status_code == 200
+    assert sleeps == [3.0]
+    assert rate_limited.closed is True
+    assert responses == []
+
+
+def test_http_retry_after_date_is_bounded_by_retry_cap(monkeypatch):
+    store = HttpStore("https://example.test")
+    monkeypatch.setattr(store.retry, "sleep_for", lambda attempt: 0.25)
+    monkeypatch.setattr("zpa.httpstore.time.time", lambda: 0.0)
+
+    delay = store.retry.delay_for(0, "Thu, 01 Jan 1970 00:01:00 GMT")
+
+    assert delay == store.retry.cap
+
+
+def test_http_retry_ignores_malformed_retry_after(monkeypatch):
+    store = HttpStore("https://example.test")
+    monkeypatch.setattr(store.retry, "sleep_for", lambda attempt: 0.75)
+
+    assert store.retry.delay_for(0, "not-a-delay") == 0.75
+
+
 def test_http_get_range_rejects_short_partial_response(monkeypatch):
     store = HttpStore("https://example.test")
     response = SimpleNamespace(status_code=206, content=b"ab")
