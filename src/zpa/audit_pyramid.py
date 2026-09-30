@@ -20,6 +20,9 @@ CHECK CODES
   HEADERLESS_CHUNK_STORE  chunk keys present but no .zarray/.zgroup -- undecodable
   CONTAINER_NO_GROUP_HEADER  children are Zarr nodes but root has no group header;
                      zarr.open() on the *.zarr path fails
+  ACCESS_UNKNOWN     [info] access could not establish presence or absence
+  METADATA_UNREADABLE  metadata exists but cannot be decoded
+  ROOT_ABSENT        requested Zarr root is confirmed absent
   EMPTY_ZARR_DIR     *.zarr directory with no contents
   NOT_MULTISCALE     [info] valid Zarr group, but not an OME pyramid
   MULTISCALE_EMPTY   declares multiscales but yields no usable datasets
@@ -85,7 +88,9 @@ SEVERITY = {
     "AXES_MISMATCH": "low",
     "HEADERLESS_CHUNK_STORE": "high",
     "CONTAINER_NO_GROUP_HEADER": "low",
+    "ROOT_ABSENT": "low",
     "EMPTY_ZARR_DIR": "low",
+    "METADATA_UNREADABLE": "high",
 }
 
 # Codes that describe what a node IS, not that anything is wrong. They are
@@ -95,7 +100,8 @@ SEVERITY = {
 # it only ever occurs on the deepest levels, where a fixed chunk shape carried
 # down the pyramid inevitably exceeds the array. It is the natural consequence
 # of constant chunking, not a defect.
-INFO_CODES = {"NOT_A_ZARR_GROUP", "NOT_MULTISCALE", "BARE_ARRAY", "CHUNK_EXCEEDS_SHAPE"}
+INFO_CODES = {"NOT_A_ZARR_GROUP", "NOT_MULTISCALE", "BARE_ARRAY",
+              "CHUNK_EXCEEDS_SHAPE", "ACCESS_UNKNOWN"}
 for _c in INFO_CODES:
     SEVERITY[_c] = "info"
 
@@ -120,6 +126,33 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         })
 
     if not pm.has_multiscales:
+        if getattr(pm, "evidence_state", None) == "UNKNOWN":
+            add("ACCESS_UNKNOWN", None,
+                "existence/content could not be established by the attempted access",
+                getattr(pm, "evidence_reason", None) or "TRANSPORT_ERROR",
+                "PRESENT or confirmed ABSENT")
+            return findings, [], {
+                "root": root, "zarr_format": pm.zarr_format, "n_levels": 0,
+                "is_group": pm.is_group, "kind": "access_unknown",
+                "has_multiscales": False,
+                "multiscales_key_present": pm.multiscales_key_present,
+                "evidence_state": pm.evidence_state,
+                "evidence_reason": pm.evidence_reason,
+                "errors": pm.errors, "n_findings": len(findings),
+            }
+        if getattr(pm, "evidence_reason", None) == "METADATA_UNREADABLE":
+            add("METADATA_UNREADABLE", None,
+                getattr(pm, "node_detail", "") or "; ".join(pm.errors),
+                "METADATA_UNREADABLE", "readable JSON metadata")
+            return findings, [], {
+                "root": root, "zarr_format": pm.zarr_format, "n_levels": 0,
+                "is_group": pm.is_group, "kind": "metadata_unreadable",
+                "has_multiscales": False,
+                "multiscales_key_present": pm.multiscales_key_present,
+                "evidence_state": pm.evidence_state,
+                "evidence_reason": pm.evidence_reason,
+                "errors": pm.errors, "n_findings": len(findings),
+            }
         # Three genuinely different situations, previously conflated as one
         # high-severity finding. Only the third is a defect.
         if not pm.is_group:
@@ -132,6 +165,7 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
                 "array": "BARE_ARRAY",
                 "headerless_chunks": "HEADERLESS_CHUNK_STORE",
                 "container": "CONTAINER_NO_GROUP_HEADER",
+                "absent": "ROOT_ABSENT",
                 "empty": "EMPTY_ZARR_DIR",
             }.get(nk, "NOT_A_ZARR_GROUP")
             add(code, None,
@@ -157,6 +191,8 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
             "is_group": pm.is_group, "kind": kind,
             "has_multiscales": False,
             "multiscales_key_present": pm.multiscales_key_present,
+            "evidence_state": getattr(pm, "evidence_state", None),
+            "evidence_reason": getattr(pm, "evidence_reason", None),
             "errors": pm.errors, "n_findings": len(findings),
         }
 
@@ -165,8 +201,17 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
 
     for l in levels:
         if not l.present:
-            add("LEVEL_MISSING", l.path,
-                f"declared in multiscales but no readable array header: {l.error}")
+            if getattr(l, "evidence_state", None) == "UNKNOWN":
+                add("ACCESS_UNKNOWN", l.path,
+                    f"declared level could not be checked: {l.error}",
+                    getattr(l, "evidence_reason", None) or "TRANSPORT_ERROR",
+                    "PRESENT or confirmed ABSENT")
+            elif getattr(l, "evidence_reason", None) == "METADATA_UNREADABLE":
+                add("METADATA_UNREADABLE", l.path,
+                    f"declared level metadata exists but is unreadable: {l.error}")
+            else:
+                add("LEVEL_MISSING", l.path,
+                    f"declared in multiscales but no readable array header: {l.error}")
         elif l.shape and any(int(s) <= 0 for s in l.shape):
             add("DEGENERATE_LEVEL", l.path, "non-positive extent", l.shape)
         if l.present and l.has_chunks is False:
@@ -187,7 +232,10 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
     if not present:
         return findings, [], {
             "root": root, "zarr_format": pm.zarr_format, "n_levels": len(levels),
-            "has_multiscales": True, "errors": pm.errors, "n_findings": len(findings),
+            "has_multiscales": True,
+            "evidence_state": getattr(pm, "evidence_state", None),
+            "evidence_reason": getattr(pm, "evidence_reason", None),
+            "errors": pm.errors, "n_findings": len(findings),
         }
 
     base = present[0]
@@ -274,14 +322,20 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         "compressor": l.compressor_id(),
         "dimension_separator": l.dimension_separator,
         "n_chunks": l.n_chunks, "n_voxels": l.n_voxels, "error": l.error,
+        "evidence_state": getattr(l, "evidence_state", None),
+        "evidence_reason": getattr(l, "evidence_reason", None),
         "has_chunks": l.has_chunks, "top_entries": l.top_entries,
         "top_entries_max": l.top_entries_max,
+        "chunk_evidence_state": getattr(l, "chunk_evidence_state", None),
+        "chunk_evidence_reason": getattr(l, "chunk_evidence_reason", None),
     } for l in levels]
 
     pyr_rec = {
         "root": root, "zarr_format": pm.zarr_format, "axes": pm.axes,
         "n_levels": len(levels), "n_levels_present": len(present),
         "has_multiscales": True,
+        "evidence_state": getattr(pm, "evidence_state", None),
+        "evidence_reason": getattr(pm, "evidence_reason", None),
         "base_shape": base.shape, "base_dtype": base.dtype,
         "rounding": sorted(roundings),
         "undeclared_levels": pm.extra_level_dirs,
