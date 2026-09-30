@@ -32,6 +32,9 @@ __all__ = ["StoreError", "ObjectInfo", "HttpStore", "S3Store", "open_store"]
 DEFAULT_UA = "vesuvius-audit/1.0 (public-data integrity survey; contact via GitHub issue)"
 
 _HREF_RE = re.compile(r'href="([^"?][^"]*)"', re.IGNORECASE)
+_CONTENT_RANGE_RE = re.compile(
+    r"^bytes\\s+(\\d+)-(\\d+)/(?:\\d+|\\*)$", re.IGNORECASE
+)
 
 
 class StoreError(RuntimeError):
@@ -219,6 +222,15 @@ class HttpStore:
                 f"short ranged GET: expected {length} bytes, got {len(data)}: "
                 f"{self.url(path)}"
             )
+        if r.status_code == 206:
+            content_range = getattr(r, "headers", {}).get("Content-Range", "")
+            match = _CONTENT_RANGE_RE.match(content_range)
+            if (match is None or int(match.group(1)) != start
+                    or int(match.group(2)) != end):
+                raise StoreError(
+                    f"invalid Content-Range {content_range!r}; expected "
+                    f"bytes {start}-{end}: {self.url(path)}"
+                )
         return data
 
     def get_json(self, path: str) -> Any:
