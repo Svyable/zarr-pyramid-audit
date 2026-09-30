@@ -18,8 +18,10 @@ Design notes:
   - Two-phase fetch for uncompressed chunks: read the first 4 KiB; any
     nonzero byte proves the chunk is populated without downloading the rest.
     Only fully-zero prefixes trigger the full download.
-  - Decodable today: zarr v2 raw and v2 blosc. v3 sharded stores and exotic
-    codecs (e.g. volcomp) are reported as UNDECODEABLE, never silently
+  - Decodable today: zarr v2 raw and v2 blosc; v3 sharded levels whose
+    inner codec is volcomp (the dl.ash2txt.org scroll volumes), decoded
+    with a vendored libvolcomp over HTTP byte ranges. Other v3 sharded
+    stores and exotic codecs are reported as UNDECODEABLE, never silently
     skipped.
 """
 
@@ -269,4 +271,147 @@ def probe_level_v3_sharded(bucket: str, root: str, level_rec: dict,
         out.append(ChunkSample(root=root, level=level, chunk_index=p,
                                key=f"{level}/<shard-window>",
                                status=status, detail=detail))
+    return out
+
+
+def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
+                               samples_per_level: int = 3,
+                               inner_per_shard: int = 3) -> list[ChunkSample]:
+    """Probe a v3 sharded level whose inner codec is volcomp.
+
+    Parses the sharding_indexed shard indexes over HTTP byte ranges and
+    decodes sampled 128^3 inner chunks with the vendored libvolcomp --
+    no zarr-python, no event loop, proxy-friendly.  Statuses:
+    populated | empty (present, decodes to fill) | missing (absent from
+    the shard index; reads as fill legitimately) | undecodable |
+    fetch_error.
+    """
+    import numpy as np
+
+    from . import volcomp as vc
+
+    level = str(level_rec.get("level"))
+    fill_value = level_rec.get("fill_value")
+    if fill_value is None:
+        fill_value = 0
+    out: list[ChunkSample] = []
+
+    def fail(status, detail, idx=()):
+        out.append(ChunkSample(root=root, level=level, chunk_index=idx,
+                               key=f"{level}/<volcomp>", status=status,
+                               detail=detail))
+        return out
+
+    ok, reason = vc.available()
+    if not ok:
+        return fail("undecodable", f"volcomp unavailable: {reason}")
+    try:
+        meta = store.get_json(f"{root}/{level}/zarr.json")
+    except Exception as exc:
+        return fail("fetch_error", f"zarr.json unreadable: {exc}")
+    info = vc.parse_zarr_json(meta)
+    if info is None:
+        return fail("undecodable", "zarr.json has no sharding_indexed codec")
+    if info.inner_codec != "volcomp":
+        return fail("undecodable",
+                    f"inner codec is {info.inner_codec!r}, not volcomp")
+
+    base = store.url("").rstrip("/")
+    sess = store._session()
+    shard_grid = [max(1, (s + o - 1) // o)
+                  for s, o in zip(info.shape, info.outer_chunks)]
+    for sc in sample_indices(shard_grid, samples_per_level):
+        skey = vc.shard_key(root, level, sc)
+        shard_url = f"{base}/{skey}"
+        # shard size via a 1-byte range probe (Content-Range carries total)
+        try:
+            r = sess.get(shard_url, headers={"Range": "bytes=0-0"},
+                         timeout=60)
+            if r.status_code == 404:
+                out.append(ChunkSample(
+                    root=root, level=level, chunk_index=sc,
+                    key=f"{level}/c/" + "/".join(map(str, sc)),
+                    status="missing",
+                    detail="shard object absent (reads as fill)"))
+                continue
+            r.raise_for_status()
+            total = int(r.headers.get("Content-Range", "").rsplit("/", 1)[1])
+        except Exception as exc:
+            return fail("fetch_error", f"shard size probe failed: {exc}", sc)
+        cps = vc.inner_chunks_per_shard(info, sc)
+        n_inner = 1
+        for c in cps:
+            n_inner *= c
+        try:
+            idx_size = vc.index_encoded_size(n_inner, info.index_codecs)
+        except ValueError as exc:
+            return fail("undecodable", str(exc), sc)
+        if total < idx_size:
+            return fail("fetch_error",
+                        f"shard smaller than its index ({total} < {idx_size})",
+                        sc)
+        try:
+            raw_index = store.get_range(skey, total - idx_size, idx_size)
+        except Exception as exc:
+            return fail("fetch_error", f"index fetch failed: {exc}", sc)
+        entries = vc.parse_index(raw_index, n_inner, info.index_codecs)
+        if entries is None:
+            return fail("fetch_error", "shard index failed to parse", sc)
+        fetched = idx_size + 1  # index + size probe
+        for ic in sample_indices(list(cps), inner_per_shard):
+            flat = 0
+            mult = 1
+            for dim in reversed(range(len(cps))):
+                flat += ic[dim] * mult
+                mult *= cps[dim]
+            off, ln = entries[flat]
+            # global inner-chunk coords, for edge cropping
+            gic = tuple(sc[d] * (info.outer_chunks[d] // info.inner_chunks[d])
+                        + ic[d] for d in range(len(cps)))
+            key = (f"{level}/c/" + "/".join(map(str, sc)) +
+                   f"#{'.'.join(map(str, ic))}")
+            if off == vc.MISSING or ln == vc.MISSING:
+                out.append(ChunkSample(
+                    root=root, level=level, chunk_index=gic, key=key,
+                    status="missing",
+                    detail="inner chunk absent from shard index"))
+                continue
+            try:
+                blob = store.get_range(skey, off, ln)
+                fetched += len(blob)
+            except Exception as exc:
+                out.append(ChunkSample(
+                    root=root, level=level, chunk_index=gic, key=key,
+                    status="fetch_error", detail=f"chunk fetch failed: {exc}",
+                    bytes_fetched=fetched))
+                fetched = 0
+                continue
+            # cheap first pass: decode the central 16^3 block only
+            blk = vc.decode_block(blob, 4, 4, 4)
+            nz = sum(1 for b in blk if b != fill_value) if blk else 0
+            if nz:
+                status, detail = "populated", (
+                    f"center 16^3 block: {nz}/4096 differ from fill "
+                    f"({fill_value!r}); {len(blob)} stored bytes")
+            else:
+                full = vc.decode_chunk(blob)
+                if full is None:
+                    status, detail = ("undecodable",
+                                      "volcomp decode failed (corrupt stream?)")
+                else:
+                    # crop edge chunks to the valid region
+                    arr = np.frombuffer(full, dtype=np.uint8).reshape(
+                        (128,) * len(cps))
+                    sl = tuple(
+                        slice(0, min(info.inner_chunks[d],
+                                     info.shape[d] - gic[d] * info.inner_chunks[d]))
+                        for d in range(len(cps)))
+                    nz = int((arr[sl] != fill_value).sum())
+                    status = "populated" if nz else "empty"
+                    detail = (f"{nz}/{arr[sl].size} valid voxels differ from "
+                              f"fill ({fill_value!r}); {len(blob)} stored bytes")
+            out.append(ChunkSample(root=root, level=level, chunk_index=gic,
+                                   key=key, status=status, detail=detail,
+                                   bytes_fetched=fetched))
+            fetched = 0
     return out

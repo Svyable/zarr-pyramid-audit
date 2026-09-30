@@ -34,9 +34,8 @@ import random
 import sys
 from collections import Counter
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from zpa.chunkscan import probe_level, probe_level_v3_sharded  # noqa: E402
+from zpa.chunkscan import (probe_level, probe_level_v3_sharded,
+                            probe_level_volcomp_sharded)  # noqa: E402
 from zpa.httpstore import open_store                        # noqa: E402
 from zpa.pool import parallel_map                           # noqa: E402
 from zpa.runio import RunManifest, write_json               # noqa: E402
@@ -122,14 +121,24 @@ def main() -> int:
             else ""
 
         def probe_rec(root: str, rec: dict):
-            # v3 sharded levels are not directly addressable: probe windows
-            # through zarr-python instead of individual chunk keys.
-            if (rec.get("compressor") or "").lower() == "sharding_indexed" \
-                    and bucket:
-                return probe_level_v3_sharded(
-                    bucket, root, rec,
-                    samples_per_level=args.samples_per_level,
-                    endpoint_url=s3_endpoint)
+            # v3 sharded levels: try the volcomp byte-range probe first
+            # (self-detects the codec from zarr.json; works on any base).
+            # Falls back to zarr-python window reads on s3://, which need
+            # the S3 store rather than plain HTTPS.
+            if (rec.get("compressor") or "").lower() == "sharding_indexed":
+                samples = probe_level_volcomp_sharded(
+                    store, root, rec,
+                    samples_per_level=args.samples_per_level)
+                if not (len(samples) == 1
+                        and samples[0].status == "undecodable"
+                        and "not volcomp" in samples[0].detail):
+                    return samples
+                if bucket:
+                    return probe_level_v3_sharded(
+                        bucket, root, rec,
+                        samples_per_level=args.samples_per_level,
+                        endpoint_url=s3_endpoint)
+                return samples
             return probe_level(store, root, rec,
                                samples_per_level=args.samples_per_level)
 
@@ -164,6 +173,10 @@ def main() -> int:
                     emit("CHUNK_SAMPLE_EMPTY", "info", s.root, s.level,
                          ".".join(map(str, s.chunk_index)), s.detail,
                          s.bytes_fetched)
+                elif s.status == "missing":
+                    emit("CHUNK_SAMPLE_MISSING", "info", s.root, s.level,
+                         ".".join(map(str, s.chunk_index)), s.detail,
+                         s.bytes_fetched)
                 elif s.status == "undecodable":
                     emit("CHUNK_UNDECODEABLE", "low", s.root, s.level,
                          ".".join(map(str, s.chunk_index)), s.detail,
@@ -174,6 +187,8 @@ def main() -> int:
                          s.bytes_fetched)
             for level, ss in by_level.items():
                 levels_scanned += 1
+                # Only *present* chunks count toward the all-empty verdict;
+                # missing inner chunks legitimately read as fill (masked).
                 decodable = [s for s in ss
                              if s.status in ("populated", "empty")]
                 if decodable and all(s.status == "empty" for s in decodable):

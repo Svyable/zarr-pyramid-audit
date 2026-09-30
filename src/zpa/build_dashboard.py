@@ -54,6 +54,10 @@ def main() -> int:
         csv3 = load_json(f"{ART}/2026-09-30-s3-chunkscan-v3/scan_empty_chunks.summary.json")
     except FileNotFoundError:
         csv3 = None
+    try:
+        vc = load_json(f"{ART}/2026-09-30-dl-volcomp-probe/scan_empty_chunks.summary.json")
+    except FileNotFoundError:
+        vc = None
 
     # dl defective-pyramid list (roots with actionable findings), from findings csv
     dl_bad: Counter = Counter()
@@ -90,6 +94,19 @@ def main() -> int:
             f"is now covered by a content probe.</p>")
     else:
         v3para = ""
+    if vc:
+        vcpara = (
+            f"<p><strong>volcomp scroll volumes</strong> (dl.ash2txt.org, "
+            f"{vc['roots_scanned']} volumes, {vc['levels_scanned']} levels): "
+            f"{vc['by_code'].get('CHUNK_SAMPLE_POPULATED', 0)} inner chunks "
+            f"decoded with real content, "
+            f"{vc['by_code'].get('CHUNK_SAMPLE_MISSING', 0)} legitimately "
+            f"missing (masked background is unstored, not zero-filled), "
+            f"<strong>0 all-empty levels</strong>. The training volumes "
+            f"themselves are now content-probed — decoded with a vendored "
+            f"libvolcomp over HTTP byte ranges.</p>")
+    else:
+        vcpara = ""
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -213,6 +230,7 @@ next silent-corruption class: chunks that exist but decode to all fill_value.</p
 evidence of absence in the sample, not proof of absence in the corpus. The tool
 is published for anyone to rerun at larger sample sizes.</p>
 {v3para}
+{vcpara}
 </section>
 
 <section>

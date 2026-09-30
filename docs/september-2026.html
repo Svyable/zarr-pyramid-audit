@@ -70,7 +70,7 @@ catches this at publish time. This contribution:</p>
 independently confirms the header-only PHerc0814 surface volume (villa #1892,
 all 6 levels header-only, reads silently return zeros) is still live in the
 bucket — and names its two populated sibling renders as safe alternatives.</li>
-<li><strong>Stops new corruption at the door.</strong> <code>bin/gate.py</code>
+<li><strong>Stops new corruption at the door.</strong> <code>zpa-gate</code>
 is a publish-time metadata gate that fails closed on structural defects
 (high severity by default), with GitHub Actions annotations for CI.</li>
 <li><strong>Proves defects don't self-heal.</strong> The 20-day regression found
@@ -88,9 +88,11 @@ had never been audited. 957/957 roots now audited header-only in ~5 minutes.</li
 <li><strong>Zarr v3 support.</strong> v3 bare arrays were misreported as
 NOT_A_ZARR_GROUP; now correctly classified as BARE_ARRAY with
 shape/chunks/dtype. All 70 v3 pyramids audited clean.</li>
-<li><strong>Chunk-content probing</strong> (<code>bin/scan_empty_chunks.py</code>):
+<li><strong>Chunk-content probing</strong> (<code>zpa-scan-chunks</code>):
 closes the next silent-corruption class — chunks that exist but decode to all
-fill_value — via sampled decode (v2/v3, raw/Blosc/sharded).</li>
+fill_value — via sampled decode (v2/v3, raw/Blosc/sharded, and now
+<strong>volcomp</strong>: all 64 scroll volumes on dl.ash2txt.org decoded
+with a vendored libvolcomp, 384 levels probed, 0 present-but-empty).</li>
 <li><strong>Mirror-fidelity evidence.</strong> The 64 same-named volumes are
 format migrations, not copies (S3: v2/128³/raw; dl: v3/1024³-sharded/volcomp,
 quantization noise only) — reproducibility must pin the store, not just the name.</li>
@@ -115,8 +117,11 @@ vs populated control (64,498 nonzero voxels)</td></tr>
 <tr><td>Mirrors are migrations, not copies</td>
 <td><code>artifacts/2026-09-29-s3/MIRROR_FIDELITY.md</code> — byte-level comparison</td></tr>
 <tr><td>Present-but-empty chunks: not observed</td>
-<td><code>artifacts/2026-09-30-s3-chunkscan/</code> (788/788 populated) and
-<code>artifacts/2026-09-30-s3-chunkscan-v3/</code> (1,224/1,260 windows populated, 0 all-empty levels)</td></tr>
+<td><code>artifacts/2026-09-30-s3-chunkscan/</code> (788/788 populated),
+<code>artifacts/2026-09-30-s3-chunkscan-v3/</code> (1,224/1,260 windows populated, 0 all-empty levels), and
+<code>artifacts/2026-09-30-dl-volcomp-probe/</code> — <strong>all 64 volcomp scroll volumes on dl.ash2txt.org</strong>
+(384 levels): 548 inner chunks decoded with real content, 2,118 legitimately missing (masked background),
+<strong>0 present-but-empty</strong>, decoded with a vendored libvolcomp</td></tr>
 <tr><td>Gate rejects the defective root, passes clean ones</td>
 <td><code>bin/gate.py</code> — demonstrated in README</td></tr>
 </table>

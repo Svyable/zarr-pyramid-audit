@@ -35,5 +35,8 @@ zpa-known-defects = "zpa.build_known_defects:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+zpa = ["data/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
