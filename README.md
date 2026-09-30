@@ -118,7 +118,9 @@ Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.leve
 
 ## Continuous verification
 
-`.github/workflows/audit.yml` runs on every push and weekly: it audits a sample
+`workflows/audit.yml` runs on every push and weekly once enabled (move it to
+`.github/workflows/` — this push token lacks the `workflow` scope, so that
+last step is yours): it audits a sample
 of the S3 bucket header-only, asserts the gate **passes** a known-clean pyramid
 and **fails closed** on the known-defective one, and smoke-tests the
 chunk-content probe. No credentials needed (anonymous S3).
