@@ -89,7 +89,7 @@ def _error_evidence(error: str, *, listing: bool = False) -> tuple[str, str]:
         return "UNKNOWN", "REQUEST_TIMEOUT"
     if "http 429" in low:
         return "UNKNOWN", "RATE_LIMITED"
-    if re.search(r"http 5\\d\\d", low):
+    if re.search(r"http 5\d\d", low):
         return "UNKNOWN", "SERVER_ERROR"
     if "timeout" in low or "timed out" in low:
         return "UNKNOWN", "TIMEOUT"
