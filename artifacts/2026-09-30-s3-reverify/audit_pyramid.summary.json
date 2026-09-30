@@ -1,0 +1,17 @@
+{
+  "base": "s3://vesuvius-challenge-open-data",
+  "roots_requested": 1,
+  "pyramids_audited": 1,
+  "pyramids_with_findings": 1,
+  "pyramids_clean": 0,
+  "findings_total": 6,
+  "findings_actionable": 6,
+  "findings_informational": 0,
+  "pyramids_with_defects": 1,
+  "by_code": {
+    "LEVEL_NO_CHUNKS": 6
+  },
+  "by_severity": {
+    "high": 6
+  }
+}

@@ -141,7 +141,10 @@ artifacts, so anyone can see bucket health at a glance.</li>
 <td><code>artifacts/2026-09-29-s3/</code> — full audit JSONL + summary</td></tr>
 <tr><td>Defective pyramid reads <b>silently return zeros</b></td>
 <td><code>artifacts/2026-09-29-s3/SILENT_ZEROS.md</code> — zarr-python proof
-vs populated control (64,498 nonzero voxels)</td></tr>
+vs populated control (64,498 nonzero voxels). <b>Re-confirmed still live
+2026-09-30 ~22:25 UTC</b> (<code>artifacts/2026-09-30-s3-reverify/</code>):
+6 high-severity <code>LEVEL_NO_CHUNKS</code> findings, identical signature —
+unrepaired for the full September window.</td></tr>
 <tr><td>Defect isolated to <b>one</b> pipeline run (1 of 19 copies)</td>
 <td><code>SILENT_ZEROS.md</code> — 18 clean siblings named</td></tr>
 <tr><td><b>Zero</b> defects repaired in 20 days</td>
