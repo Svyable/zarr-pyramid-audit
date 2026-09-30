@@ -3,33 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d0b08">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/september-2026.html">
 <title>September 2026 submission — zarr-pyramid-audit</title>
 <style>
-:root{color-scheme:dark}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-     background:#0d1117;color:#e6edf3;margin:0;line-height:1.6}
-.wrap{max-width:880px;margin:0 auto;padding:32px 20px 64px}
-a{color:#58a6ff}
-h1{font-size:1.9rem;margin:0 0 4px}
-.sub{color:#8b949e;margin:0 0 28px}
-h2{font-size:1.25rem;margin:32px 0 8px;color:#f0f6fc}
-.q{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:18px 20px;margin:16px 0}
-.q h3{margin:0 0 8px;font-size:1.05rem;color:#79c0ff}
-.q p{margin:8px 0}
-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.92rem}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #21262d;vertical-align:top}
-th{color:#8b949e;font-weight:600}
-code{background:#161b22;padding:2px 6px;border-radius:4px;font-size:.88em}
-.meta{color:#8b949e;font-size:.9rem}
-.status{background:#0f2a18;border:1px solid #2ea043;border-radius:8px;padding:14px 18px;margin:24px 0}
-.nav{margin-top:40px;padding-top:16px;border-top:1px solid #21262d}
-ul{margin:8px 0}
-li{margin:4px 0}
+:root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;--ink:#ece3d2;--muted:#a89880;--dim:#6f6350;--ember:#ff7a1a;--gold:#ffd166;--good:#8fd694}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:radial-gradient(1000px 440px at 75% -10%,rgba(255,122,26,.12),transparent 60%),var(--bg);color:var(--ink);margin:0;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:#ffb347}a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(13,11,8,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.navinner{max-width:960px;margin:0 auto;padding:.7rem 20px;display:flex;align-items:center;gap:.7rem}
+.brand{display:flex;align-items:center;gap:.55rem;color:var(--ink);font-weight:800;text-decoration:none}.brandmark{width:26px;height:26px;border-radius:7px;border:1px solid #6f3b18;display:grid;place-items:center;color:var(--ember);font-family:Georgia,serif;background:#17110c}
+.navinner .links{margin-left:auto;display:flex;gap:.7rem;font-size:.82rem}.navinner .links a{color:var(--muted);text-decoration:none}.navinner .links a:hover{color:var(--ink)}
+.wrap{max-width:920px;margin:0 auto;padding:52px 20px 72px}
+.eyebrow{letter-spacing:.22em;text-transform:uppercase;color:var(--ember);font-size:.72rem;font-weight:800;margin-bottom:.4rem}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2.2rem,6vw,3.5rem);line-height:1.08;margin:0 0 8px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 30px}
+h2{font-family:Georgia,"Times New Roman",serif;font-size:1.45rem;margin:38px 0 10px;color:var(--ink)}
+.q{background:rgba(22,19,16,.92);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;box-shadow:0 14px 40px rgba(0,0,0,.12)}
+.q h3{margin:0 0 8px;font-size:1.02rem;color:var(--gold)}.q p{margin:8px 0;color:var(--muted)}.q strong{color:var(--ink)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #211c14;vertical-align:top}th{color:var(--muted);font-weight:700}
+code{background:#100e0b;border:1px solid #211c14;padding:2px 6px;border-radius:5px;font-size:.88em;color:var(--gold)}
+.meta{color:var(--muted);font-size:.9rem}
+.status{background:linear-gradient(135deg,rgba(143,214,148,.07),rgba(255,122,26,.05));border:1px solid rgba(143,214,148,.32);border-radius:12px;padding:16px 18px;margin:26px 0}
+.nav{margin-top:44px;padding-top:18px;border-top:1px solid var(--line)}ul{margin:8px 0}li{margin:5px 0;color:var(--muted)}li strong{color:var(--ink)}
+@media(max-width:650px){.navinner .links a:last-child{display:none}.wrap{padding-top:38px}table{font-size:.82rem}}
 </style>
 </head>
 <body>
+<nav class="topbar" aria-label="Primary"><div class="navinner">
+<a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
+<div class="links"><a href="./">Dashboard</a><a href="https://github.com/Svyable/zarr-pyramid-audit">GitHub</a></div>
+</div></nav>
 <div class="wrap">
 
+<div class="eyebrow">Submission record · September 2026</div>
 <h1>September 2026 Progress Prize — submission</h1>
 <p class="sub">Vesuvius Challenge &middot; open-source contribution by
 <a href="https://github.com/Svyable">Sven</a> (+ Muse, AI assistant)</p>
