@@ -169,6 +169,16 @@ one confirmed header-only pyramid) are in
 
 ## Results on dl.ash2txt.org (run of 2026-09-09)
 
+## Companion project
+
+[ScrollQ](https://github.com/Svyable/scrollq) scores every scroll volume
+0–100 on data quality — signal presence, texture energy, dynamic range,
+dead-slice scan — and joins the ranking against published ink labels to flag
+"🎯 label next" targets ([live leaderboard](https://svyable.github.io/scrollq/)).
+This repo is "don't train on lies" (corruption); ScrollQ is "train on the
+best first" (triage). `scrollq-health` (in the ScrollQ package) runs both
+halves and issues one verdict per volume: **TRAIN / CAUTION / DO NOT TRAIN**.
+
 Full artifacts in [`artifacts/2026-09-09/`](artifacts/2026-09-09/).
 
 Discovery crawled 19,995 directory listings with 0 errors and found **241 Zarr roots**. All 241 were
