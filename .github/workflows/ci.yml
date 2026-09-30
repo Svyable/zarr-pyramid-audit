@@ -23,7 +23,22 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pytest
-          python -m pip install -e .
+          python -m pip install pytest build
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Install built wheel
+        run: |
+          python -m pip install dist/*.whl
+          python -m pip check
       - name: Test
         run: python -m pytest -q
+      - name: Smoke-test installed console scripts
+        run: |
+          cd "$(mktemp -d)"
+          python - <<'PYCODE'
+          import importlib.metadata
+          import subprocess
+          for ep in importlib.metadata.distribution("zarr-pyramid-audit").entry_points:
+              if ep.group == "console_scripts":
+                  subprocess.run([ep.name, "--help"], check=True)
+          PYCODE

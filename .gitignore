@@ -17,3 +17,7 @@ build/
 reports/*DRAFT*
 tmp/
 venv/
+
+# Built release archives and test cache
+dist/
+.pytest_cache/
