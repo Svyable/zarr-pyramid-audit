@@ -69,7 +69,11 @@ catches this at publish time. This contribution:</p>
 <li><strong>Finds live corruption before anyone trains on it.</strong> The audit
 independently confirms the header-only PHerc0814 surface volume (villa #1892,
 all 6 levels header-only, reads silently return zeros) is still live in the
-bucket — and names its two populated sibling renders as safe alternatives.</li>
+bucket — and names its two populated sibling renders as safe alternatives.
+The new chunk-content probe then caught a second live case the header audit
+cannot see: 7 of 8 levels of
+<code>other/dev/meshes/20231022170900-ome.zarr</code> decode to all zeros
+while L0 holds real mesh data.</li>
 <li><strong>Stops new corruption at the door.</strong> <code>zpa-gate</code>
 is a publish-time metadata gate that fails closed on structural defects
 (high severity by default), with GitHub Actions annotations for CI.</li>
@@ -116,12 +120,14 @@ vs populated control (64,498 nonzero voxels)</td></tr>
 <td><code>artifacts/2026-09-29-dl-regression/</code> — strict diff: 0 fixed, 0 new</td></tr>
 <tr><td>Mirrors are migrations, not copies</td>
 <td><code>artifacts/2026-09-29-s3/MIRROR_FIDELITY.md</code> — byte-level comparison</td></tr>
-<tr><td>Present-but-empty chunks: not observed</td>
-<td><code>artifacts/2026-09-30-s3-chunkscan/</code> (788/788 populated),
-<code>artifacts/2026-09-30-s3-chunkscan-v3/</code> (1,224/1,260 windows populated, 0 all-empty levels), and
-<code>artifacts/2026-09-30-dl-volcomp-probe/</code> — <strong>all 64 volcomp scroll volumes on dl.ash2txt.org</strong>
-(384 levels): 548 inner chunks decoded with real content, 2,118 legitimately missing (masked background),
-<strong>0 present-but-empty</strong>, decoded with a vendored libvolcomp</td></tr>
+<tr><td>Present-but-empty chunks: <strong>found live</strong></td>
+<td><code>artifacts/2026-09-30-dl-v2-probe/</code> — 128 roots / 748 levels
+content-probed (1,795 chunks with real data): 7 levels of
+<code>other/dev/meshes/20231022170900-ome.zarr</code> decode to all zeros
+while L0 holds mesh content (verified: 12/12 L1 chunks empty, downscaled
+counterpart of populated L0 region empty, byte-identical zero-blobs).
+Not observed in S3 (788/788 populated) or the 64 volcomp scroll volumes
+(548 decoded, 0 present-but-empty).</td></tr>
 <tr><td>Gate rejects the defective root, passes clean ones</td>
 <td><code>bin/gate.py</code> — demonstrated in README</td></tr>
 </table>

@@ -14,8 +14,14 @@ Findings:
                                     to fill_value -- suspicious, needs a human
                                     (genuinely empty background is possible)
   CHUNK_UNDECODEABLE       [low]    chunk fetched but codec not supported
-                                    (v3 shards, volcomp, ...)
   CHUNK_FETCH_ERROR        [low]    chunk key vanished / download failed
+  CHUNK_SAMPLE_MISSING     [info]   inner chunk absent from a v3 shard index
+                                    (masked background legitimately unstored)
+  CHUNK_SAMPLE_ABSENT      [info]   v2 chunk key not present (sparse level)
+  CHUNK_LEVEL_NO_CHUNKS    [info]   level holds no stored chunks at all
+                                    (audit-flagged, probe-confirmed)
+  CHUNK_LEVEL_NO_SAMPLES   [info]   sparse level the spread sampling could not
+                                    cover -- a coverage gap, not a finding
 
 Usage:
     python bin/scan_empty_chunks.py --base s3://vesuvius-challenge-open-data/ \
@@ -76,7 +82,7 @@ def main() -> int:
             if not line:
                 continue
             r = json.loads(line)
-            if not r.get("present") or r.get("has_chunks") is False:
+            if not r.get("present"):
                 continue
             if not r.get("shape") or not r.get("chunks"):
                 continue
@@ -143,9 +149,11 @@ def main() -> int:
                                samples_per_level=args.samples_per_level)
 
         def work(root: str):
-            return root, [s for rec in sorted(by_root[root],
-                                             key=lambda r: r.get("index", 0))
-                          for s in probe_rec(root, rec)]
+            return root, [(str(rec.get("level")),
+                           rec.get("has_chunks"),
+                           probe_rec(root, rec))
+                          for rec in sorted(by_root[root],
+                                            key=lambda r: r.get("index", 0))]
 
         def emit(code, severity, root, level, chunk, detail, bf):
             w.writerow({"code": code, "severity": severity, "root": root,
@@ -160,40 +168,62 @@ def main() -> int:
                 emit("CHUNK_FETCH_ERROR", "low", res.item, "", "",
                      res.error, 0)
                 continue
-            root, samples = res.value
-            by_level: dict[str, list] = {}
-            for s in samples:
-                by_level.setdefault(s.level, []).append(s)
-                bytes_total += s.bytes_fetched
-                if s.status == "populated":
-                    emit("CHUNK_SAMPLE_POPULATED", "info", s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-                elif s.status == "empty":
-                    emit("CHUNK_SAMPLE_EMPTY", "info", s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-                elif s.status == "missing":
-                    emit("CHUNK_SAMPLE_MISSING", "info", s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-                elif s.status == "undecodable":
-                    emit("CHUNK_UNDECODEABLE", "low", s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-                else:
-                    emit("CHUNK_FETCH_ERROR", "low", s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-            for level, ss in by_level.items():
+            root, per_level = res.value
+            for level, has_chunks, samples in per_level:
                 levels_scanned += 1
+                if not samples:
+                    if has_chunks is False:
+                        # Audit-flagged chunkless level, confirmed: no
+                        # chunk keys among the probe's spread candidates.
+                        emit("CHUNK_LEVEL_NO_CHUNKS", "info", root,
+                             level, "",
+                             "level holds no stored chunks (audit: "
+                             "has_chunks=false; probe: no keys among 9 "
+                             "spread candidates)", 0)
+                    else:
+                        # Sparse level the spread sampling couldn't cover:
+                        # not evidence of absence, reported as a coverage
+                        # gap rather than a finding.
+                        emit("CHUNK_LEVEL_NO_SAMPLES", "info", root,
+                             level, "",
+                             "no chunk keys among 9 spread candidates; "
+                             "sparse level not coverable by spread "
+                             "sampling", 0)
+                    continue
+                for s in samples:
+                    bytes_total += s.bytes_fetched
+                    if s.status == "populated":
+                        emit("CHUNK_SAMPLE_POPULATED", "info", s.root,
+                             s.level, ".".join(map(str, s.chunk_index)),
+                             s.detail, s.bytes_fetched)
+                    elif s.status == "empty":
+                        emit("CHUNK_SAMPLE_EMPTY", "info", s.root, s.level,
+                             ".".join(map(str, s.chunk_index)), s.detail,
+                             s.bytes_fetched)
+                    elif s.status == "missing":
+                        emit("CHUNK_SAMPLE_MISSING", "info", s.root, s.level,
+                             ".".join(map(str, s.chunk_index)), s.detail,
+                             s.bytes_fetched)
+                    elif s.status == "absent":
+                        emit("CHUNK_SAMPLE_ABSENT", "info", s.root, s.level,
+                             ".".join(map(str, s.chunk_index)), s.detail,
+                             s.bytes_fetched)
+                    elif s.status == "undecodable":
+                        emit("CHUNK_UNDECODEABLE", "low", s.root, s.level,
+                             ".".join(map(str, s.chunk_index)), s.detail,
+                             s.bytes_fetched)
+                    else:
+                        emit("CHUNK_FETCH_ERROR", "low", s.root, s.level,
+                             ".".join(map(str, s.chunk_index)), s.detail,
+                             s.bytes_fetched)
                 # Only *present* chunks count toward the all-empty verdict;
                 # missing inner chunks legitimately read as fill (masked).
-                decodable = [s for s in ss
+                decodable = [s for s in samples
                              if s.status in ("populated", "empty")]
                 if decodable and all(s.status == "empty" for s in decodable):
                     levels_all_empty.append((root, level))
-                    emit("CHUNK_SAMPLE_ALL_EMPTY", "medium", root, level, "",
+                    emit("CHUNK_SAMPLE_ALL_EMPTY", "medium", root, level,
+                         "",
                          f"all {len(decodable)} sampled chunks decode to "
                          f"fill_value; human review needed", 0)
 

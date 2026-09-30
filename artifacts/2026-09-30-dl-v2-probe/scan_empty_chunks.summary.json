@@ -1,0 +1,22 @@
+{
+  "roots_scanned": 128,
+  "levels_scanned": 748,
+  "levels_all_empty": [
+    "other/dev/meshes/20231022170900-ome.zarr L1",
+    "other/dev/meshes/20231022170900-ome.zarr L2",
+    "other/dev/meshes/20231022170900-ome.zarr L3",
+    "other/dev/meshes/20231022170900-ome.zarr L4",
+    "other/dev/meshes/20231022170900-ome.zarr L5",
+    "other/dev/meshes/20231022170900-ome.zarr L6",
+    "other/dev/meshes/20231022170900-ome.zarr L7"
+  ],
+  "n_levels_all_empty": 7,
+  "bytes_fetched": 1457962601,
+  "by_code": {
+    "CHUNK_SAMPLE_POPULATED": 1795,
+    "CHUNK_LEVEL_NO_SAMPLES": 59,
+    "CHUNK_SAMPLE_EMPTY": 17,
+    "CHUNK_LEVEL_NO_CHUNKS": 11,
+    "CHUNK_SAMPLE_ALL_EMPTY": 7
+  }
+}

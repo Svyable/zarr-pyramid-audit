@@ -58,6 +58,10 @@ def main() -> int:
         vc = load_json(f"{ART}/2026-09-30-dl-volcomp-probe/scan_empty_chunks.summary.json")
     except FileNotFoundError:
         vc = None
+    try:
+        v2 = load_json(f"{ART}/2026-09-30-dl-v2-probe/scan_empty_chunks.summary.json")
+    except FileNotFoundError:
+        v2 = None
 
     # dl defective-pyramid list (roots with actionable findings), from findings csv
     dl_bad: Counter = Counter()
@@ -107,6 +111,23 @@ def main() -> int:
             f"libvolcomp over HTTP byte ranges.</p>")
     else:
         vcpara = ""
+    if v2:
+        v2para = (
+            f"<p><strong>dl v2 content probe</strong> (dl.ash2txt.org, "
+            f"{v2['roots_scanned']} roots, {v2['levels_scanned']} levels, "
+            f"raw/Blosc): "
+            f"{v2['by_code'].get('CHUNK_SAMPLE_POPULATED', 0)} chunks "
+            f"decoded with real content, "
+            f"{v2['by_code'].get('CHUNK_LEVEL_NO_CHUNKS', 0)} audit-flagged "
+            f"chunkless levels confirmed, "
+            f"{v2['by_code'].get('CHUNK_LEVEL_NO_SAMPLES', 0)} sparse "
+            f"mask levels honestly reported as uncoverable — and "
+            f"<strong class=\"bad\">{v2['n_levels_all_empty']} present-but-empty "
+            f"levels found</strong> in "
+            f"<code>other/dev/meshes/20231022170900-ome.zarr</code> "
+            f"(L1–L7 decode to all zeros while L0 holds mesh data).</p>")
+    else:
+        v2para = ""
     page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -231,6 +252,7 @@ evidence of absence in the sample, not proof of absence in the corpus. The tool
 is published for anyone to rerun at larger sample sizes.</p>
 {v3para}
 {vcpara}
+{v2para}
 </section>
 
 <section>

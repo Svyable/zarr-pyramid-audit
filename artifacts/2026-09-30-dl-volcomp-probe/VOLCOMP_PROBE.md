@@ -70,3 +70,6 @@ appear here.
 - A level is flagged `CHUNK_SAMPLE_ALL_EMPTY` only if every *present*
   sampled chunk decodes to fill; missing chunks don't count toward the
   verdict.
+- Shard indexes are fetched with a single suffix byte-range
+  (`bytes=-N`); block-decode vs full-chunk-decode agreement verified 6/6
+  on live chunks.

@@ -1,0 +1,61 @@
+{
+  "run_name": "scan_empty_chunks",
+  "started_utc": "2026-09-30T15:02:35.708387+00:00",
+  "argv": [
+    "bin/scan_empty_chunks.py",
+    "--base",
+    "https://dl.ash2txt.org/",
+    "--levels-jsonl",
+    "/tmp/dl-v2-levels.jsonl",
+    "--samples-per-level",
+    "3",
+    "--workers",
+    "8",
+    "--out-dir",
+    "artifacts/2026-09-30-dl-v2-probe"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-39-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python3",
+  "packages": {
+    "numpy": "2.5.3",
+    "zarr": "3.4.0",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {},
+  "outputs": [],
+  "notes": [],
+  "base": "https://dl.ash2txt.org/",
+  "n_roots": 128,
+  "samples_per_level": 3,
+  "summary": {
+    "roots_scanned": 128,
+    "levels_scanned": 748,
+    "levels_all_empty": [
+      "other/dev/meshes/20231022170900-ome.zarr L1",
+      "other/dev/meshes/20231022170900-ome.zarr L2",
+      "other/dev/meshes/20231022170900-ome.zarr L3",
+      "other/dev/meshes/20231022170900-ome.zarr L4",
+      "other/dev/meshes/20231022170900-ome.zarr L5",
+      "other/dev/meshes/20231022170900-ome.zarr L6",
+      "other/dev/meshes/20231022170900-ome.zarr L7"
+    ],
+    "n_levels_all_empty": 7,
+    "bytes_fetched": 1457962601,
+    "by_code": {
+      "CHUNK_SAMPLE_POPULATED": 1795,
+      "CHUNK_LEVEL_NO_SAMPLES": 59,
+      "CHUNK_SAMPLE_EMPTY": 17,
+      "CHUNK_LEVEL_NO_CHUNKS": 11,
+      "CHUNK_SAMPLE_ALL_EMPTY": 7
+    }
+  },
+  "ended_utc": "2026-09-30T15:16:38.635845+00:00",
+  "wall_seconds": 842.928
+}
