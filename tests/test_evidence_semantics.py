@@ -1,8 +1,10 @@
 """Evidence semantics: failures must never masquerade as missing data."""
 import io
 import json
+from types import SimpleNamespace
 
 from zpa.audit_pyramid import audit_one
+from zpa.gate import check_one
 from zpa.httpstore import HttpStore, S3Store, StoreError
 from zpa.zarrmeta import read_pyramid
 
@@ -258,3 +260,26 @@ def test_s3_store_preserves_object_evidence():
         store.base_url = "s3://fixture/"
         result = store.json_evidence("root/.zgroup")
         assert (result.state, result.reason) == (state, reason)
+
+
+def test_publish_gate_fails_closed_on_unknown_access():
+    store, _ = routed_store({
+        "root/.zgroup": (403, b""),
+        "root/zarr.json": (403, b""),
+        "root/.zarray": (403, b""),
+        "root/": (403, b""),
+    })
+    args = SimpleNamespace(
+        no_chunk_presence=True,
+        ignore_unreadable=False,
+        fail_on="high",
+    )
+    result = check_one(store, "root", args)
+    assert result["verdict"] == "unreadable"
+    assert result["fail"] is True
+    assert result["findings"][0]["code"] == "GATE_UNREADABLE"
+
+    args.ignore_unreadable = True
+    ignored = check_one(store, "root", args)
+    assert ignored["verdict"] == "unreadable"
+    assert ignored["fail"] is False
