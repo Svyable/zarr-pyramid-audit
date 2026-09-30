@@ -33,7 +33,7 @@ DEFAULT_UA = "vesuvius-audit/1.0 (public-data integrity survey; contact via GitH
 
 _HREF_RE = re.compile(r'href="([^"?][^"]*)"', re.IGNORECASE)
 _CONTENT_RANGE_RE = re.compile(
-    r"^bytes\\s+(\\d+)-(\\d+)/(?:\\d+|\\*)$", re.IGNORECASE
+    r"bytes\s+(\d+)-(\d+)/(\d+|\*)", re.IGNORECASE
 )
 
 
@@ -224,9 +224,10 @@ class HttpStore:
             )
         if r.status_code == 206:
             content_range = getattr(r, "headers", {}).get("Content-Range", "")
-            match = _CONTENT_RANGE_RE.match(content_range)
+            match = _CONTENT_RANGE_RE.fullmatch(content_range)
             if (match is None or int(match.group(1)) != start
-                    or int(match.group(2)) != end):
+                    or int(match.group(2)) != end
+                    or (match.group(3) != "*" and int(match.group(3)) <= end)):
                 raise StoreError(
                     f"invalid Content-Range {content_range!r}; expected "
                     f"bytes {start}-{end}: {self.url(path)}"
