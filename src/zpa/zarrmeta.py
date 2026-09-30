@@ -209,7 +209,7 @@ def _parse_v3_array(j: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-_CHUNK_KEY_RE = re.compile(r"^\\d+(\\.\\d+)*$")
+_CHUNK_KEY_RE = re.compile(r"^\d+(\.\d+)*$")
 
 
 def _json_evidence(store, path: str):
