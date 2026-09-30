@@ -7,8 +7,10 @@ from the audit CSVs so it never drifts from the evidence; re-run after each
 audit and diff.
 """
 
+import argparse
 import csv
 import json
+import os
 import sys
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -35,6 +37,10 @@ def load_findings(csv_path, store):
 
 
 def main():
+    argparse.ArgumentParser(
+        description="Compile known defects from audit artifacts under ZPA_REPO "
+                    "(default: current directory)."
+    ).parse_args()
     entries = []
     for csv_path, store, first_seen in [
         (f"{ART}/2026-09-29-s3/audit_pyramid.findings.csv",
