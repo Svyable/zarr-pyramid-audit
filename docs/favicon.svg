@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Zarr pyramid audit">
+  <rect width="64" height="64" rx="14" fill="#0d0b08"/>
+  <path d="M12 16h40L22 48h30" fill="none" stroke="#ff7a1a" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 53h32" stroke="#ffd166" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+</svg>

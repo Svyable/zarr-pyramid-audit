@@ -1,0 +1,75 @@
+name: Pages artifact
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "src/zpa/build_dashboard.py"
+      - "bin/build_dashboard.py"
+      - "artifacts/**"
+      - "data/known-defects.json"
+      - ".github/workflows/pages-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "src/zpa/build_dashboard.py"
+      - "bin/build_dashboard.py"
+      - "artifacts/**"
+      - "data/known-defects.json"
+      - ".github/workflows/pages-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Regenerate dashboard
+        run: python bin/build_dashboard.py --out /tmp/index.html
+      - name: Require committed dashboard to be current
+        run: diff -u docs/index.html /tmp/index.html
+      - name: Check local site links
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          docs = Path("docs")
+          missing = []
+
+          class Links(HTMLParser):
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  for key in ("href", "src"):
+                      value = attrs.get(key)
+                      if not value or value.startswith(("#", "mailto:", "data:")):
+                          continue
+                      parts = urlsplit(value)
+                      if parts.scheme or parts.netloc:
+                          continue
+                      path = parts.path
+                      if not path or path == "./":
+                          target = docs / "index.html"
+                      else:
+                          target = docs / path.lstrip("./")
+                          if path.endswith("/"):
+                              target /= "index.html"
+                      if not target.exists():
+                          missing.append((value, str(target)))
+
+          for page in docs.glob("*.html"):
+              parser = Links()
+              parser.feed(page.read_text(encoding="utf-8"))
+
+          if missing:
+              for link, target in missing:
+                  print(f"missing local asset: {link} -> {target}")
+              raise SystemExit(1)
+          PY

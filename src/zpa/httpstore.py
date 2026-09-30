@@ -27,7 +27,8 @@ from urllib.parse import unquote, urljoin, urlparse
 import requests
 from requests.adapters import HTTPAdapter
 
-__all__ = ["StoreError", "ObjectInfo", "HttpStore", "S3Store", "open_store"]
+__all__ = ["StoreError", "ObjectInfo", "EvidenceResult", "ListingResult",
+           "HttpStore", "S3Store", "open_store"]
 
 DEFAULT_UA = "vesuvius-audit/1.0 (public-data integrity survey; contact via GitHub issue)"
 
@@ -51,6 +52,50 @@ class ObjectInfo:
     status: int | None = None
     error: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class EvidenceResult:
+    """Result of a targeted read without conflating failure with absence."""
+    value: Any | None
+    state: str                    # PRESENT | ABSENT | UNKNOWN
+    reason: str | None = None
+    error: str | None = None
+
+
+@dataclass
+class ListingResult:
+    """Directory inventory plus the evidence carried by the listing call."""
+    dirs: list[str] = field(default_factory=list)
+    files: list[str] = field(default_factory=list)
+    state: str = "UNKNOWN"        # PRESENT | ABSENT | UNKNOWN
+    reason: str | None = None
+    error: str | None = None
+
+
+def _error_evidence(error: str, *, listing: bool = False) -> tuple[str, str]:
+    """Map transport failures to evidence states without inventing absence."""
+    low = error.lower()
+    if error.startswith("404 Not Found") or "filenotfounderror" in low:
+        return "ABSENT", "NOT_FOUND"
+    if "http 401" in low:
+        return "UNKNOWN", "AUTHENTICATION_REQUIRED"
+    if ("http 403" in low or "permissionerror" in low
+            or "accessdenied" in low or "access denied" in low):
+        return "UNKNOWN", "FORBIDDEN"
+    if "http 405" in low and listing:
+        return "UNKNOWN", "LISTING_UNSUPPORTED"
+    if "http 408" in low:
+        return "UNKNOWN", "REQUEST_TIMEOUT"
+    if "http 429" in low:
+        return "UNKNOWN", "RATE_LIMITED"
+    if re.search(r"http 5\d\d", low):
+        return "UNKNOWN", "SERVER_ERROR"
+    if "timeout" in low or "timed out" in low:
+        return "UNKNOWN", "TIMEOUT"
+    if "connection" in low:
+        return "UNKNOWN", "CONNECTION_ERROR"
+    return "UNKNOWN", "TRANSPORT_ERROR"
 
 
 class _RetryPolicy:
@@ -239,24 +284,36 @@ class HttpStore:
         return json.loads(self.get(path).decode("utf-8"))
 
     def try_json(self, path: str) -> tuple[Any | None, str | None]:
-        """(obj, None) on success, (None, reason) on failure. Never raises."""
+        """Compatibility wrapper around json_evidence()."""
+        result = self.json_evidence(path)
+        return result.value, result.error
+
+    def json_evidence(self, path: str) -> EvidenceResult:
+        """Read JSON while retaining PRESENT / ABSENT / UNKNOWN evidence."""
         try:
-            return self.get_json(path), None
+            return EvidenceResult(self.get_json(path), "PRESENT")
         except StoreError as e:
-            return None, str(e)
-        except Exception as e:  # malformed JSON
-            return None, f"{type(e).__name__}: {e}"
+            error = str(e)
+            state, reason = _error_evidence(error)
+            return EvidenceResult(None, state, reason, error)
+        except Exception as e:  # object exists but JSON is malformed
+            error = f"{type(e).__name__}: {e}"
+            return EvidenceResult(None, "PRESENT", "METADATA_UNREADABLE", error)
 
     def list_dir(self, path: str) -> tuple[list[str], list[str]]:
-        """
-        Parse an nginx/Apache autoindex page.
-        Returns (subdirs, files) as names relative to *path*, percent-decoded.
-        """
+        """Compatibility wrapper around list_dir_evidence()."""
+        result = self.list_dir_evidence(path)
+        return result.dirs, result.files
+
+    def list_dir_evidence(self, path: str) -> ListingResult:
+        """Parse an autoindex while retaining whether the listing was observable."""
         p = path if path.endswith("/") else path + "/"
         try:
             body = self.get(p).decode("utf-8", errors="replace")
-        except StoreError:
-            return [], []
+        except StoreError as e:
+            error = str(e)
+            state, reason = _error_evidence(error, listing=True)
+            return ListingResult(state=state, reason=reason, error=error)
         dirs: list[str] = []
         files: list[str] = []
         for href in _HREF_RE.findall(body):
@@ -269,7 +326,7 @@ class HttpStore:
                 dirs.append(name[:-1])
             else:
                 files.append(name)
-        return dirs, files
+        return ListingResult(dirs=dirs, files=files, state="PRESENT")
 
 
 class S3Store:
@@ -353,12 +410,25 @@ class S3Store:
         return json.loads(self.get(path).decode("utf-8"))
 
     def try_json(self, path: str) -> tuple[Any | None, str | None]:
+        result = self.json_evidence(path)
+        return result.value, result.error
+
+    def json_evidence(self, path: str) -> EvidenceResult:
         try:
-            return self.get_json(path), None
+            return EvidenceResult(self.get_json(path), "PRESENT")
+        except StoreError as e:
+            error = str(e)
+            state, reason = _error_evidence(error)
+            return EvidenceResult(None, state, reason, error)
         except Exception as e:
-            return None, f"{type(e).__name__}: {e}"
+            error = f"{type(e).__name__}: {e}"
+            return EvidenceResult(None, "PRESENT", "METADATA_UNREADABLE", error)
 
     def list_dir(self, path: str) -> tuple[list[str], list[str]]:
+        result = self.list_dir_evidence(path)
+        return result.dirs, result.files
+
+    def list_dir_evidence(self, path: str) -> ListingResult:
         p = self._p(path).rstrip("/")
         dirs: list[str] = []
         files: list[str] = []
@@ -366,9 +436,14 @@ class S3Store:
             for e in self.fs.ls(p, detail=True):
                 name = e["name"].rstrip("/").rsplit("/", 1)[-1]
                 (dirs if e.get("type") == "directory" else files).append(name)
-        except Exception:
-            return [], []
-        return dirs, files
+        except FileNotFoundError as e:
+            error = f"{type(e).__name__}: {e}"
+            return ListingResult(state="ABSENT", reason="NOT_FOUND", error=error)
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+            state, reason = _error_evidence(error, listing=True)
+            return ListingResult(state=state, reason=reason, error=error)
+        return ListingResult(dirs=dirs, files=files, state="PRESENT")
 
 
 def open_store(base_url: str, **kw):

@@ -6,6 +6,7 @@ name: audit-smoke
 
 on:
   push:
+    branches: [main]
   pull_request:
   schedule:
     - cron: "0 9 * * 1"   # Mondays 09:00 UTC
@@ -14,10 +15,13 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      AWS_ENDPOINT_URL_S3: https://s3.us-east-1.amazonaws.com
+      AWS_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -28,6 +32,7 @@ jobs:
         run: |
           zpa-audit \
             --base s3://vesuvius-challenge-open-data/ \
+            --roots artifacts/2026-09-29-s3/discover_zarr.roots.jsonl \
             --limit 10 --workers 8 \
             --out-dir ci-artifacts/s3-sample
 
@@ -61,7 +66,7 @@ jobs:
 
       - name: Upload CI artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: audit-smoke
           path: ci-artifacts/
