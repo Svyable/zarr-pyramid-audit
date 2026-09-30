@@ -1,0 +1,49 @@
+name: Data finding
+description: A defective (or wrongly flagged) pyramid in the open data
+labels: [data-finding]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Findings live or die on reproducibility. Give us the command and the
+        artifact — a finding without a reproducible command will be asked for one.
+        Remember: absent-from-shard-index (masked background) is legitimate and
+        is NOT a defect.
+  - type: input
+    id: root
+    attributes:
+      label: Zarr root
+      description: "Full root, e.g. `s3://vesuvius-challenge-open-data/PHerc0814/.../....zarr` or a dl.ash2txt.org path"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of finding
+      options:
+        - new defective pyramid (missed by the audit)
+        - false positive (wrongly flagged)
+        - severity dispute
+        - new check-code proposal
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      description: Full command and flags that reproduce your observation.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed vs. expected
+      description: What the data shows and why the current behavior is wrong.
+    validations:
+      required: true
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Evidence
+      description: Paste key JSON/CSV rows or link the artifact (findings.csv entry, report).

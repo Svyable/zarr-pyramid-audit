@@ -1,0 +1,33 @@
+name: Bug report
+description: Something in the audit tooling is broken
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please give us enough to reproduce it.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you expected vs. what you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Exact command
+      description: The full command and flags, plus the store base and root if relevant.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Commit hash or pip version."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / traceback
+      render: shell
