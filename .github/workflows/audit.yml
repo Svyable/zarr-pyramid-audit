@@ -1,0 +1,67 @@
+name: audit-smoke
+
+# Proves the toolkit actually runs, on the real public data, on every push
+# and weekly. Header-only checks are cheap (KB per pyramid); the chunk probe
+# samples a handful of chunks. No credentials needed -- anonymous S3.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 9 * * 1"   # Mondays 09:00 UTC
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install the package
+        run: pip install .
+
+      - name: Audit a sample of the S3 bucket (header-only)
+        run: |
+          zpa-audit \
+            --base s3://vesuvius-challenge-open-data/ \
+            --limit 10 --workers 8 \
+            --out-dir ci-artifacts/s3-sample
+
+      - name: Gate passes a known-clean pyramid
+        run: |
+          zpa-gate \
+            --base s3://vesuvius-challenge-open-data/ \
+            --root PHerc0814/volumes/20260309142202-2.399um-0.2m-78keV-masked.zarr \
+            --fail-on high --format github
+
+      - name: Gate fails closed on the known-defective pyramid
+        id: gate_bad
+        continue-on-error: true
+        run: |
+          zpa-gate \
+            --base s3://vesuvius-challenge-open-data/ \
+            --root PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr \
+            --fail-on high --format github
+
+      - name: Verify the gate actually failed closed
+        if: steps.gate_bad.outcome != 'failure'
+        run: echo "gate should have rejected the defective pyramid" && exit 1
+
+      - name: Chunk-content probe smoke (2 roots, 1 sample/level)
+        run: |
+          zpa-scan-chunks \
+            --base s3://vesuvius-challenge-open-data/ \
+            --levels-jsonl ci-artifacts/s3-sample/audit_pyramid.levels.jsonl \
+            --limit-roots 2 --samples-per-level 1 --workers 4 \
+            --out-dir ci-artifacts/chunkscan-smoke
+
+      - name: Upload CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-smoke
+          path: ci-artifacts/
