@@ -195,19 +195,31 @@ class HttpStore:
         return r.content
 
     def get_range(self, path: str, start: int, length: int) -> bytes:
-        """Read [start, start+length). Raises StoreError on failure.
+        """Read exactly [start, start+length). Raises StoreError on failure.
         Note: a server that ignores Range returns 200 and the whole object;
-        we detect that and slice, so the caller always gets what it asked for."""
+        we detect that and slice. Short reads fail closed so callers never
+        mistake truncated shard indexes or chunks for complete data."""
+        if start < 0 or length < 0:
+            raise ValueError("start and length must be non-negative")
+        if length == 0:
+            return b""
         end = start + length - 1
         r = self._request("GET", path, headers={"Range": f"bytes={start}-{end}"},
                           allow_redirects=True)
         if r.status_code == 404:
             raise StoreError(f"404 Not Found: {self.url(path)}")
         if r.status_code == 206:
-            return r.content
-        if r.status_code == 200:
-            return r.content[start:start + length]
-        raise StoreError(f"HTTP {r.status_code} on ranged GET: {self.url(path)}")
+            data = r.content
+        elif r.status_code == 200:
+            data = r.content[start:start + length]
+        else:
+            raise StoreError(f"HTTP {r.status_code} on ranged GET: {self.url(path)}")
+        if len(data) != length:
+            raise StoreError(
+                f"short ranged GET: expected {length} bytes, got {len(data)}: "
+                f"{self.url(path)}"
+            )
+        return data
 
     def get_json(self, path: str) -> Any:
         import json
@@ -304,10 +316,22 @@ class S3Store:
             raise StoreError(f"{type(e).__name__}: {e}") from e
 
     def get_range(self, path: str, start: int, length: int) -> bytes:
+        if start < 0 or length < 0:
+            raise ValueError("start and length must be non-negative")
+        if length == 0:
+            return b""
         try:
             with self.fs.open(self._p(path), "rb") as fh:
                 fh.seek(start)
-                return fh.read(length)
+                data = fh.read(length)
+            if len(data) != length:
+                raise StoreError(
+                    f"short ranged read: expected {length} bytes, got {len(data)}: "
+                    f"{path}"
+                )
+            return data
+        except StoreError:
+            raise
         except Exception as e:
             raise StoreError(f"{type(e).__name__}: {e}") from e
 
