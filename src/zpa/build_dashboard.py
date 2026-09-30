@@ -234,8 +234,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <div class="actiongrid">
     <div><h3>Put the gate in front of publication</h3>
       <p><code>zpa-gate</code> reads metadata, not payloads, and returns a non-zero exit code when a root crosses the chosen severity threshold.</p>
-      <div class="cmd"><code>zpa-gate --base s3://my-bucket/staging/ \
-  --roots publish.jsonl --fail-on high</code></div></div>
+      <div class="cmd"><code>zpa-gate --base s3://my-bucket/staging/<br>  --roots publish.jsonl --fail-on high</code></div></div>
     <div><h3>Absence requires evidence</h3>
       <p>Metadata and listings now carry an explicit <b>PRESENT / ABSENT / UNKNOWN</b> state.
       A timeout, 403, rate limit, or server error cannot be silently promoted into a “missing level” or “empty store” claim.</p>
@@ -445,7 +444,7 @@ def main() -> int:
 
     code_rows = []
     for code in sorted(set(s3_codes) | set(dl_codes),
-                       key=lambda c: -(s3_codes.get(c, 0) + dl_codes.get(c, 0))):
+                       key=lambda c: (-(s3_codes.get(c, 0) + dl_codes.get(c, 0)), c)):
         sev = SEVERITY.get(code, "medium")
         s3n, dln = s3_codes.get(code, 0), dl_codes.get(code, 0)
         bar_html = (
