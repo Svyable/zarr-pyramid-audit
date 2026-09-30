@@ -2,6 +2,9 @@
 
 Read-only integrity auditing for OME-Zarr multiscale pyramids served over HTTP or S3.
 
+**[Data-health dashboard](docs/index.html)** — the public, visual summary of every audit run below
+(open `docs/index.html` in a browser, or serve the repo's `docs/` folder with GitHub Pages).
+
 Built to audit [`dl.ash2txt.org`](https://dl.ash2txt.org/) (the Vesuvius Challenge / Scroll Prize
 data host), but nothing in it is Vesuvius-specific: point `--base` at any store that exposes a
 directory autoindex and it works.
