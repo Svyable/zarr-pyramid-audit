@@ -48,6 +48,9 @@ CODE_BLURB = {
     "DEGENERATE_LEVEL": "a level has a zero/negative extent",
     "HEADERLESS_CHUNK_STORE": "chunk keys present but no decodable header",
     "CONTAINER_NO_GROUP_HEADER": "children are Zarr nodes but root has no group header",
+    "ROOT_ABSENT": "requested Zarr root is confirmed absent",
+    "ACCESS_UNKNOWN": "access could not establish presence or absence — informational",
+    "METADATA_UNREADABLE": "metadata exists but could not be decoded",
     "EMPTY_ZARR_DIR": "*.zarr directory with no contents",
     "NOT_A_ZARR_GROUP": "no .zgroup / zarr.json and nothing Zarr-like inside",
     "NOT_MULTISCALE": "valid Zarr group, never claimed to be a pyramid",
@@ -59,6 +62,14 @@ PAGE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>zarr-pyramid-audit — Don't train on lies</title>
 <meta name="description" content="Independent integrity audit of the Vesuvius open-data Zarr stores. 957 S3 roots audited, one defective pyramid found.">
+<meta name="theme-color" content="#0d0b08">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="zarr-pyramid-audit — Don't train on lies">
+<meta property="og:description" content="Evidence-backed integrity auditing for public OME-Zarr pyramids.">
+<meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/">
 <style>
 :root{{
   --bg:#0d0b08; --panel:#161310; --panel2:#1c1813; --line:#2c251b;
@@ -67,12 +78,28 @@ PAGE = """<!doctype html>
   --good:#8fd694; --warn:#ff9e5e; --bad:#ff6b6b;
 }}
 *{{box-sizing:border-box}}
+html{{scroll-behavior:smooth}}
 body{{margin:0;background:var(--bg);color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   -webkit-font-smoothing:antialiased}}
 a{{color:var(--amber)}}
+a:focus-visible,button:focus-visible,input:focus-visible{{outline:2px solid var(--gold);outline-offset:3px}}
+.skip{{position:fixed;left:1rem;top:1rem;z-index:1000;transform:translateY(-180%);
+  background:var(--gold);color:#171008;padding:.55rem .8rem;border-radius:8px;font-weight:800;text-decoration:none}}
+.skip:focus{{transform:none}}
 .wrap{{max-width:1200px;margin:0 auto;padding:0 1.25rem}}
-.hero{{position:relative;overflow:hidden;padding:4.5rem 0 3rem;
+.topbar{{position:sticky;top:0;z-index:50;background:rgba(13,11,8,.88);
+  backdrop-filter:blur(16px);border-bottom:1px solid rgba(44,37,27,.78)}}
+.navinner{{max-width:1200px;margin:0 auto;padding:.7rem 1.25rem;display:flex;align-items:center;gap:1rem}}
+.brand{{display:flex;align-items:center;gap:.6rem;color:var(--ink);text-decoration:none;font-weight:800}}
+.brandmark{{width:26px;height:26px;border-radius:7px;border:1px solid #6f3b18;display:grid;place-items:center;
+  color:var(--ember);font-family:Georgia,serif;background:#17110c}}
+.navlinks{{display:flex;gap:.2rem;margin-left:auto;align-items:center;flex-wrap:wrap}}
+.navlinks a{{color:var(--muted);text-decoration:none;font-size:.82rem;padding:.38rem .58rem;border-radius:7px}}
+.navlinks a:hover{{color:var(--ink);background:var(--panel2)}}
+.navstatus{{font-size:.72rem;color:var(--good);border:1px solid rgba(143,214,148,.24);
+  background:rgba(143,214,148,.06);padding:.3rem .55rem;border-radius:999px;white-space:nowrap}}
+.hero{{position:relative;overflow:hidden;padding:4.2rem 0 3rem;
   background:
     radial-gradient(1200px 500px at 70% -10%, rgba(255,122,26,.14), transparent 60%),
     radial-gradient(800px 400px at 15% 110%, rgba(255,209,102,.08), transparent 60%),
@@ -130,17 +157,38 @@ tbody tr:hover td{{background:#1e1913}}
 .cb-s3{{background:#ff7a1a}} .cb-dl{{background:#7a4fd0}}
 code{{font-size:.8rem;color:var(--amber)}}
 .controls{{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}}
+.search{{margin-left:auto;display:flex;align-items:center;min-width:min(100%,260px)}}
+.search input{{width:100%;background:#100e0b;border:1px solid var(--line);border-radius:999px;color:var(--ink);
+  padding:.47rem .8rem;font:inherit;font-size:.82rem}}
+.resultcount{{font-size:.76rem;color:var(--dim);min-width:5.5rem;text-align:right}}
+.sr-only{{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}}
 .sevbtn{{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
   border-radius:999px;padding:.45rem .9rem;font-size:.82rem;cursor:pointer}}
 .sevbtn.on{{border-color:var(--ember);color:var(--ink);background:#241a10}}
 .method{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}}
 .suite{{display:flex;gap:1rem;flex-wrap:wrap;align-items:stretch}}
 .suite .card{{flex:1;min-width:260px}}
+.actiongrid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}}
+.actiongrid h3{{margin:.1rem 0 .5rem;font-size:.95rem}}
+.cmd{{background:#0c0a08;border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow:auto}}
+.cmd code{{white-space:pre;color:var(--gold)}}
 footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   color:var(--dim);font-size:.82rem;line-height:1.7}}
 .hidden{{display:none!important}}
-@media(max-width:700px){{.cbar{{min-width:70px}}}}
+@media(max-width:700px){{.cbar{{min-width:70px}}.navstatus{{display:none}}.navlinks a{{padding:.34rem .42rem}}
+  .search{{order:2;margin-left:0;flex:1 1 100%}}.resultcount{{margin-left:auto}}}}
 </style></head><body>
+
+<a class="skip" href="#main">Skip to audit results</a>
+<nav class="topbar" aria-label="Primary"><div class="navinner">
+  <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
+  <div class="navlinks">
+    <a href="#overview">Overview</a><a href="#findings">Findings</a><a href="#probe">Chunk probe</a>
+    <a href="#method">Method</a><a href="./september-2026.html">Writeup</a>
+    <a href="{repo}">GitHub</a>
+  </div>
+  <span class="navstatus">● evidence-backed</span>
+</div></nav>
 
 <header class="hero"><div class="wrap">
   <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER 2026</div>
@@ -161,9 +209,9 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   </div>
 </div></header>
 
-<div class="wrap">
+<main id="main" class="wrap">
 
-<div class="insights">
+<section class="insights" id="overview">
   <div class="card"><h3>The live defect</h3>
     <p>A <b>PHerc0814</b> surface-volume pyramid in the open-data S3 bucket has
     <b>valid headers at all six levels and zero chunk objects</b>. Every reader
@@ -180,6 +228,20 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     64 scroll volumes, <b>{v2_pop}</b> raw/Blosc chunks across 128 dl roots —
     <b>0 all-empty levels</b> in the training data. One present-but-empty mesh
     derivative caught in <code>other/dev/</code> (medium, human review).</p></div>
+</section>
+
+<div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>
+  <div class="actiongrid">
+    <div><h3>Put the gate in front of publication</h3>
+      <p><code>zpa-gate</code> reads metadata, not payloads, and returns a non-zero exit code when a root crosses the chosen severity threshold.</p>
+      <div class="cmd"><code>zpa-gate --base s3://my-bucket/staging/ \
+  --roots publish.jsonl --fail-on high</code></div></div>
+    <div><h3>Absence requires evidence</h3>
+      <p>Metadata and listings now carry an explicit <b>PRESENT / ABSENT / UNKNOWN</b> state.
+      A timeout, 403, rate limit, or server error cannot be silently promoted into a “missing level” or “empty store” claim.</p>
+      <p><a href="{repo}/tree/main/data">Known-defect registry →</a> ·
+      <a href="{repo}/tree/main/artifacts">Run artifacts →</a></p></div>
+  </div>
 </div>
 
 <div class="panel"><h2>🚨 The defective pyramid<span class="sub">s3://vesuvius-challenge-open-data</span></h2>
@@ -199,13 +261,16 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   Actions annotations for CI. This defect class can never ship again.</div>
 </div>
 
-<div class="panel"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity · S3 = open-data bucket, dl = dl.ash2txt.org</span></h2>
+<div class="panel" id="findings"><h2>Findings by check code<span class="sub">Click a column to sort · filter by severity · S3 = open-data bucket, dl = dl.ash2txt.org</span></h2>
   <div class="controls">
-    <button class="sevbtn on" data-s="">all</button>
-    <button class="sevbtn" data-s="high">high</button>
-    <button class="sevbtn" data-s="medium">medium</button>
-    <button class="sevbtn" data-s="low">low</button>
-    <button class="sevbtn" data-s="info">info</button>
+    <button type="button" class="sevbtn on" data-s="">all</button>
+    <button type="button" class="sevbtn" data-s="high">high</button>
+    <button type="button" class="sevbtn" data-s="medium">medium</button>
+    <button type="button" class="sevbtn" data-s="low">low</button>
+    <button type="button" class="sevbtn" data-s="info">info</button>
+    <label class="search"><span class="sr-only">Filter finding codes</span>
+      <input id="codeSearch" type="search" placeholder="Filter codes or meanings…" autocomplete="off"></label>
+    <span class="resultcount" id="resultCount" aria-live="polite"></span>
   </div>
   <div style="overflow-x:auto"><table id="codes"><thead><tr>
     <th data-k="code">check code</th><th data-k="sev">severity</th>
@@ -217,7 +282,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   {dl_info} informational across 18 defective pyramids (villa #1755–#1760).</p>
 </div>
 
-<div class="panel"><h2>Chunk-content probe<span class="sub">2026-09-30 · sampled decode, not just headers</span></h2>
+<div class="panel" id="probe"><h2>Chunk-content probe<span class="sub">2026-09-30 · sampled decode, not just headers</span></h2>
   <p>The header-only audit answers "are chunk keys present?" — the probe answers the
   next question: <b>"do the present chunks hold data?"</b> This closes the next
   silent-corruption class: chunks that exist but decode to all fill_value.</p>
@@ -266,7 +331,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     <p><code>scrollq-health --root &lt;volume&gt;</code></p></div>
 </div></div>
 
-</div><!-- /wrap -->
+</main>
 
 <footer><div class="wrap">
   <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 21 check codes over
@@ -282,9 +347,10 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 (function(){{
   const tb = document.querySelector("#codes tbody");
   const rows = Array.from(tb.querySelectorAll("tr"));
-  let sortK = "total", asc = false, sevF = "";
+  let sortK = "total", asc = false, sevF = "", query = "";
   function apply(){{
-    let vis = rows.filter(r => !sevF || r.dataset.sev === sevF);
+    let vis = rows.filter(r => (!sevF || r.dataset.sev === sevF)
+      && (!query || r.textContent.toLowerCase().includes(query)));
     vis.sort((a, b) => {{
       let x, y;
       if (sortK === "code" || sortK === "sev") {{
@@ -299,6 +365,8 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     rows.forEach(r => r.classList.add("hidden"));
     vis.forEach(r => r.classList.remove("hidden"));
     tb.append(frag);
+    const count = document.querySelector("#resultCount");
+    if (count) count.textContent = vis.length + (vis.length === 1 ? " code" : " codes");
   }}
   document.querySelectorAll("#codes thead th[data-k]").forEach(th => {{
     th.addEventListener("click", () => {{
@@ -314,6 +382,8 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     document.querySelectorAll(".sevbtn").forEach(x => x.classList.remove("on"));
     b.classList.add("on"); sevF = b.dataset.s; apply();
   }}));
+  const search = document.querySelector("#codeSearch");
+  if (search) search.addEventListener("input", () => {{ query = search.value.trim().toLowerCase(); apply(); }});
   apply();
 }})();
 </script>
@@ -329,7 +399,8 @@ SEVERITY = {
     "FILL_DRIFT": "medium", "MIXED_ROUNDING": "medium",
     "COMPRESSOR_DRIFT": "low", "AXES_MISMATCH": "low",
     "HEADERLESS_CHUNK_STORE": "high", "CONTAINER_NO_GROUP_HEADER": "low",
-    "EMPTY_ZARR_DIR": "low",
+    "ROOT_ABSENT": "low", "EMPTY_ZARR_DIR": "low",
+    "METADATA_UNREADABLE": "high", "ACCESS_UNKNOWN": "info",
     "NOT_A_ZARR_GROUP": "info", "NOT_MULTISCALE": "info",
     "BARE_ARRAY": "info", "CHUNK_EXCEEDS_SHAPE": "info",
 }
@@ -343,6 +414,8 @@ def load_json(p):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(REPO, "docs", "index.html"))
+    ap.add_argument("--stamp", default=os.environ.get("ZPA_DASHBOARD_STAMP"),
+                    help="override the dashboard update date (YYYY-MM-DD)")
     args = ap.parse_args()
 
     s3 = load_json(f"{ART}/2026-09-29-s3/audit_pyramid.summary.json")
@@ -425,8 +498,12 @@ def main() -> int:
     chunks_probed = (cs["by_code"].get("CHUNK_SAMPLE_POPULATED", 0) + vc_pop + v2_pop
                      + (csv3["by_code"].get("CHUNK_SAMPLE_POPULATED", 0) if csv3 else 0))
 
-    import datetime
-    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    artifact_dates = sorted(
+        name[:10] for name in os.listdir(ART)
+        if len(name) >= 10 and name[4:5] == "-" and name[7:8] == "-"
+        and name[:10].replace("-", "").isdigit()
+    )
+    stamp = args.stamp or (artifact_dates[-1] if artifact_dates else "unknown")
 
     page = PAGE.format(
         repo="https://github.com/Svyable/zarr-pyramid-audit",
