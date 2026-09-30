@@ -128,7 +128,7 @@ a{{color:var(--acc)}}
 <body><div class="wrap">
 <header>
 <h1>Vesuvius Open Data — Zarr Pyramid Health</h1>
-<div class="sub">Independent integrity audit of the public Vesuvius Challenge data stores &middot; updated {updated} &middot; <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable/zarr-pyramid-audit</a> (MIT)</div>
+<div class="sub">Independent integrity audit of the public Vesuvius Challenge data stores &middot; updated {updated} &middot; <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable/zarr-pyramid-audit</a> (MIT) &middot; <a href="september-2026.html">September 2026 Progress Prize submission</a></div>
 </header>
 
 <div class="kpis">

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>September 2026 submission — zarr-pyramid-audit</title>
+<style>
+:root{color-scheme:dark}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+     background:#0d1117;color:#e6edf3;margin:0;line-height:1.6}
+.wrap{max-width:880px;margin:0 auto;padding:32px 20px 64px}
+a{color:#58a6ff}
+h1{font-size:1.9rem;margin:0 0 4px}
+.sub{color:#8b949e;margin:0 0 28px}
+h2{font-size:1.25rem;margin:32px 0 8px;color:#f0f6fc}
+.q{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:18px 20px;margin:16px 0}
+.q h3{margin:0 0 8px;font-size:1.05rem;color:#79c0ff}
+.q p{margin:8px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #21262d;vertical-align:top}
+th{color:#8b949e;font-weight:600}
+code{background:#161b22;padding:2px 6px;border-radius:4px;font-size:.88em}
+.meta{color:#8b949e;font-size:.9rem}
+.status{background:#0f2a18;border:1px solid #2ea043;border-radius:8px;padding:14px 18px;margin:24px 0}
+.nav{margin-top:40px;padding-top:16px;border-top:1px solid #21262d}
+ul{margin:8px 0}
+li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>September 2026 Progress Prize — submission</h1>
+<p class="sub">Vesuvius Challenge &middot; open-source contribution by
+<a href="https://github.com/Svyable">Sven</a> (+ Muse, AI assistant)</p>
+
+<div class="status">
+<strong>Contribution URLs</strong><br>
+Repo: <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable/zarr-pyramid-audit</a>
+(MIT fork of <a href="https://github.com/sgsllc-jr/zarr-pyramid-audit">sgsllc-jr/zarr-pyramid-audit</a>;
+all upstream credit retained)<br>
+Live data-health dashboard: <a href="https://svyable.github.io/zarr-pyramid-audit/">svyable.github.io/zarr-pyramid-audit</a>
+</div>
+
+<h2>What is your contribution?</h2>
+
+<div class="q">
+<h3>(1) Which scroll data did you work on?</h3>
+<p>The entire open-data surface, on both public stores:</p>
+<ul>
+<li><strong>S3 bucket</strong> (<code>s3://vesuvius-challenge-open-data</code>):
+957 Zarr pyramid roots discovered by full crawl — 146 beyond the published
+catalogue — spanning PHerc0814, PHercParis4, PHerc186 and community uploads.</li>
+<li><strong>dl.ash2txt.org</strong>: the 241-root set behind villa issues
+#1755–#1760, re-audited for a 20-day regression check.</li>
+<li>Deep dives: the defective PHerc0814 surface volume (villa #1892),
+the known silent-zero volumes, and 64 same-named volumes present in both stores.</li>
+</ul>
+</div>
+
+<div class="q">
+<h3>(2) How does it increase the probability of reading the scrolls?</h3>
+<p>Ink detection and segmentation read reduced pyramid levels, never the full
+volume. A level whose header is valid but whose chunks are missing returns
+plausible all-zero voxels <em>with no error</em> — silent corruption that burns
+GPU time and misleads every downstream model. No existing Vesuvius tooling
+catches this at publish time. This contribution:</p>
+<ul>
+<li><strong>Finds live corruption before anyone trains on it.</strong> The audit
+independently confirms the header-only PHerc0814 surface volume (villa #1892,
+all 6 levels header-only, reads silently return zeros) is still live in the
+bucket — and names its two populated sibling renders as safe alternatives.</li>
+<li><strong>Stops new corruption at the door.</strong> <code>bin/gate.py</code>
+is a publish-time metadata gate that fails closed on structural defects
+(high severity by default), with GitHub Actions annotations for CI.</li>
+<li><strong>Proves defects don't self-heal.</strong> The 20-day regression found
+zero of 18 defective pyramids repaired — so catching defects before publish is
+the only point of leverage, which is exactly what the gate provides.</li>
+</ul>
+</div>
+
+<div class="q">
+<h3>(3) What does it enable that was not possible before?</h3>
+<ul>
+<li><strong>First audit of the open-data S3 bucket.</strong> The upstream tool
+only covered dl.ash2txt.org; the S3 bucket — the primary open-data surface —
+had never been audited. 957/957 roots now audited header-only in ~5 minutes.</li>
+<li><strong>Zarr v3 support.</strong> v3 bare arrays were misreported as
+NOT_A_ZARR_GROUP; now correctly classified as BARE_ARRAY with
+shape/chunks/dtype. All 70 v3 pyramids audited clean.</li>
+<li><strong>Chunk-content probing</strong> (<code>bin/scan_empty_chunks.py</code>):
+closes the next silent-corruption class — chunks that exist but decode to all
+fill_value — via sampled decode (v2/v3, raw/Blosc/sharded).</li>
+<li><strong>Mirror-fidelity evidence.</strong> The 64 same-named volumes are
+format migrations, not copies (S3: v2/128³/raw; dl: v3/1024³-sharded/volcomp,
+quantization noise only) — reproducibility must pin the store, not just the name.</li>
+<li><strong>A public, living data-health dashboard</strong> generated from audit
+artifacts, so anyone can see bucket health at a glance.</li>
+</ul>
+</div>
+
+<div class="q">
+<h3>(4) What evidence have you provided?</h3>
+<table>
+<tr><th>Claim</th><th>Evidence (in repo)</th></tr>
+<tr><td>957 S3 roots, 956 clean, 1 defective</td>
+<td><code>artifacts/2026-09-29-s3/</code> — full audit JSONL + summary</td></tr>
+<tr><td>Defective pyramid reads silently return zeros</td>
+<td><code>artifacts/2026-09-29-s3/SILENT_ZEROS.md</code> — zarr-python proof
+vs populated control (64,498 nonzero voxels)</td></tr>
+<tr><td>Defect isolated to one pipeline run (1 of 19 copies)</td>
+<td><code>SILENT_ZEROS.md</code> — 18 clean siblings named</td></tr>
+<tr><td>Zero defects repaired in 20 days</td>
+<td><code>artifacts/2026-09-29-dl-regression/</code> — strict diff: 0 fixed, 0 new</td></tr>
+<tr><td>Mirrors are migrations, not copies</td>
+<td><code>artifacts/2026-09-29-s3/MIRROR_FIDELITY.md</code> — byte-level comparison</td></tr>
+<tr><td>Present-but-empty chunks: not observed</td>
+<td><code>artifacts/2026-09-30-s3-chunkscan/</code> (788/788 populated) and
+<code>artifacts/2026-09-30-s3-chunkscan-v3/</code> (1,224/1,260 windows populated, 0 all-empty levels)</td></tr>
+<tr><td>Gate rejects the defective root, passes clean ones</td>
+<td><code>bin/gate.py</code> — demonstrated in README</td></tr>
+</table>
+<p>Novelty is claimed only for the tooling and the integration; the underlying
+defects (#1892, #1755–#1760) are credited to their reporters and independently
+confirmed here.</p>
+</div>
+
+<h2>Team</h2>
+<p>Solo contributor (Sven) + Muse (AI assistant). Upstream tool by sgsllc-jr,
+MIT-licensed; all upstream credit retained in the fork.</p>
+
+<h2>Submission status</h2>
+<p class="meta">Draft answers prepared; the official Google Form is submitted by
+Sven before the September 30, 2026, 11:59 PM Pacific deadline.</p>
+
+<div class="nav">
+<a href="./">← back to the data-health dashboard</a>
+</div>
+
+</div>
+</body>
+</html>
