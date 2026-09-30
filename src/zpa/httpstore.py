@@ -21,6 +21,7 @@ import re
 import threading
 import time
 from dataclasses import dataclass, field
+from email.utils import parsedate_to_datetime
 from typing import Any, Iterable
 from urllib.parse import unquote, urljoin, urlparse
 
@@ -108,6 +109,24 @@ class _RetryPolicy:
         # full jitter -- avoids synchronised retry storms from a worker pool
         return random.uniform(0.0, min(self.cap, self.base * (2 ** attempt)))
 
+    def delay_for(self, attempt: int, retry_after: str | None = None) -> float:
+        """Return a bounded retry delay, respecting a valid Retry-After hint."""
+        backoff = self.sleep_for(attempt)
+        if not retry_after:
+            return backoff
+        value = retry_after.strip()
+        seconds: float | None = None
+        if value.isdigit():
+            seconds = float(value)
+        else:
+            try:
+                seconds = parsedate_to_datetime(value).timestamp() - time.time()
+            except (TypeError, ValueError, OverflowError):
+                pass
+        if seconds is None:
+            return backoff
+        return max(backoff, min(self.cap, max(0.0, seconds)))
+
 
 class HttpStore:
     """
@@ -178,7 +197,11 @@ class HttpStore:
             try:
                 r = self._session().request(method, u, timeout=self.timeout, **kw)
                 if r.status_code in self.RETRY_STATUS and attempt < self.retry.tries - 1:
-                    time.sleep(self.retry.sleep_for(attempt))
+                    retry_after = (r.headers.get("Retry-After")
+                                   if r.status_code in {429, 503} else None)
+                    delay = self.retry.delay_for(attempt, retry_after)
+                    r.close()  # release the connection before waiting/retrying
+                    time.sleep(delay)
                     continue
                 return r
             except requests.RequestException as e:
