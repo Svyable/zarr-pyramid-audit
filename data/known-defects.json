@@ -1,0 +1,255 @@
+{
+  "generated_utc": "2026-09-30T12:38:18.972928+00:00",
+  "n_entries": 19,
+  "note": "Machine-readable kill list of confirmed pyramid defects. 'open' means still present at last_confirmed; nothing in this list has been observed repaired.",
+  "defects": [
+    {
+      "root": "community-uploads/bruniss/labels/surfaces/archive/1-voxel-sheet_slices-closed.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT",
+        "LEVEL_NO_CHUNKS"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": "villa #1755",
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/gp_only/old/1122_preds/newst-sfc-regular-sm.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "HEADERLESS_CHUNK_STORE"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s5/surfaces",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "LEVEL_MISSING"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "fragments/Frag3/PHercParis1Fr34.volpkg/volumes_standardized/88keV_3.24um_.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "LEVEL_MISSING"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "fragments/Frag3/PHercParis1Fr34.volpkg/volumes_zarr/88keV_3.24um_.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "LEVEL_MISSING"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "other/dev/inked_zarrs/3336_predictions.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "LEVEL_NO_CHUNKS"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": "villa #1756",
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "other/dev/inked_zarrs/3336_predictions10.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "SCALE_SHAPE_MISMATCH"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "other/dev/inked_zarrs/3336_predictions11.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "SCALE_SHAPE_MISMATCH"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "other/dev/inked_zarrs/3336_predictions9.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "high",
+      "finding_codes": [
+        "SCALE_SHAPE_MISMATCH"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/fibers_3d/gp_only/old/mask-fiber-only_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/fibers_3d/gp_only/old/mask-hz-only_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/full_scroll/mask-2ext-surface-evenmore_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/full_scroll/mask-2ext-surface_erode_evenmore_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/gp_only/old/mask-2ext-surface-erode_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/gp_only/old/mask-2ext-surface_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "community-uploads/bruniss/scrolls/s1/surfaces/gp_only/old/surface2xt-updated_ome.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "full-scrolls/Scroll5/PHerc172.volpkg/representations/direction_fields/s5-fiber-directions.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "CONTAINER_NO_GROUP_HEADER"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "full-scrolls/Scroll5/PHerc172.volpkg/volumes_zarr/20241024131838.zarr",
+      "store": "https://dl.ash2txt.org",
+      "severity": "low",
+      "finding_codes": [
+        "COMPRESSOR_DRIFT"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": null,
+      "evidence": "artifacts/2026-09-29-dl-regression/"
+    },
+    {
+      "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+      "store": "s3://vesuvius-challenge-open-data",
+      "severity": "high",
+      "finding_codes": [
+        "LEVEL_NO_CHUNKS"
+      ],
+      "first_seen": "2026-09-29",
+      "last_confirmed": "2026-09-29",
+      "status": "open",
+      "upstream_issue": "villa #1892",
+      "evidence": "artifacts/2026-09-29-s3/SILENT_ZEROS.md"
+    }
+  ]
+}

@@ -8,6 +8,7 @@
 requests>=2.31          # HTTP store transport
 numpy>=1.24             # chunk sample analysis (count_chunks.py)
 numcodecs>=0.12         # Blosc round-trip for measured compression ratios
+zarr>=3.0               # v3 sharded chunk-content probe (scan_empty_chunks --only-sharded)
 
 # Needed for s3:// bases (the S3 open-data bucket audit). HTTP(S) bases work
 # without it.

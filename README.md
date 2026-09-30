@@ -116,6 +116,20 @@ Gate a publish (fails closed on high-severity findings; exit 0 = clean):
 Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.levels.jsonl`,
 `*.pyramids.jsonl`, `*.summary.json`, `*.manifest.json`.
 
+## Continuous verification
+
+`.github/workflows/audit.yml` runs on every push and weekly: it audits a sample
+of the S3 bucket header-only, asserts the gate **passes** a known-clean pyramid
+and **fails closed** on the known-defective one, and smoke-tests the
+chunk-content probe. No credentials needed (anonymous S3).
+
+Unit tests cover the network-free core (`python -m pytest tests/ -q`).
+
+`data/known-defects.json` is the machine-readable kill list — every confirmed
+defective pyramid across both stores with finding codes, severity, evidence
+pointers, and upstream issue links. Regenerate with
+`bin/build_known_defects.py` after each audit and diff.
+
 ### Auditing the S3 open-data bucket
 
 The same tools run against `s3://vesuvius-challenge-open-data/` (anonymous —
