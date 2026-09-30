@@ -21,19 +21,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install the package
+        run: pip install .
 
       - name: Audit a sample of the S3 bucket (header-only)
         run: |
-          python3 bin/audit_pyramid.py \
+          zpa-audit \
             --base s3://vesuvius-challenge-open-data/ \
             --limit 10 --workers 8 \
             --out-dir ci-artifacts/s3-sample
 
       - name: Gate passes a known-clean pyramid
         run: |
-          python3 bin/gate.py \
+          zpa-gate \
             --base s3://vesuvius-challenge-open-data/ \
             --root PHerc0814/volumes/20260309142202-2.399um-0.2m-78keV-masked.zarr \
             --fail-on high --format github
@@ -42,7 +42,7 @@ jobs:
         id: gate_bad
         continue-on-error: true
         run: |
-          python3 bin/gate.py \
+          zpa-gate \
             --base s3://vesuvius-challenge-open-data/ \
             --root PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr \
             --fail-on high --format github
@@ -53,7 +53,7 @@ jobs:
 
       - name: Chunk-content probe smoke (2 roots, 1 sample/level)
         run: |
-          python3 bin/scan_empty_chunks.py \
+          zpa-scan-chunks \
             --base s3://vesuvius-challenge-open-data/ \
             --levels-jsonl ci-artifacts/s3-sample/audit_pyramid.levels.jsonl \
             --limit-roots 2 --samples-per-level 1 --workers 4 \

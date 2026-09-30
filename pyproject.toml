@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zarr-pyramid-audit"
+version = "0.3.0"
+description = "Integrity auditing for OME-Zarr multiscale pyramids: find silent corruption before it burns GPU time"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Sven" }]
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "numpy>=1.24",
+    "numcodecs>=0.12",
+    "s3fs>=2024.1",
+    "zarr>=3.0",
+]
+keywords = ["zarr", "ome-zarr", "vesuvius", "data-integrity", "audit"]
+
+[project.urls]
+Homepage = "https://github.com/Svyable/zarr-pyramid-audit"
+Repository = "https://github.com/Svyable/zarr-pyramid-audit"
+
+[project.scripts]
+zpa-discover = "zpa.discover_zarr:main"
+zpa-audit = "zpa.audit_pyramid:main"
+zpa-gate = "zpa.gate:main"
+zpa-scan-chunks = "zpa.scan_empty_chunks:main"
+zpa-count-chunks = "zpa.count_chunks:main"
+zpa-dashboard = "zpa.build_dashboard:main"
+zpa-known-defects = "zpa.build_known_defects:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

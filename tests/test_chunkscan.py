@@ -8,10 +8,7 @@ import sys
 import numpy as np
 import pytest
 
-sys.path.insert(0, "lib")
-sys.path.insert(0, ".")
-
-from lib.chunkscan import _decode, _is_fill, sample_indices  # noqa: E402
+from zpa.chunkscan import _decode, _is_fill, sample_indices
 
 
 def test_sample_indices_spread_1d():

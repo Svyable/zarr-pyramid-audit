@@ -54,11 +54,11 @@ group) and are never counted as defects.
 
 | tool | what it does | cost |
 |---|---|---|
-| `bin/discover_zarr.py` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
-| `bin/audit_pyramid.py` | 21 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
-| `bin/count_chunks.py` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
-| `bin/gate.py` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
-| `bin/scan_empty_chunks.py` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `undecodable`. Flags levels where every sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) are probed through zarr-python window reads instead of chunk keys. | KB–MB per pyramid (sampled) |
+| `zpa-discover` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
+| `zpa-audit` | 21 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
+| `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
+| `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
+| `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `undecodable`. Flags levels where every sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) are probed through zarr-python window reads instead of chunk keys. | KB–MB per pyramid (sampled) |
 
 ### Check codes
 
@@ -84,12 +84,20 @@ DEGENERATE_LEVEL          a level has a zero/negative extent
 
 ## Usage
 
+Install (also installs the `zpa-*` commands):
+
 ```bash
-python -m venv .venv && ./.venv/bin/pip install -r requirements.txt
+pip install git+https://github.com/Svyable/zarr-pyramid-audit.git
+```
+
+Or from a checkout (the `bin/` shims run the same code without installing):
+
+```bash
+python -m venv .venv && ./.venv/bin/pip install -e .
 ```
 
 ```bash
-./.venv/bin/python bin/discover_zarr.py --base https://dl.ash2txt.org/ --max-depth 10 --out-dir tmp
+zpa-discover --base https://dl.ash2txt.org/ --max-depth 10 --out-dir tmp
 ```
 
 `--max-depth 10` is not optional for this host: the default (6) stops short of the roots under `community-uploads/bruniss/scrolls/s1/…/old/…` and `Scroll5/…/representations/predictions/fibers/`, which sit 7–8 path segments deep (a depth-6 run finds 229 roots instead of 241).
@@ -99,18 +107,24 @@ are audited like v2 pyramids, and a v3 bare array at a root is reported as
 `BARE_ARRAY` (info) rather than `NOT_A_ZARR_GROUP`.
 
 ```bash
-./.venv/bin/python bin/audit_pyramid.py --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl --max-rps 25 --out-dir tmp
+zpa-audit --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl --max-rps 25 --out-dir tmp
 ```
 
 ```bash
-./.venv/bin/python bin/count_chunks.py --base https://dl.ash2txt.org/ --roots-csv shortlist.csv --out-dir tmp
+zpa-count-chunks --base https://dl.ash2txt.org/ --roots-csv shortlist.csv --out-dir tmp
+```
+
+Sampled chunk-*content* probe (do present chunks hold data?):
+
+```bash
+zpa-scan-chunks --base s3://vesuvius-challenge-open-data/ --levels-jsonl tmp/audit_pyramid.levels.jsonl --out-dir tmp
 ```
 
 Gate a publish (fails closed on high-severity findings; exit 0 = clean):
 
 ```bash
-./.venv/bin/python bin/gate.py --base s3://my-bucket/staging/ --roots manifest.jsonl --fail-on high
-./.venv/bin/python bin/gate.py --base s3://my-bucket/staging/ --root path/to/volume.zarr --format github
+zpa-gate --base s3://my-bucket/staging/ --roots manifest.jsonl --fail-on high
+zpa-gate --base s3://my-bucket/staging/ --root path/to/volume.zarr --format github
 ```
 
 Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.levels.jsonl`,
@@ -130,7 +144,7 @@ Unit tests cover the network-free core (`python -m pytest tests/ -q`).
 `data/known-defects.json` is the machine-readable kill list — every confirmed
 defective pyramid across both stores with finding codes, severity, evidence
 pointers, and upstream issue links. Regenerate with
-`bin/build_known_defects.py` after each audit and diff.
+`zpa-known-defects` after each audit and diff.
 
 ### Auditing the S3 open-data bucket
 
@@ -140,8 +154,8 @@ no credentials). The `s3://` scheme selects the `S3Store` backend, which needs
 
 ```bash
 export AWS_ENDPOINT_URL_S3=https://s3.us-east-1.amazonaws.com
-./.venv/bin/python bin/discover_zarr.py --base s3://vesuvius-challenge-open-data/ --max-depth 10 --out-dir tmp/s3
-./.venv/bin/python bin/audit_pyramid.py --base s3://vesuvius-challenge-open-data/ --roots tmp/s3/discover_zarr.roots.jsonl --workers 16 --out-dir tmp/s3audit
+zpa-discover --base s3://vesuvius-challenge-open-data/ --max-depth 10 --out-dir tmp/s3
+zpa-audit --base s3://vesuvius-challenge-open-data/ --roots tmp/s3/discover_zarr.roots.jsonl --workers 16 --out-dir tmp/s3audit
 ```
 
 `S3Store` also accepts `endpoint_url=` / `region_name=` keyword arguments via
