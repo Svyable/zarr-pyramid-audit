@@ -90,6 +90,27 @@ def check_one(store, root: str, args) -> dict:
                 "fail": not args.ignore_unreadable,
                 "findings": [{"code": "GATE_UNREADABLE", "severity": "high",
                               "level": "", "detail": f"{type(e).__name__}: {e}"}]}
+    access_unknown = [f for f in findings if f["code"] == "ACCESS_UNKNOWN"]
+    if access_unknown:
+        details = "; ".join(
+            f"{f.get('level') or 'root'}: {f.get('observed') or f.get('detail')}"
+            for f in access_unknown
+        )
+        return {
+            "root": root,
+            "verdict": "unreadable",
+            "fail": not args.ignore_unreadable,
+            "findings": [{
+                "code": "GATE_UNREADABLE",
+                "severity": "high",
+                "level": "",
+                "detail": f"access evidence is UNKNOWN ({details})",
+            }],
+            "informational": [
+                {"code": f["code"], "detail": f["detail"]} for f in access_unknown
+            ],
+        }
+
     threshold = SEV_ORDER[args.fail_on]
     failing = [f for f in findings
                if SEV_ORDER.get(f["severity"], 0) >= threshold]
