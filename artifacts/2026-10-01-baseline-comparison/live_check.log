@@ -1,0 +1,6 @@
+1.129um-0.22m-59keV-volume-20260521123630-L1.zarr
+  ome-zarr-models: accepts (Image)
+  zarr-python level 5 (116, 61, 145) uint8: read 249856 voxels, nonzero=0, raised=False
+2.399um-0.22m-78keV-volume-20260309142202.zarr
+  ome-zarr-models: accepts (Image)
+  zarr-python level 5 (109, 57, 136) uint8: read 233472 voxels, nonzero=176423, raised=False

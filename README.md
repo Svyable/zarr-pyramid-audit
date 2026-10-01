@@ -14,6 +14,10 @@ It **cannot** certify that voxels are semantically correct, that a sampled probe
 that data it could not read is fine. Unreadable evidence stays `UNKNOWN` and is never reported as
 clean. See [Limitations](#limitations).
 
+**Reviewing a submission?** [`docs/SUBMISSION.md`](docs/SUBMISSION.md) maps each criterion to the command
+or artifact behind it, including how ZPA compares with zarr-python and the OME-NGFF validator on the
+same live defect ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)).
+
 ## Reproduce in 60 seconds
 
 One public store, one expected output

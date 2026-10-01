@@ -18,6 +18,7 @@ Corpus version: **1** · report schema: **1.1.0** ·
 | `http/range-cases.json` | byte-range and suffix-range responses, including ambiguous and invalid ones, with the exact expected bytes or error |
 | `expected/<case>.json` | golden output per case: every finding's code, severity, level and evidence state; per-level evidence; integrity and coverage; gate verdict; recommended consumer verdict; chunk-probe statuses (on-disk cases) |
 | `corpus.py` | case definitions, builder, runner and golden projection |
+| `compare_baselines.py` | runs zarr-python and ome-zarr-models over the same trees and records what each tells its user ([results](../artifacts/2026-10-01-baseline-comparison/)) |
 
 The golden files leave out free-text `detail` strings and environment-specific
 values (absolute paths, tool version); everything a consumer branches on is in.

@@ -184,6 +184,7 @@ def build_v3_clean(path):
             "chunk_key_encoding": {"name": "default",
                                    "configuration": {"separator": "/"}},
             "fill_value": 0, "codecs": [{"name": "bytes"}],
+            "dimension_names": ["z", "y", "x"],
             "attributes": {}})
         for n, idx in enumerate(_indices(_grid(shape, C))):
             _raw(os.path.join(path, p, "c", *map(str, idx)),

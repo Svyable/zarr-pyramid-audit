@@ -27,6 +27,18 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Evidence and documentation
+
+- `docs/SUBMISSION.md`: submission criteria mapped to the command, file or
+  artifact behind each claim, including the known gaps.
+- `artifacts/2026-10-01-baseline-comparison/` and
+  `fixtures/compare_baselines.py`: zarr-python and ome-zarr-models run on the
+  live PHerc0814 defect (the validator accepts it; zarr-python reads all zeros
+  without error) and on the fixture corpus, with the selection bias stated.
+- Fixture `clean_v3` now carries the `dimension_names` OME-Zarr 0.5 requires.
+  ome-zarr-models rejected the old version; ZPA does not check this, and no
+  ZPA golden changed.
+
 ### Contract 1.1.0 — OME-NGFF conformance codes
 
 `contract-fingerprint: 569547603cf1`
