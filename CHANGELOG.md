@@ -90,6 +90,11 @@ Migration notes for consumers:
 - Fixture `clean_v3` now carries the `dimension_names` OME-Zarr 0.5 requires.
   ome-zarr-models rejected the old version; ZPA did not, which led to
   `DIMENSION_NAMES_MISMATCH` (contract 1.2.0 below).
+- README, dashboard and the September page brought up to date: ScrolIQ's
+  fail-closed verdict rules (scrollq#55), the baseline comparison (a new
+  dashboard panel generated from `comparison.json`), and the tifxyz survey.
+  `docs/september-2026.html` keeps its 2026-09-30 claims and gains a dated
+  "post-deadline update" panel.
 
 ### Contract 1.1.0 — OME-NGFF conformance codes
 

@@ -106,6 +106,7 @@ Latest awarded work: <a href="https://scrollprize.org/winners">scrollprize.org/w
 <a href="#evidence">evidence</a>
 <a href="#reproduce">reproduce</a>
 <a href="#scroliq">ScrolIQ</a>
+<a href="#update">2026-10-01 update</a>
 </div>
 </div></header>
 
@@ -121,6 +122,42 @@ That failure can waste training runs or invalidate downstream segmentation and i
 <div class="point"><div class="k">Prevent</div><p><code>zpa-gate</code> turns the finding into a <b>publish-time CI failure</b>: defective root exit 1, populated sibling exit 0, nonexistent path exit 1.</p></div>
 </div>
 <p class="smalllink">Evidence is committed and reproducible; the page links every headline claim to a repo artifact below.</p></div>
+
+<div class="panel" id="update"><h2>Post-deadline update · 2026-10-01</h2>
+<div class="callout"><p><span class="kicker">Added after the September 30 deadline.</span>
+Everything else on this page is the submission as frozen on 2026-09-30, apart from the dated corrections
+marked in place. This panel lists what was added the next day; each item links to the committed evidence.</p></div>
+<ul>
+<li><b>tifxyz surfaces are now audited.</b> New <code>zpa-tifxyz</code> checks Volume Cartographer surface
+patches (<code>meta.json</code> + <code>x/y/z.tif</code>) with strict range reads. All <b>1,539</b> surfaces in the
+S3 bucket are integrity PASS; the content tier ran on 1,391 (148 over the 32 MiB cap are reported as a coverage gap).
+It found <b>161</b> surfaces with points at negative coordinates, outside any CT volume, and <b>30</b> whose
+<code>meta.json</code> bbox disagrees with the stored coordinates, all <code>low</code> review findings
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-tifxyz"><code>artifacts/2026-10-01-s3-tifxyz/</code></a>).
+Triangular meshes are not audited here.</li>
+<li><b>Compared with the tools people already use.</b> On the live PHerc0814 defect the OME-NGFF validator
+(ome-zarr-models 1.7) accepts the pyramid and zarr-python 3.1.6 reads a level-5 window as 249,856 voxels, all zero,
+without an error; the gate rejects it. On the fixture corpus, defects flagged: zarr-python 8 / 26, the validator
+14 / 26, the ZPA header audit 25 / 26, with the chunk probe 26 / 26. The corpus was built around ZPA's failure
+classes, so it is read per defect class, not as a score
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-baseline-comparison"><code>artifacts/2026-10-01-baseline-comparison/</code></a>).</li>
+<li><b>OME-NGFF conformance re-audit.</b> All 957 S3 roots re-audited with the new spec-conformance checks:
+0 conformance findings, every root declares OME-NGFF 0.4, and the 2026-09-29 findings reproduce row for row
+(956 clean, 1 defective) (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-conformance"><code>artifacts/2026-10-01-s3-conformance/</code></a>).</li>
+<li><b>ScrolIQ now fails closed.</b> Since <a href="https://github.com/Svyable/scrollq/pull/55">scrollq#55</a>,
+<code>scrollq-health</code> takes integrity from this repo's versioned report: an unreadable level or an absent
+root is <b>DO NOT TRAIN</b> instead of falling through to the quality score. Live negative control: an absent
+root reads DO NOT TRAIN
+(<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed">ScrolIQ evidence</a>).</li>
+<li><b>A versioned contract.</b> Audit and tifxyz reports share one JSON contract, <code>schema_version</code> 1.2.0,
+with published schemas, a recommended verdict mapping (FAIL / UNKNOWN → DO NOT TRAIN, WARN → CAUTION), and
+committed golden outputs for 67 fixture cases
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/INTEGRATION.md"><code>docs/INTEGRATION.md</code></a>,
+<a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/CHANGELOG.md"><code>CHANGELOG.md</code></a>).</li>
+</ul>
+<p class="smalllink">Reviewer map, criterion by criterion:
+<a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/SUBMISSION.md"><code>docs/SUBMISSION.md</code></a> ·
+<a href="./">live dashboard</a></p></div>
 
 <div class="panel" id="data"><h2><span class="q">(1)</span> Which scroll data did you work on?</h2>
 <p>The entire open-data surface, on both public stores:</p>
@@ -202,7 +239,9 @@ and modular integration using standard community formats. The submission maps di
 <tr><td>Documentation</td><td>README usage, machine-readable artifacts, reproducibility manifests, known-defect records, and a public dashboard generated from committed evidence.</td></tr>
 <tr><td>Technical integration</td><td>Accepts Zarr v2/v3 over HTTP/S3, emits stable JSONL/CSV/summary outputs, and exposes console commands suitable for CI or orchestration with the wider Vesuvius toolchain.</td></tr>
 </tbody></table>
-<p class="smalllink">Criteria source: <a href="https://scrollprize.org/prizes">Vesuvius Challenge open prizes</a> (September 30, 2026 snapshot).</p></div>
+<p class="smalllink">Criteria source: <a href="https://scrollprize.org/prizes">Vesuvius Challenge open prizes</a> (September 30, 2026 snapshot).</p>
+<p class="smalllink"><b>Update (2026-10-01):</b> technical integration now also covers tifxyz surfaces and a
+versioned JSON report contract; see the <a href="#update">post-deadline update</a>.</p></div>
 
 <div class="panel" id="evidence"><h2><span class="q">(4)</span> What evidence have you provided?</h2>
 <table><thead><tr><th>claim</th><th>evidence (in repo)</th></tr></thead><tbody>
@@ -292,7 +331,10 @@ unscorable or below 40, is <b>CAUTION</b>; otherwise <b>TRAIN</b>. Verified on l
 defective PHerc0814 pyramid (its quality is unscorable, so the verdict comes from this audit alone), TRAIN on a
 healthy PHerc0813 dl volume, CAUTION on the v2 dev mesh
 (<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts">ScrolIQ evidence</a>;
-rules from its <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>, checked 2026-09-30).</li>
+rules from its <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>, checked 2026-09-30).<br><b>Update (2026-10-01):</b> the rules above are as of 2026-09-30. Since
+<a href="https://github.com/Svyable/scrollq/pull/55">scrollq#55</a>, missing integrity evidence (an unreadable
+level, an absent root) is also DO NOT TRAIN; the three verdicts above are unchanged
+(<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed">re-run</a>).</li>
 <li><b>Shared foundation.</b> ScrolIQ imports this package's HTTP/S3 store, header parser, audit, and vendored
 <code>libvolcomp</code> decoder, and declares <code>zarr-pyramid-audit</code> as a dependency. The dependency runs
 one way: this repo never imports ScrolIQ.</li>
@@ -307,7 +349,9 @@ one way: this repo never imports ScrolIQ.</li>
 <p class="meta"><span class="status-ready">Frozen public snapshot.</span>
 Evidence and same-day re-verification are frozen on September 30, 2026, the day of the official Progress Prize
 deadline (11:59 PM Pacific); submission itself is completed through the Challenge's official form. The evidence on
-this page stays frozen at that date — <a href="./">the live dashboard</a> carries the current evidence.</p></div>
+this page stays frozen at that date — <a href="./">the live dashboard</a> carries the current evidence.
+Additions made after the deadline are confined to dated corrections and the clearly marked
+<a href="#update">2026-10-01 update</a>.</p></div>
 
 </div>
 

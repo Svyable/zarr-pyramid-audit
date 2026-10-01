@@ -270,7 +270,8 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     <div><h3>1 · Inspect frozen evidence</h3>
       <p>Every headline number on this page is generated from committed run artifacts. Pages CI regenerates the dashboard and rejects drift from the evidence.</p>
       <p><a href="{repo}/tree/main/artifacts">Run artifacts →</a> ·
-      <a href="{repo}/blob/main/data/known-defects.json">Known-defect registry →</a></p></div>
+      <a href="{repo}/blob/main/data/known-defects.json">Known-defect registry →</a> ·
+      <a href="{repo}/blob/main/docs/SUBMISSION.md">Submission criteria → evidence map →</a></p></div>
     <div><h3>2 · Reproduce a verdict</h3>
       <p>Install the public tool and run the same fail-closed gate used for publication checks.</p>
       <div class="cmd"><code>pip install git+https://github.com/Svyable/zarr-pyramid-audit.git<br>zpa-gate --base &lt;store&gt; --root &lt;volume.zarr&gt;</code></div></div>
@@ -281,7 +282,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <div class="gatebox"><b>Grand Prize preflight:</b> use the same gate on the exact prize-eligible CT, surface, and derived Zarr inputs before expensive geometry or ink work. A silent storage defect should fail before it can contaminate an unrolling campaign. Before 2.5D ink inference, run <code>zpa-surface-depth-profile</code> on the rendered stack to pin the slice count, source volume, sampled depth integrity, and depth profile. <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/surface-depth-profile.md">Protocol →</a></div>
 </div>
 
-<div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>
+{baseline_panel}<div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>
   <div class="actiongrid">
     <div><h3>Put the gate in front of publication</h3>
       <p><code>zpa-gate</code> reads metadata, not payloads, and returns a non-zero exit code when a root crosses the chosen severity threshold.</p>
@@ -330,18 +331,22 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 
   <h3 style="margin:1.4rem 0 .4rem;font-size:.95rem">One verdict per volume: <code>scrollq-health</code></h3>
   <div style="overflow-x:auto"><table><thead><tr><th>integrity (this repo)</th><th>quality (ScrolIQ)</th><th>verdict</th></tr></thead><tbody>
-  <tr><td>any <b>high</b> finding</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
-  <tr><td>medium finding(s), no high</td><td>not consulted</td><td><span class="verdict caution">CAUTION</span></td></tr>
-  <tr><td>pass (no high or medium finding)</td><td>unscorable, or score below 40</td><td><span class="verdict caution">CAUTION</span></td></tr>
-  <tr><td>pass (no high or medium finding)</td><td>score 40 or above</td><td><span class="verdict train">TRAIN</span></td></tr>
+  <tr><td><b>FAIL</b> — any high finding, or the audit itself errored</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
+  <tr><td><b>UNKNOWN</b> — unreadable level, absent root, nothing to audit</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
+  <tr><td><b>WARN</b> — medium finding(s), no high</td><td>not consulted</td><td><span class="verdict caution">CAUTION</span></td></tr>
+  <tr><td><b>PASS</b></td><td>unscorable, or score below 40</td><td><span class="verdict caution">CAUTION</span></td></tr>
+  <tr><td><b>PASS</b></td><td>score 40 or above</td><td><span class="verdict train">TRAIN</span></td></tr>
   </tbody></table></div>
   <p style="font-size:.85rem">Rules as implemented in ScrolIQ's
   <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>
-  (checked 2026-09-30). All three outcomes were run on live data
-  (<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts">ScrolIQ evidence</a>):
-  <b>DO NOT TRAIN</b> on the defective PHerc0814 pyramid — its quality is unscorable, so the
-  verdict comes from this audit alone — <b>TRAIN</b> on a healthy PHerc0813 dl volume, and
-  <b>CAUTION</b> on the v2 dev mesh.</p>
+  (checked 2026-10-01). Since
+  <a href="https://github.com/Svyable/scrollq/pull/55">scrollq#55</a> ScrolIQ takes integrity from
+  this repo's versioned report (<code>zpa.report.audit_root</code>) and its recommended mapping, so
+  missing evidence fails closed instead of falling through to the quality score. Live runs
+  (<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed">ScrolIQ evidence</a>):
+  <b>DO NOT TRAIN</b> on the defective PHerc0814 pyramid (FAIL) and on an absent root (UNKNOWN,
+  the negative control), <b>TRAIN</b> on a healthy PHerc0813 dl volume, and <b>CAUTION</b> on the
+  v2 dev mesh (integrity PASS, quality unscorable).</p>
 
   <h3 style="margin:1.4rem 0 .2rem;font-size:.95rem">Where ScrolIQ builds on this repo</h3>
   <ul class="ties">
@@ -576,6 +581,58 @@ def render_tifxyz_panel(summary_path: str) -> str:
         '</div>\n')
 
 
+BASELINE_TOOLS = (
+    ("zarr-python", "zarr-python (open + read every level)"),
+    ("ome-zarr-models", "ome-zarr-models (OME-NGFF validator)"),
+    ("zpa (header audit)", "ZPA header audit"),
+    ("zpa (+ chunk probe)", "ZPA + sampled chunk probe"),
+)
+
+
+def render_baseline_panel(comparison_path: str) -> str:
+    """Baseline-comparison panel from a committed comparison.json ('' if absent)."""
+    try:
+        c = load_json(comparison_path)
+    except FileNotFoundError:
+        return ""
+    summ, ver = c.get("summary", {}), c.get("versions", {})
+
+    def cell(tool, cat):
+        v = summ.get(tool, {}).get(cat)
+        return f'{v["flagged"]} / {v["of"]}' if v else "&ndash;"
+
+    rows = "".join(
+        f'<tr><td>{html.escape(label)}</td>'
+        + "".join(f'<td class="num">{cell(tool, cat)}</td>'
+                  for cat in ("defect", "suspicious", "benign", "out-of-model"))
+        + "</tr>"
+        for tool, label in BASELINE_TOOLS if tool in summ)
+    art = ("https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/"
+           "2026-10-01-baseline-comparison")
+    return (
+        '<div class="panel" id="baselines"><h2>Against the tools people already use'
+        f'<span class="sub">2026-10-01 · zarr-python {html.escape(ver.get("zarr", "?"))}, '
+        f'ome-zarr-models {html.escape(ver.get("ome-zarr-models", "?"))}</span></h2>\n'
+        '  <p><b>On the live defect,</b> both baselines treat the PHerc0814 '
+        '<code>-L1</code> pyramid as healthy: the OME-NGFF validator accepts it, '
+        'and zarr-python reads a level-5 window as all zeros without an error. '
+        'The ZPA gate rejects it (6 &times; <code>LEVEL_NO_CHUNKS</code>).</p>\n'
+        '  <p><b>On the fixture corpus</b> (ground truth assigned from what each '
+        'fixture was built to contain), flagged / total:</p>\n'
+        '  <div style="overflow-x:auto"><table><thead><tr><th>tool</th>'
+        '<th class="num">defects</th><th class="num">suspicious content</th>'
+        '<th class="num">false alarms on valid pyramids</th>'
+        '<th class="num">out-of-model nodes</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>\n'
+        '  <p style="font-size:.85rem">Selection bias: the corpus was written around '
+        'ZPA&rsquo;s failure classes, so read it per defect class, not as a score. '
+        'The validator checks the full NGFF spec, which ZPA does not attempt; run '
+        'both. ZPA&rsquo;s false alarms are a legal compressor drift (low, integrity '
+        'stays PASS) and a sampled probe on a mostly empty level.</p>\n'
+        f'  <p class="smalllink"><a href="{art}">Comparison, method and caveats &rarr;</a></p>\n'
+        '</div>\n')
+
+
 def load_json(p):
     with open(p, encoding="utf-8") as fh:
         return json.load(fh)
@@ -670,6 +727,8 @@ def main() -> int:
 
     tifxyz_panel = render_tifxyz_panel(
         f"{ART}/2026-10-01-s3-tifxyz/tifxyz.summary.json")
+    baseline_panel = render_baseline_panel(
+        f"{ART}/2026-10-01-baseline-comparison/comparison.json")
 
     artifact_dates = sorted(
         name[:10] for name in os.listdir(ART)
@@ -691,6 +750,7 @@ def main() -> int:
         probe_rows=probe_rows, v2_note=v2_note,
         vc_pop=vc_pop, v2_pop=v2_pop, kd_n=kd_n, stamp=stamp,
         n_codes=len(SEVERITY), tifxyz_panel=tifxyz_panel,
+        baseline_panel=baseline_panel,
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:

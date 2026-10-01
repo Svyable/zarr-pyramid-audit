@@ -1,7 +1,7 @@
 # zarr-pyramid-audit
 
-Read-only integrity auditing for OME-Zarr multiscale pyramids served over HTTP, S3 or a local
-directory.
+Read-only integrity auditing for OME-Zarr multiscale pyramids, and for the tifxyz surface patches
+segmented from them, served over HTTP, S3 or a local directory.
 
 **What it audits, what it emits, what it cannot certify.** ZPA checks whether a pyramid is what its
 metadata says it is: every declared level present and readable, shapes consistent with the declared
@@ -217,16 +217,21 @@ spend GPU or expert time on this volume?* — from opposite ends:
 
 ### How they connect
 
-- **One verdict per volume.** ScrolIQ's `scrollq-health` runs this repo's audit alongside its
-  quality score. Integrity wins: any **high** finding is **DO NOT TRAIN** regardless of score; a
-  **medium** finding is **CAUTION**; with neither, quality that is unscorable or below 40 is
-  **CAUTION**, and anything else is **TRAIN**. Run on live data: DO NOT TRAIN on the defective
-  PHerc0814 pyramid (its quality is unscorable, so the verdict comes from this audit alone), TRAIN
-  on a healthy PHerc0813 volume, CAUTION on the v2 dev mesh
-  ([ScrolIQ's evidence](https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts)).
+- **One verdict per volume.** ScrolIQ's `scrollq-health` takes integrity from this repo's versioned
+  report (`zpa.report.audit_root`) and follows its recommended mapping, so integrity wins and
+  missing evidence fails closed: **FAIL** (any high finding, or the audit errored) and **UNKNOWN**
+  (an unreadable level, an absent root, nothing to audit) are **DO NOT TRAIN** regardless of score;
+  **WARN** (a medium finding) is **CAUTION**; on **PASS**, quality that is unscorable or below 40 is
+  **CAUTION**, and anything else is **TRAIN**. Run on live data on 2026-10-01: DO NOT TRAIN on the
+  defective PHerc0814 pyramid (FAIL) and on an absent root (UNKNOWN, the negative control), TRAIN
+  on a healthy PHerc0813 volume, CAUTION on the v2 dev mesh (integrity PASS, quality unscorable)
+  ([ScrolIQ's evidence](https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed)).
   The rules are those of ScrolIQ's
   [`health.py`](https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py) as checked on
-  2026-09-30; they live there, not here.
+  2026-10-01, after [Svyable/scrollq#55](https://github.com/Svyable/scrollq/pull/55); they live
+  there, not here. Before #55 (checked 2026-09-30) ScrolIQ counted severities only, so an
+  unreadable level or an absent root could fall through to the quality score
+  ([`docs/INTEGRATION.md`](docs/INTEGRATION.md#scroliq-integration-surface)).
 - **Shared foundation.** ScrolIQ imports this package's HTTP/S3 store, header parser, audit and the
   vendored `libvolcomp` decoder (`zpa.httpstore`, `zpa.zarrmeta`, `zpa.audit_pyramid`,
   `zpa.volcomp`), and declares `zarr-pyramid-audit` as a dependency. The dependency runs one way:
@@ -483,6 +488,16 @@ found no empty surface, no channel-mask disagreement and no non-finite coordinat
 
 All are `low` review findings.
 
+**Against existing tools** ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/),
+zarr-python 3.1.6 and the ome-zarr-models 1.7 OME-NGFF validator). On the live PHerc0814 defect both
+baselines treat the pyramid as healthy: the validator accepts it, and zarr-python reads a level-5
+window as 249,856 voxels, all zero, without an error. The gate rejects it. On the fixture corpus,
+defects flagged: zarr-python 8 / 26, the validator 14 / 26, the ZPA header audit 25 / 26, and with
+the sampled chunk probe 26 / 26. The corpus was written around ZPA's failure classes, so read it per
+defect class rather than as a score. The validator checks the full NGFF spec, which ZPA does not;
+the two are complementary. ZPA's false alarms on valid pyramids (1 / 10 header-only, 2 / 10 with the
+probe) and the caveats are in the artifact README.
+
 **Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
 defective pyramids across both stores, with finding codes, severity and evidence pointers.
 
@@ -557,6 +572,10 @@ for l in 0 1 2 3 4 5; do printf "L$l .zarray="; curl -s -o /dev/null -w "%{http_
 - **Coverage of codecs and hosts.** The chunk probe decodes raw, Blosc and volcomp-sharded chunks
   (Linux x86-64 for the vendored decoder). Other codecs are reported `CHUNK_UNDECODEABLE`, never
   guessed.
+- **Surfaces: tifxyz only, and content up to a cap.** `zpa-tifxyz` audits tifxyz quadmeshes; it
+  reads full channels only with `--content`, and only up to `--max-content-bytes` per channel (256 MiB by
+  default; the 2026-10-01 survey used 32 MiB). Larger surfaces get `TIFXYZ_CONTENT_UNDECODED`, a coverage gap, not a pass. Triangular
+  meshes (`.obj`, `.ply`) are not audited here; mesh and winding audits live in ScrolIQ.
 
 ## Accuracy policy
 
