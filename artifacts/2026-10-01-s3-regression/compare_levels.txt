@@ -1,0 +1,4 @@
+levels: baseline 5348, current 5348, only baseline 0, only current 0
+levels with a changed field (present, shape, chunks, dtype, fill_value, compressor, dimension_separator, has_chunks, top_entries): 0
+not comparable (missing from a run): zarr_format
+current chunk evidence: {'PRESENT': 5342, 'ABSENT': 6} {'NO_CHUNK_KEYS': 6}

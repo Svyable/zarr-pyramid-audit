@@ -420,6 +420,12 @@ without error, against a populated control that returned 64,498 nonzero voxels
 identical result ([`artifacts/2026-09-30-s3-reverify/`](artifacts/2026-09-30-s3-reverify/)); it
 independently confirms [villa #1892](https://github.com/scrollprize/villa/issues/1892).
 
+**S3 regression re-audit, 2026-10-01** ([`artifacts/2026-10-01-s3-regression/`](artifacts/2026-10-01-s3-regression/)).
+A fresh crawl finds the same 957 roots. Against 2026-09-29: 0 findings fixed, 0 new, 6 unchanged, and all
+5,348 levels unchanged, each with direct chunk evidence (none `UNKNOWN`). The PHerc0814 `-L1` pyramid still had
+no chunk keys at any level at 07:32 UTC. The matching dl.ash2txt.org re-run is pending: that host was not
+reachable from the environment that ran it.
+
 **dl.ash2txt.org 20-day regression**
 ([`artifacts/2026-09-29-dl-regression/`](artifacts/2026-09-29-dl-regression/)). The 2026-09-09
 audit's identical 241-root list, re-run: 18 defective pyramids and 50 actionable findings, and a

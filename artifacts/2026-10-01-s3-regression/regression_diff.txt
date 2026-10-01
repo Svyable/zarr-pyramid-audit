@@ -1,0 +1,4 @@
+roots: baseline 957, current 957, common 957, added 0, dropped 0
+findings on common roots: fixed 0, new 0, unchanged 6
+defective roots (non-info finding): baseline 1, current 1
+findings on added roots: 0 {}
