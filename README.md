@@ -415,6 +415,11 @@ Header audits cost under 9 KiB regardless of array size. The probe costs roughly
 bytes. Payload bytes exclude HTTP/TLS overhead and S3 listing responses; see the artifact README for
 exactly what is and is not counted.
 
+**OME-NGFF conformance re-audit** ([`artifacts/2026-10-01-s3-conformance/`](artifacts/2026-10-01-s3-conformance/)).
+All 957 S3 roots re-audited with the spec-conformance checks on: 0 `TRANSFORM_SCALE_COUNT`,
+`TRANSFORM_ARITY`, `AXES_INVALID` or `OME_VERSION_UNMODELLED`; every root declares OME-NGFF 0.4; the
+2026-09-29 findings are reproduced row for row (956 clean, 1 defective).
+
 **Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
 defective pyramids across both stores, with finding codes, severity and evidence pointers.
 
