@@ -1,0 +1,80 @@
+{
+  "run_name": "audit_pyramid",
+  "started_utc": "2026-10-01T04:05:01.006302+00:00",
+  "argv": [
+    "/tmp/claude-0/venv/bin/zpa-audit",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--roots",
+    "artifacts/2026-09-29-s3/discover_zarr.roots.jsonl",
+    "--workers",
+    "16",
+    "--out-dir",
+    "/tmp/claude-0/s3full"
+  ],
+  "cwd": "/home/user/zarr-pyramid-audit",
+  "host": "vm",
+  "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
+  "python": "3.11.15",
+  "python_exe": "/tmp/claude-0/venv/bin/python",
+  "packages": {
+    "numpy": "2.4.6",
+    "zarr": "3.1.6",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.106"
+  },
+  "counters": {},
+  "outputs": [
+    {
+      "path": "/tmp/claude-0/s3full/audit_pyramid.levels.jsonl",
+      "exists": true,
+      "bytes": 3221550,
+      "desc": "per-level records"
+    },
+    {
+      "path": "/tmp/claude-0/s3full/audit_pyramid.pyramids.jsonl",
+      "exists": true,
+      "bytes": 769841,
+      "desc": "per-pyramid records"
+    },
+    {
+      "path": "/tmp/claude-0/s3full/audit_pyramid.findings.csv",
+      "exists": true,
+      "bytes": 0,
+      "desc": "findings"
+    },
+    {
+      "path": "/tmp/claude-0/s3full/audit_pyramid.summary.json",
+      "exists": true,
+      "bytes": 355,
+      "desc": "summary"
+    }
+  ],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "n_roots": 957,
+  "chunk_presence_check": true,
+  "max_flat_keys": 250000,
+  "summary": {
+    "base": "s3://vesuvius-challenge-open-data/",
+    "roots_requested": 957,
+    "pyramids_audited": 957,
+    "pyramids_with_findings": 1,
+    "pyramids_clean": 956,
+    "findings_total": 6,
+    "findings_actionable": 6,
+    "findings_informational": 0,
+    "pyramids_with_defects": 1,
+    "by_code": {
+      "LEVEL_NO_CHUNKS": 6
+    },
+    "by_severity": {
+      "high": 6
+    }
+  },
+  "ended_utc": "2026-10-01T04:08:19.520615+00:00",
+  "wall_seconds": 198.514
+}
