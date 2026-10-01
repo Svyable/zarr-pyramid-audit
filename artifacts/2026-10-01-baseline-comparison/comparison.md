@@ -22,7 +22,7 @@ Per fixture (✓ = the tool gave its user a signal):
 | `compressor_drift` | benign | · silent | · accepts | PASS COMPRESSOR_DRIFT | — |
 | `separator_drift` | defect | · silent | · accepts | FAIL SEPARATOR_DRIFT | — |
 | `ndim_drift` | defect | · silent | ✓ rejects | FAIL NDIM_DRIFT | — |
-| `axes_mismatch` | defect | · silent | ✓ rejects | PASS AXES_MISMATCH, TRANSFORM_ARITY | — |
+| `axes_mismatch` | defect | · silent | ✓ rejects | PASS AXES_MISMATCH | — |
 | `degenerate_level` | defect | · silent | · accepts | FAIL DEGENERATE_LEVEL, LEVEL_NO_CHUNKS, SCALE_SHAPE_MISMATCH | CHUNK_LEVEL_NO_CHUNKS |
 | `chunk_exceeds_shape` | benign | · silent | · accepts | PASS CHUNK_EXCEEDS_SHAPE | — |
 | `physical_scale_unknown` | benign | · silent | · accepts | PASS PHYSICAL_SCALE_UNKNOWN | — |

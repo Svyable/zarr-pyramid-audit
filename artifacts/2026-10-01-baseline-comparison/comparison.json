@@ -369,8 +369,7 @@
       },
       "zpa": {
         "codes": [
-          "AXES_MISMATCH",
-          "TRANSFORM_ARITY"
+          "AXES_MISMATCH"
         ],
         "gate": "pass",
         "integrity": "PASS",
