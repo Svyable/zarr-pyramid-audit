@@ -8,8 +8,10 @@ contributing guide lives at `.github/CONTRIBUTING.md`.
 Corruption detection for OME-Zarr multiscale pyramids in the Vesuvius open
 data: header-only audits, a publish-time gate, a sampled chunk-*content*
 probe, and surface-evidence tools. "Don't train on lies." Companion:
-[ScrollQ](https://github.com/Svyable/scrollq) ("train on the best first" —
-quality scoring).
+[ScrolIQ](https://github.com/Svyable/scrollq) (capital I; formerly ScrollQ —
+"find the bottleneck": scan-health triage plus open-problem diagnostics).
+ScrolIQ depends on this repo, never the reverse; see "How this fits with
+ScrolIQ" in the README.
 
 **This is a fork** of [sgsllc-jr/zarr-pyramid-audit](https://github.com/sgsllc-jr/zarr-pyramid-audit)
 (MIT). Upstream credit is retained in the README and LICENSE.
@@ -72,7 +74,9 @@ endpoint is unreachable from some networks, including some sandboxes).
   check-code list matches `SEVERITY`, and the dashboard describes every code —
   if it fails, fix the docs, don't delete the test.
 - `data/known-defects.json` — machine-readable defect kill list
-- `docs/` — GitHub Pages: `index.html` (**generated**), September writeup
+- `docs/` — GitHub Pages: `index.html` (**generated** by `build_dashboard.py`;
+  edit the generator, never the HTML), and `september-2026.html`, which is
+  hand-written and frozen at the 2026-09-30 evidence
 - `artifacts/<date>-<name>/` — campaign outputs; the evidence behind
   published numbers. Each has a README/MD stating the command that made it.
 - `issues/` — drafts of issues filed against ScrollPrize/villa (index in
@@ -80,6 +84,11 @@ endpoint is unreachable from some networks, including some sandboxes).
 - `.github/workflows/` — `ci.yml`, `audit.yml`, `pages-check.yml` (live)
 - `env.sh` — optional bootstrap inherited from the research toolkit (sets
   `RT_*`; `pool.py` reads `RT_WORKERS`). Not needed for normal work.
+- **Downstream consumer:** ScrolIQ imports `zpa.httpstore.open_store`,
+  `zpa.zarrmeta.read_pyramid`, `zpa.audit_pyramid.audit_one` and
+  `zpa.volcomp`, and pins a tested commit of this repo in its
+  `requirements-ci.txt`. Don't change those signatures or the finding fields
+  (`code`, `severity`, `level`, `detail`) without checking it.
 
 ## What CI enforces (reproduce locally before pushing)
 
@@ -137,7 +146,9 @@ endpoint is unreachable from some networks, including some sandboxes).
    not a scroll** — medium severity, human review, with caveats. Don't
    upgrade it to high without new evidence.
 5. **Severity is load-bearing.** `high` = do not train / do not publish.
-   New high-severity checks need corpus-wide evidence.
+   New high-severity checks need corpus-wide evidence. ScrolIQ's per-volume
+   verdict maps `high` → DO NOT TRAIN and `medium` → CAUTION (rules live in
+   ScrolIQ; see the README), so changing a severity changes downstream verdicts.
 6. **Absence needs positive evidence.** Header reads and listings are
    tri-state: `PRESENT` / `ABSENT` / `UNKNOWN`. Only a confirmed 404 supports
    an absence finding; timeouts, 403/429/5xx, unsupported listings and
@@ -152,7 +163,7 @@ endpoint is unreachable from some networks, including some sandboxes).
    and surface tools import `zarr`.
 9. **Surface tools measure; they don't judge.** `zpa-surface-support` and
    `zpa-surface-depth-profile` emit evidence, not defect verdicts or quality
-   scores — scoring belongs in ScrollQ. Keep `--expected-volume-id` guards
+   scores — scoring belongs in ScrolIQ. Keep `--expected-volume-id` guards
    fail-closed.
 10. **Claim discipline in docs.** Say what an artifact proves ("gate rejects X
     when run"), not more ("gate prevents Y"). Date-stamp live-state claims
