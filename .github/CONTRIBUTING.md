@@ -85,6 +85,22 @@ PR, issue, or doc change must be backed by something a reviewer can re-run:
    (`pages-check.yml`); and a live smoke audit against the public S3 bucket
    (`audit.yml`).
 
+## Commits and merging
+
+- **Commit messages:** a short imperative subject, with a conventional prefix
+  where one fits (`feat:`, `fix:`, `docs:`, `test:`, `ci:`, `build:`). Use the
+  body for *why*, and cite the command/artifact behind any number it states.
+- **One logical change per commit.** Don't mix a new check code with
+  unrelated cleanups.
+- **Merge method:** prefer **squash merge**, so the PR title becomes the commit
+  subject on `main` (`Title (#N)`). Write the PR title as a good commit
+  subject, and keep the description self-contained — it is the permanent
+  record.
+- **Merge only when CI is green** on the PR's latest commit (`ci.yml`,
+  `audit.yml`, and `pages-check.yml` when it applies). Never force-push to
+  `main`; delete the branch after merging.
+- A change to `.github/workflows/` needs the maintainer's explicit approval.
+
 ## Reporting a data finding
 
 Open an issue with the *data finding* template and include:

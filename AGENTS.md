@@ -67,7 +67,10 @@ endpoint is unreachable from some networks, including some sandboxes).
     `src/zpa/data/VOLCOMP_PROVENANCE.md`); override with `$VOLCOMP_LIB`
 - `bin/` — thin shims for the original script names, kept for backward
   compatibility (not every command has one; new tools don't need one)
-- `tests/` — pytest suite; offline, uses synthetic pyramids and fake stores
+- `tests/` — pytest suite; offline, uses synthetic pyramids and fake stores.
+  `test_docs_consistency.py` checks that documented flags exist, the README
+  check-code list matches `SEVERITY`, and the dashboard describes every code —
+  if it fails, fix the docs, don't delete the test.
 - `data/known-defects.json` — machine-readable defect kill list
 - `docs/` — GitHub Pages: `index.html` (**generated**), September writeup
 - `artifacts/<date>-<name>/` — campaign outputs; the evidence behind
@@ -114,6 +117,7 @@ endpoint is unreachable from some networks, including some sandboxes).
 3. `high` needs corpus-wide evidence — see lesson 5.
 4. Add it to the check-code list in `README.md` (with severity) and to
    `CODE_BLURB` in `build_dashboard.py`; regenerate the dashboard.
+   `tests/test_docs_consistency.py` fails if either is out of sync.
 5. Known defects it finds go in `data/known-defects.json` via the generator.
 
 ## Hard-won lessons (do not re-learn)
@@ -163,6 +167,11 @@ first (`runio.py`; `*.bak` is git-ignored). Scratch runs go to `tmp/`
 
 ## Working rules
 
+- Commits: short imperative subject, conventional prefix where it fits
+  (`feat:` `fix:` `docs:` `test:` `ci:` `build:`), body says *why*. PRs are
+  squash-merged, so write the PR title as the commit subject. Details in
+  `.github/CONTRIBUTING.md`.
+- Merge only on green CI at the PR's latest commit.
 - New check codes need a unit test on a synthetic pyramid.
 - Every number in docs/PRs must trace to a command + artifact in this repo.
 - Add new defects to `data/known-defects.json` via the generator, not by hand.

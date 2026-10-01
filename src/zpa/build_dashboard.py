@@ -55,6 +55,8 @@ CODE_BLURB = {
     "NOT_A_ZARR_GROUP": "no .zgroup / zarr.json and nothing Zarr-like inside",
     "NOT_MULTISCALE": "valid Zarr group, never claimed to be a pyramid",
     "BARE_ARRAY": "valid single-scale Zarr array, not a pyramid",
+    "PHYSICAL_SCALE_UNKNOWN": "metadata explicitly says absolute physical size is unknown — informational",
+    "PHYSICAL_SCALE_CONTRADICTION": "physical_size=unknown conflicts with spatial units or a non-identity level-0 scale",
 }
 
 PAGE = """<!doctype html>
