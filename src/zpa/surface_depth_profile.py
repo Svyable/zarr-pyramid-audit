@@ -120,9 +120,7 @@ def profile_surface_volume(
             "grad_sum": 0.0,
             "grad_count": 0,
         }
-        p01s: list[float] = []
-        p50s: list[float] = []
-        p99s: list[float] = []
+        sampled_values: list[np.ndarray] = []
         h = hashlib.sha256()
 
         for y0 in ys:
@@ -131,9 +129,9 @@ def profile_surface_volume(
                 metrics = _tile_metrics(tile)
                 for key in totals:
                     totals[key] += metrics[key]
-                p01s.append(float(metrics["p01"]))
-                p50s.append(float(metrics["p50"]))
-                p99s.append(float(metrics["p99"]))
+                finite_tile = np.asarray(tile)[np.isfinite(tile)]
+                if finite_tile.size:
+                    sampled_values.append(finite_tile.astype(np.float64, copy=False))
                 h.update(np.asarray(tile, dtype="<f4").tobytes(order="C"))
 
         finite_n = int(totals["finite_pixels"])
@@ -151,9 +149,13 @@ def profile_surface_volume(
             if totals["grad_count"]
             else None
         )
-        p01 = float(np.mean(p01s)) if p01s else None
-        p50 = float(np.mean(p50s)) if p50s else None
-        p99 = float(np.mean(p99s)) if p99s else None
+        if sampled_values:
+            sampled = np.concatenate(sampled_values)
+            p01, p50, p99 = (
+                float(v) for v in np.percentile(sampled, [1, 50, 99])
+            )
+        else:
+            p01 = p50 = p99 = None
         dynamic = (p99 - p01) if p01 is not None and p99 is not None else None
         digest = h.hexdigest()
         digest_groups.setdefault(digest, []).append(z)
