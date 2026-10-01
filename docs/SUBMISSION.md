@@ -137,9 +137,10 @@ Other advantages, each backed by an artifact or a test:
   pinned public surface ([INTEGRATION.md](INTEGRATION.md#scroliq-integration-surface)).
 - **CLI per stage:** each `zpa-*` command reads and writes plain files, so
   stages compose in shell or CI.
-- **Used downstream today:** ScrolIQ imports this package for its per-volume
-  verdict, and its `scroliq-provenance` gate requires a ZPA audit record for
-  the exact CT volume (README, "How this fits with ScrolIQ").
+- **Used downstream today:** ScrolIQ's per-volume verdict calls
+  `zpa.report.audit_root` and applies `RECOMMENDED_CONSUMER_VERDICT`
+  (scrollq#55), and its `scroliq-provenance` gate requires a ZPA audit
+  record for the exact CT volume (README, "How this fits with ScrolIQ").
 - **CI:** a copy-paste gate job, plus `--format github` annotations.
 
 ## Known gaps (stated, not hidden)
@@ -155,6 +156,8 @@ Other advantages, each backed by an artifact or a test:
   are not checked yet.
 - The sampled probe is evidence, not exhaustive validation (README
   Limitations).
-- ScrolIQ's current verdict code reads `UNKNOWN` access and absent roots as
-  integrity PASS. The fix belongs in that repository
+- ScrolIQ adopted the fail-closed verdict mapping
+  ([Svyable/scrollq#55](https://github.com/Svyable/scrollq/pull/55), merged).
+  It pins this repo at `e473afd`, which predates the tifxyz report, so
+  ScrolIQ does not consume surface reports yet
   ([INTEGRATION.md](INTEGRATION.md#scroliq-integration-surface)).
