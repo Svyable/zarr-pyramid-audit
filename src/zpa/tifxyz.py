@@ -381,13 +381,17 @@ def audit_surface(store, root: str, *, content: bool = False,
         # the header findings above already say why that is not the case.
         surface["content_skipped"] = "header findings prevent content checks"
     if can_read_content:
+        # Check every channel against the cap before downloading any of them.
+        too_big = [ch for ch in CHANNELS if sizes[ch] > max_content_bytes]
+        if too_big:
+            ch = too_big[0]
+            add("TIFXYZ_CONTENT_UNDECODED", f"{ch}.tif",
+                f"{ch}.tif is {sizes[ch]} bytes, above --max-content-bytes")
+            can_read_content = False
+    if can_read_content:
         arrays: dict[str, np.ndarray] = {}
         for ch in CHANNELS:
             level = f"{ch}.tif"
-            if sizes[ch] > max_content_bytes:
-                add("TIFXYZ_CONTENT_UNDECODED", level,
-                    f"{level} is {sizes[ch]} bytes, above --max-content-bytes")
-                break
             try:
                 blob = store.get(f"{root}/{ch}.tif")
             except StoreError as exc:

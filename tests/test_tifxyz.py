@@ -262,3 +262,23 @@ def test_readme_tifxyz_code_table_matches_the_code():
     section = text.split("### tifxyz surface codes", 1)[1].split("\n\n", 2)[1]
     listed = dict(re.findall(r"^\| `([A-Z_]+)` \| (\w+) \|", section, re.M))
     assert listed == tx.TIFXYZ_SEVERITY
+
+
+def test_size_cap_is_checked_before_any_channel_is_downloaded():
+    class NoGet(LocalStore):
+        def get(self, path):
+            if path.endswith(".tif") and not getattr(self, "_ranged", False):
+                raise AssertionError(f"downloaded {path} despite the size cap")
+            return super().get(path)
+
+        def get_range(self, path, start, length):
+            self._ranged = True
+            try:
+                return super().get_range(path, start, length)
+            finally:
+                self._ranged = False
+
+    report = tx.audit_surface(NoGet(SURF), "tifxyz_clean.tifxyz", content=True,
+                              max_content_bytes=10)
+    assert codes(report) == ["TIFXYZ_CONTENT_UNDECODED"]
+    assert report["surface"]["content_checked"] is False
