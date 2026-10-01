@@ -464,14 +464,21 @@ All 957 S3 roots re-audited with the spec-conformance checks on: 0 `TRANSFORM_SC
 2026-09-29 findings are reproduced row for row (956 clean, 1 defective).
 
 **tifxyz surfaces** ([`artifacts/2026-10-01-s3-tifxyz/`](artifacts/2026-10-01-s3-tifxyz/), `zpa-tifxyz`).
-All 1,458 tifxyz surface patches in the S3 bucket audited. The header tier finds every one structurally
-complete. The content tier (1,310 surfaces with channels ≤ 32 MiB) finds no empty surface, no
-channel-mask disagreement and no non-finite coordinate, and 30 surfaces whose `meta.json` bbox
-disagrees with the stored coordinates:
-- 28 have the `-1` invalid marker leaked into the declared minimum (one PHercParis4 batch of
-  `tifxyz_original` intermediates);
-- 2 store points *outside* the declared bbox. One is a PHerc0139 surface with 250 of its 1,664,805
-  valid points up to ~2,000 voxels below the declared minimum.
+All 1,539 tifxyz surface patches in the S3 bucket, found by `zpa-discover`, were audited. All 1,539 are
+integrity `PASS`: every one has a readable `meta.json` and three float channels on one grid. The content
+tier ran on 1,391 surfaces; 148 have a channel over the 32 MiB cap and are reported as a coverage gap. It
+found no empty surface, no channel-mask disagreement and no non-finite coordinate. It did find:
+- **161 surfaces with points outside any CT volume** (`TIFXYZ_NEGATIVE_COORDINATE`), mostly final
+  registered surfaces (143 of 709), mostly on z, median 4.5% of a surface's points and up to 39.7%. In
+  a worked PHerc0139 example the surface runs past both ends of its target volume's z range, so a render
+  from that volume has no CT data there. Every one of these surfaces' `meta.json` bbox already shows the
+  negative extent.
+- **30 surfaces whose `meta.json` bbox disagrees with the stored coordinates**
+  (`TIFXYZ_BBOX_MISMATCH`):
+  - 28 have the `-1` invalid marker leaked into the declared minimum (one PHercParis4 batch of
+    `tifxyz_original` intermediates);
+  - 2 store points outside the declared box, 2,375 and 755 points, so cropping to the bbox would drop
+    geometry.
 
 All are `low` review findings.
 

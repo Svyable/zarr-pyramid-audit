@@ -1,0 +1,17 @@
+{
+  "base": "s3://vesuvius-challenge-open-data/",
+  "surfaces": 1539,
+  "content_tier": true,
+  "by_integrity": {
+    "PASS": 1539
+  },
+  "by_code": {
+    "TIFXYZ_NEGATIVE_COORDINATE": 161,
+    "TIFXYZ_CONTENT_UNDECODED": 148,
+    "TIFXYZ_BBOX_MISMATCH": 30
+  },
+  "by_severity": {
+    "low": 191,
+    "info": 148
+  }
+}

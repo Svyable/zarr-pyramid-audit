@@ -1,0 +1,76 @@
+{
+  "run_name": "tifxyz",
+  "started_utc": "2026-10-01T06:48:27.006838+00:00",
+  "argv": [
+    "/tmp/claude-0/venv/bin/zpa-tifxyz",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--roots",
+    "/tmp/claude-0/disc/discover_zarr.surfaces.jsonl",
+    "--content",
+    "--max-content-bytes",
+    "33554432",
+    "--workers",
+    "16",
+    "--out-dir",
+    "/tmp/claude-0/tx/def"
+  ],
+  "cwd": "/home/user/zarr-pyramid-audit",
+  "host": "vm",
+  "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
+  "python": "3.11.15",
+  "python_exe": "/tmp/claude-0/venv/bin/python",
+  "packages": {
+    "numpy": "2.4.6",
+    "zarr": "3.1.6",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "2026.3.3",
+    "requests": "2.34.2",
+    "botocore": "1.43.106"
+  },
+  "counters": {},
+  "outputs": [
+    {
+      "path": "/tmp/claude-0/tx/def/tifxyz.findings.csv",
+      "exists": true,
+      "bytes": 75412,
+      "desc": "findings"
+    },
+    {
+      "path": "/tmp/claude-0/tx/def/tifxyz.reports.jsonl",
+      "exists": true,
+      "bytes": 2155698,
+      "desc": "per-surface reports"
+    },
+    {
+      "path": "/tmp/claude-0/tx/def/tifxyz.summary.json",
+      "exists": true,
+      "bytes": 320,
+      "desc": "summary"
+    }
+  ],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "n_roots": 1539,
+  "content": true,
+  "summary": {
+    "base": "s3://vesuvius-challenge-open-data/",
+    "surfaces": 1539,
+    "content_tier": true,
+    "by_integrity": {
+      "PASS": 1539
+    },
+    "by_code": {
+      "TIFXYZ_NEGATIVE_COORDINATE": 161,
+      "TIFXYZ_CONTENT_UNDECODED": 148,
+      "TIFXYZ_BBOX_MISMATCH": 30
+    },
+    "by_severity": {
+      "low": 191,
+      "info": 148
+    }
+  },
+  "ended_utc": "2026-10-01T06:54:50.639363+00:00",
+  "wall_seconds": 383.633
+}

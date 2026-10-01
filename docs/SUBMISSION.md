@@ -22,7 +22,7 @@ evidence that downstream tools consume.
 | A confirmed silent-zeros defect is live in the official S3 bucket: a PHerc0814 surface volume whose 6 levels all have valid headers and zero chunks | [`artifacts/2026-09-29-s3/SILENT_ZEROS.md`](../artifacts/2026-09-29-s3/SILENT_ZEROS.md); re-verified [`2026-09-30-s3-reverify`](../artifacts/2026-09-30-s3-reverify/); independently confirms [villa #1892](https://github.com/scrollprize/villa/issues/1892) |
 | Audited the whole S3 bucket: 957 roots, 956 clean, 1 defective | [`artifacts/2026-09-29-s3/`](../artifacts/2026-09-29-s3/); reproduced row for row on 2026-10-01 with the conformance checks on, [`2026-10-01-s3-conformance`](../artifacts/2026-10-01-s3-conformance/) |
 | Audited all 241 `dl.ash2txt.org` roots: 18 defective pyramids. A 20-day re-run found 0 of them fixed | [`artifacts/2026-09-09/`](../artifacts/2026-09-09/), [`2026-09-29-dl-regression`](../artifacts/2026-09-29-dl-regression/) |
-| All 1,458 tifxyz surface patches in the S3 bucket audited. All are structurally complete; 30 declare a bbox that disagrees with their stored coordinates (28 with the `-1` marker leaked into the minimum, 2 with points outside the declared box) | [`artifacts/2026-10-01-s3-tifxyz/`](../artifacts/2026-10-01-s3-tifxyz/) |
+| All 1,539 tifxyz surface patches in the S3 bucket audited. All are structurally complete. 161 have points outside any CT volume (up to 39.7% of a surface); 30 declare a bbox that disagrees with their stored coordinates (28 with the `-1` marker leaked into the minimum, 2 with points outside the declared box) | [`artifacts/2026-10-01-s3-tifxyz/`](../artifacts/2026-10-01-s3-tifxyz/) |
 | The dl findings were filed upstream on 2026-09-10 as villa #1755–#1760 | [`issues/README.md`](../issues/README.md): drafts, repro commands and issue links |
 | Sampled chunk-content probes across both hosts: 4,355 populated samples in four campaigns; 7 all-empty levels, all in one dev mesh derivative (`other/dev/meshes/…`, medium, human review) | README "Latest results" table → `artifacts/2026-09-30-{s3-chunkscan,s3-chunkscan-v3,dl-volcomp-probe,dl-v2-probe}/` |
 
@@ -110,7 +110,7 @@ Other advantages, each backed by an artifact or a test:
 | v3 `sharding_indexed` with volcomp inner chunks (the `dl.ash2txt.org` scroll volumes) | **probed** by decoding over HTTP byte ranges, with shard-index CRC32C verification |
 | Raw, Blosc and `bytes` chunks | **decoded** by the probe; other codecs are reported `CHUNK_UNDECODEABLE`, never guessed |
 | Stores: `https://` autoindex, `s3://` (anonymous), `file://` or a local path | **all**, same evidence semantics |
-| tifxyz quadmeshes (`meta.json` + `x/y/z.tif`, classic TIFF or BigTIFF, uncompressed or tiled/LZW/predictor) | **audited** by `zpa-tifxyz`: structure from TIFF headers via strict range reads; coordinates with `--content`. All 1,458 public S3 surfaces surveyed ([`2026-10-01-s3-tifxyz`](../artifacts/2026-10-01-s3-tifxyz/)); `zpa-discover` lists them in `discover_zarr.surfaces.jsonl` |
+| tifxyz quadmeshes (`meta.json` + `x/y/z.tif`, classic TIFF or BigTIFF, uncompressed or tiled/LZW/predictor) | **audited** by `zpa-tifxyz`: structure from TIFF headers via strict range reads; coordinates with `--content`. All 1,539 public S3 surfaces surveyed ([`2026-10-01-s3-tifxyz`](../artifacts/2026-10-01-s3-tifxyz/)); `zpa-discover` lists them in `discover_zarr.surfaces.jsonl` |
 | Triangular meshes | **not audited by ZPA.** Mesh and winding audits live in the companion [ScrolIQ](https://github.com/Svyable/scrollq) |
 
 ### Maintains consistent output formats
@@ -124,8 +124,8 @@ Other advantages, each backed by an artifact or a test:
 - The contract (codes, severities, integrity states, recommended verdicts)
   is fingerprinted. `tests/test_contract.py` fails until a change carries a
   migration note.
-- Expected outputs for all 66 fixture cases are committed: 43 on-disk Zarr,
-  8 replayed HTTP and 15 tifxyz surfaces. Any behaviour change shows up as a reviewable diff
+- Expected outputs for all 67 fixture cases are committed: 43 on-disk Zarr,
+  8 replayed HTTP and 16 tifxyz surfaces. Any behaviour change shows up as a reviewable diff
   (`tests/test_fixture_corpus.py`).
 - Every CLI run writes CSV/JSONL plus a provenance manifest and never
   overwrites an earlier output.
@@ -148,9 +148,11 @@ Other advantages, each backed by an artifact or a test:
   2026-10-01 runs. The dl campaigns are dated 2026-09-09 to 2026-09-30, and
   the volcomp CRC32C check has not been run on live shards.
 - Triangular meshes are not audited by ZPA (see the table above). The tifxyz
-  content tier was run on surfaces whose channels are ≤ 32 MiB (1,310 of
-  1,458); the other 148 have header-tier evidence only, reported as a
-  coverage gap.
+  content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
+  1,539); the other 148 have header-tier evidence only, reported as a
+  coverage gap. `TIFXYZ_NEGATIVE_COORDINATE` catches geometry below a
+  volume's grid; overruns past its top need the target volume's shape and
+  are not checked yet.
 - The sampled probe is evidence, not exhaustive validation (README
   Limitations).
 - ScrolIQ's current verdict code reads `UNKNOWN` access and absent roots as

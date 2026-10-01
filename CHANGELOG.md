@@ -54,11 +54,13 @@ Migration notes for consumers:
   `TIFXYZ_ABSENT` joins `ROOT_ABSENT` / `EMPTY_ZARR_DIR` as "nothing to
   audit": integrity `UNKNOWN`, never `PASS`. Each code is isolated by a
   fixture in `fixtures/surfaces/`.
-- **Evidence for the severities**: all 1,458 tifxyz surfaces in the public
+- **Evidence for the severities**: all 1,539 tifxyz surfaces in the public
   S3 bucket (`artifacts/2026-10-01-s3-tifxyz/`).
   - Header tier: all structurally complete; none of the medium codes fires.
-  - Content tier on the 1,310 surfaces with channels ≤ 32 MiB: no empty
+  - Content tier on the 1,391 surfaces with channels ≤ 32 MiB: no empty
     surface, no channel-mask disagreement, no non-finite coordinate.
+  - 161 `TIFXYZ_NEGATIVE_COORDINATE`, with metadata that honestly declares
+    the extent.
   - 30 `TIFXYZ_BBOX_MISMATCH`: 28 where the `-1` invalid marker leaked into
     the declared bbox minimum (one PHercParis4 batch), and 2 where stored
     points lie outside the declared bbox.
