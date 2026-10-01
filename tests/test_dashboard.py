@@ -89,5 +89,9 @@ def test_dashboard_states_the_fail_closed_verdict_rules(page):
 def test_dashboard_links_the_october_plan(page):
     assert 'href="./october-2026.html"' in page
     plan = (REPO / "docs" / "october-2026.html").read_text(encoding="utf-8")
-    # A plan page: every goal names its exit evidence and starts as planned.
-    assert plan.count('<span class="tag plan">planned</span>') == plan.count("<tr><td>G")
+    # A plan page: every goal row carries exactly one status tag.
+    import re
+    rows = re.findall(r"<tr><td>G\d</td>.*?</tr>", plan, re.S)
+    assert len(rows) == 7
+    tags = r'<span class="tag (plan|prog|done)">(planned|in progress|done|slipped)</span>'
+    assert all(len(re.findall(tags, r)) == 1 for r in rows)

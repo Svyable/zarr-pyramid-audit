@@ -80,6 +80,8 @@ footer a{color:var(--muted)}
 .goals td{font-size:.84rem}
 .tag{display:inline-block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:.1rem .5rem;color:var(--muted);margin-left:.3rem}
 .tag.plan{color:var(--amber);border-color:#4c3a24}
+.tag.prog{color:var(--gold);border-color:#5b4934}
+.tag.done{color:var(--good);border-color:#2f4a31}
 .phase{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-top:.8rem}
 .phase .point{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:1rem}
 .phase .point .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ember);font-weight:800}
@@ -144,11 +146,14 @@ triangular meshes are not audited; ScrolIQ pins a commit that predates the tifxy
 <div class="panel" id="goals"><h2>October goals</h2>
 <p>Ordered by how much a reader of our numbers depends on them. Each row's last column is the definition of done.</p>
 <div class="tablewrap"><table class="goals"><thead><tr><th>#</th><th>goal</th><th>why now</th><th>done when (committed evidence)</th></tr></thead><tbody>
-<tr><td>G1</td><td><b>Re-verify live state on both hosts</b><span class="tag plan">planned</span></td>
+<tr><td>G1</td><td><b>Re-verify live state on both hosts</b><span class="tag prog">in progress</span></td>
 <td>Every live claim is dated. The dl campaigns stop at 2026-09-30 because <code>dl.ash2txt.org</code> was unreachable
 from the 2026-10-01 environment.</td>
 <td>A dated <code>artifacts/2026-10-*-dl-regression/</code> re-running the 2026-09-09 root list with a strict diff
-(fixed / new / unchanged), and a dated S3 re-audit. Whatever the result, it is published.</td></tr>
+(fixed / new / unchanged), and a dated S3 re-audit. Whatever the result, it is published.<br>
+<b>2026-10-01:</b> S3 half done
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a>). dl half blocked: the
+environment's network policy refuses <code>dl.ash2txt.org</code>.</td></tr>
 <tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag plan">planned</span></td>
 <td><code>SHARD_INDEX_CHECKSUM_MISMATCH</code> is <code>low</code> because it has never seen a live shard; a writer that
 skips or computes the checksum differently would look like corruption.</td>
@@ -212,6 +217,13 @@ quoted. Publishing to PyPI only with the maintainer's explicit approval.</td></t
 <div class="panel" id="status"><h2>Status log</h2>
 <table><thead><tr><th>date</th><th>change</th></tr></thead><tbody>
 <tr><td>2026-10-01</td><td>Plan set. G1–G7 planned; none started.</td></tr>
+<tr><td>2026-10-01</td><td><b>G1, S3 half done.</b> Fresh crawl and header-only audit of the bucket: the same
+957 roots and 1,539 tifxyz surfaces as before; 956 clean, 1 defective; against 2026-09-29, 0 findings fixed,
+0 new, 6 unchanged, and all 5,348 levels unchanged. The PHerc0814 <code>-L1</code> pyramid still has no chunk
+keys at any level at 07:32 UTC
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a>).
+<b>dl half blocked:</b> <code>dl.ash2txt.org</code> is refused by the build environment's network policy; it
+needs an environment that can reach the host.</td></tr>
 </tbody></table></div>
 
 </div>

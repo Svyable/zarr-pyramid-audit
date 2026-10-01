@@ -100,6 +100,11 @@ Migration notes for consumers:
   that counts as done, and the dashboard, README and SUBMISSION.md link to it.
   Dashboard tables now scroll inside their panels, so the page no longer
   scrolls sideways at phone width.
+- `artifacts/2026-10-01-s3-regression/` (October goal G1, S3 half): fresh
+  crawl and audit of the bucket, a strict diff against 2026-09-29 (0 fixed,
+  0 new, 6 unchanged), and a level-by-level comparison (5,348 unchanged).
+  `regression_diff.py` there also reproduces the published 2026-09-29 dl
+  regression from committed files. The dl.ash2txt.org half is pending.
 
 ### Contract 1.1.0 — OME-NGFF conformance codes
 

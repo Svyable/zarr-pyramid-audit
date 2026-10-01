@@ -1,0 +1,24 @@
+{
+ "baseline": "artifacts/2026-09-29-s3",
+ "current": "artifacts/2026-10-01-s3-regression",
+ "defective_roots": {
+  "baseline": 1,
+  "current": 1
+ },
+ "findings_in_common_roots": {
+  "fixed": 0,
+  "new": 0,
+  "unchanged": 6
+ },
+ "fixed": [],
+ "new": [],
+ "on_new_roots": [],
+ "on_new_roots_by_code": {},
+ "roots": {
+  "added": [],
+  "baseline": 957,
+  "common": 957,
+  "current": 957,
+  "dropped": []
+ }
+}
