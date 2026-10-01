@@ -231,6 +231,8 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     64 scroll volumes, <b>{v2_pop}</b> raw/Blosc chunks across 128 dl roots —
     <b>0 all-empty levels</b> in the training data. One present-but-empty mesh
     derivative caught in <code>other/dev/</code> (medium, human review).</p></div>
+  <div class="card"><h3>Surface-volume window evidence</h3>
+    <p><code>zpa-surface-depth-profile</code> checks the rendered ink-model input stack itself: expected slice count, deterministic per-depth signal/texture, sampled all-zero layers, duplicate sampled-layer digests, and exact source-volume lineage. It reports evidence rather than pretending these observations prove ink.</p></div>
 </section>
 
 <div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
@@ -246,7 +248,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
       <p>The scheduled workflow exercises anonymous public data: a clean gate pass, a known-defect rejection, and a sampled chunk-content decode.</p>
       <p><a href="{repo}/actions/workflows/audit.yml">Real-data verification workflow →</a></p></div>
   </div>
-  <div class="gatebox"><b>Grand Prize preflight:</b> use the same gate on the exact prize-eligible CT, surface, and derived Zarr inputs before expensive geometry or ink work. A silent storage defect should fail before it can contaminate an unrolling campaign.</div>
+  <div class="gatebox"><b>Grand Prize preflight:</b> use the same gate on the exact prize-eligible CT, surface, and derived Zarr inputs before expensive geometry or ink work. A silent storage defect should fail before it can contaminate an unrolling campaign. Before 2.5D ink inference, run <code>zpa-surface-depth-profile</code> on the rendered stack to pin the slice count, source volume, sampled depth integrity, and depth profile. <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/surface-depth-profile.md">Protocol →</a></div>
 </div>
 
 <div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>

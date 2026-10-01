@@ -33,6 +33,7 @@ zpa-count-chunks = "zpa.count_chunks:main"
 zpa-dashboard = "zpa.build_dashboard:main"
 zpa-known-defects = "zpa.build_known_defects:main"
 zpa-surface-support = "zpa.surface_support:main"
+zpa-surface-depth-profile = "zpa.surface_depth_profile:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
