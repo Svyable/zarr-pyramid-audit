@@ -5,8 +5,8 @@ with the expected structured output committed next to it. They pin the
 evidence contract (missing ≠ empty ≠ zero-filled; UNKNOWN is never clean)
 and make any behaviour change show up as a reviewable diff.
 
-Corpus version: **1** · report schema: **1.0.0** ·
-38 on-disk cases, 8 replayed-HTTP cases,
+Corpus version: **1** · report schema: **1.1.0** ·
+42 on-disk cases, 8 replayed-HTTP cases,
 19 byte-range cases.
 
 ## Layout
@@ -51,7 +51,7 @@ zpa-audit --base http://127.0.0.1:8000/ --root clean_v2.zarr --out-dir tmp/fx
 
 ```bash
 python fixtures/corpus.py build      # after editing a builder in corpus.py
-python fixtures/corpus.py expected   # after an intentional behaviour change
+python fixtures/corpus.py expected   # after an intentional behaviour change (also rewrites the table below)
 git diff fixtures/expected           # review every changed golden
 ```
 
@@ -76,13 +76,17 @@ removed or renamed.
 | `compressor_drift` | level 1 is blosc-compressed, levels 0 and 2 are raw | `COMPRESSOR_DRIFT` (low, PRESENT) | PASS | pass | populated |
 | `separator_drift` | level 1 uses '/' dimension_separator, others '.' | `SEPARATOR_DRIFT` (high, PRESENT) | FAIL | fail | populated |
 | `ndim_drift` | level 1 is 2-D inside a 3-D pyramid | `NDIM_DRIFT` (high, PRESENT) | FAIL | fail | populated |
-| `axes_mismatch` | two axes declared for 3-D arrays | `AXES_MISMATCH` (low, PRESENT) | PASS | pass | populated |
+| `axes_mismatch` | two axes declared for 3-D arrays | `AXES_MISMATCH` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT) | PASS | pass | populated |
 | `degenerate_level` | level 1 has a zero extent | `DEGENERATE_LEVEL` (high, PRESENT), `LEVEL_NO_CHUNKS` (high, ABSENT), `SCALE_SHAPE_MISMATCH` (high, PRESENT) | FAIL | fail | populated; `CHUNK_LEVEL_NO_CHUNKS` |
 | `chunk_exceeds_shape` | deepest level chunk exceeds its shape on every axis (benign info) | `CHUNK_EXCEEDS_SHAPE` (info, PRESENT) | PASS | pass | populated |
 | `physical_scale_unknown` | physical_size explicitly 'unknown', no contradicting claim (info) | `PHYSICAL_SCALE_UNKNOWN` (info, PRESENT) | PASS | pass | populated |
 | `physical_scale_contradiction_units` | physical_size 'unknown' but spatial axes declare micrometer units | `PHYSICAL_SCALE_CONTRADICTION` (high, PRESENT) | FAIL | fail | populated |
 | `physical_scale_contradiction_scale` | physical_size 'unknown' but level-0 spatial scale is not identity | `PHYSICAL_SCALE_CONTRADICTION` (high, PRESENT) | FAIL | fail | populated |
 | `physical_scale_unspecified` | no physical_size marker plus units and a real voxel size: nothing is guessed | — | PASS | pass | populated |
+| `ome_version_unmodelled` | declares OME-NGFF 0.6, newer than the audit models: conformance checks skipped (info) | `OME_VERSION_UNMODELLED` (info, PRESENT) | PASS | pass | populated |
+| `transform_scale_count` | level 1 declares two scale transforms (spec: exactly one) | `TRANSFORM_SCALE_COUNT` (low, PRESENT) | PASS | pass | populated |
+| `transform_arity` | level 1 translation has 2 entries for 3 axes | `TRANSFORM_ARITY` (low, PRESENT) | PASS | pass | populated |
+| `axes_invalid` | two axes share the name 'y' | `AXES_INVALID` (low, PRESENT) | PASS | pass | populated |
 | `multiscale_empty` | multiscales key present with an empty datasets list | `MULTISCALE_EMPTY` (high, PRESENT) | FAIL | fail | — |
 | `not_multiscale` | valid Zarr group that never claims to be a pyramid (info) | `NOT_MULTISCALE` (info, PRESENT) | PASS | pass | — |
 | `bare_array` | single-scale v2 array at the root (info) | `BARE_ARRAY` (info, PRESENT) | PASS | pass | — |

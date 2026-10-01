@@ -53,7 +53,7 @@ __all__ = [
     "load_schema", "validate_report", "contract", "contract_fingerprint",
 ]
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 TOOL = "zarr-pyramid-audit"
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}

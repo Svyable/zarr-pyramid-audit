@@ -81,6 +81,96 @@ def test_decode_real_chunk():
     assert vc.decode_block(b"\x00" * 16, 0, 0, 0) is None
 
 
+# ---- shard-index CRC32C verification -----------------------------------------
+# parse_index() deliberately skips the trailing checksum (pinned by
+# test_index_roundtrip above); verification is a separate, opt-in function.
+
+def _real_shard(tmp_path, *, index_location="end"):
+    """Have zarr-python write a real sharded array; return (raw shard, n_inner)."""
+    import numpy as np
+    import zarr
+    from zarr.codecs import BytesCodec, Crc32cCodec, ShardingCodec
+    arr = zarr.create_array(
+        zarr.storage.LocalStore(str(tmp_path)), shape=(8, 8, 8),
+        chunks=(8, 8, 8), dtype="u1", fill_value=0, zarr_format=3,
+        compressors=None,   # a default outer compressor would wrap the whole shard
+        serializer=ShardingCodec(
+            chunk_shape=(4, 4, 4), codecs=[BytesCodec()],
+            index_codecs=[BytesCodec(), Crc32cCodec()],
+            index_location=index_location),
+    )
+    arr[:] = np.arange(512, dtype="u1").reshape(8, 8, 8)
+    return (tmp_path / "c" / "0" / "0" / "0").read_bytes(), 8
+
+
+def test_crc32c_known_vector_and_empty():
+    assert vc.crc32c(b"123456789") == 0xE3069283   # CRC-32C check value
+    assert vc.crc32c(b"") == 0
+
+
+def test_pure_python_crc32c_agrees_with_the_fast_path():
+    import os
+    data = os.urandom(8196)
+    assert vc._crc32c_py(data) == vc.crc32c(data)
+    assert vc._crc32c_py(b"123456789") == 0xE3069283
+
+
+def test_verify_accepts_an_index_written_by_zarr_python(tmp_path):
+    raw, n = _real_shard(tmp_path)
+    size = vc.index_encoded_size(n, ["bytes", "crc32c"])
+    tail = raw[-size:]
+    assert vc.verify_index_checksum(tail, ["bytes", "crc32c"]) is True
+    # and the layout assumptions parse_index relies on agree with zarr's
+    entries = vc.parse_index(tail, n, ["bytes", "crc32c"])
+    assert entries is not None and len(entries) == n
+    assert all(o + ln <= len(raw) - size for o, ln in entries)
+
+
+def test_verify_rejects_a_flipped_index_byte(tmp_path):
+    raw, n = _real_shard(tmp_path)
+    size = vc.index_encoded_size(n, ["bytes", "crc32c"])
+    tail = bytearray(raw[-size:])
+    tail[5] ^= 0x01                       # corrupt one offset byte
+    assert vc.verify_index_checksum(bytes(tail), ["bytes", "crc32c"]) is False
+    # parse_index still "succeeds" -- exactly the silent failure this closes
+    assert vc.parse_index(bytes(tail), n, ["bytes", "crc32c"]) is not None
+
+
+def test_verify_rejects_a_corrupted_stored_checksum(tmp_path):
+    raw, n = _real_shard(tmp_path)
+    size = vc.index_encoded_size(n, ["bytes", "crc32c"])
+    tail = bytearray(raw[-size:])
+    tail[-1] ^= 0xFF
+    assert vc.verify_index_checksum(bytes(tail), ["bytes", "crc32c"]) is False
+
+
+def test_verify_ignores_corruption_outside_the_index(tmp_path):
+    # The CRC covers the index only; chunk payload damage is a different
+    # failure (caught by decoding) and must not be reported as an index fault.
+    raw, n = _real_shard(tmp_path)
+    size = vc.index_encoded_size(n, ["bytes", "crc32c"])
+    damaged = bytearray(raw)
+    damaged[3] ^= 0xFF
+    assert vc.verify_index_checksum(bytes(damaged[-size:]),
+                                    ["bytes", "crc32c"]) is True
+
+
+def test_verify_is_not_applicable_without_a_crc32c_codec():
+    raw = b"\x00" * (16 * 8)
+    assert vc.verify_index_checksum(raw, ["bytes"]) is None
+
+
+def test_verify_too_short_to_hold_a_checksum_is_a_mismatch():
+    assert vc.verify_index_checksum(b"\x00\x01", ["bytes", "crc32c"]) is False
+
+
+def test_parse_zarr_json_reads_index_location():
+    assert vc.parse_zarr_json(_meta()).index_location == "end"   # default
+    meta = _meta()
+    meta["codecs"][0]["configuration"]["index_location"] = "start"
+    assert vc.parse_zarr_json(meta).index_location == "start"
+
+
 # ---- shard-index reads go through the strict suffix read --------------------
 
 from zpa.chunkscan import probe_level_volcomp_sharded  # noqa: E402

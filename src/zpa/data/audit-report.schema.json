@@ -22,7 +22,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "tool": {
       "type": "string",
@@ -161,6 +161,7 @@
       "enum": [
         "ACCESS_UNKNOWN",
         "AUDIT_ERROR",
+        "AXES_INVALID",
         "AXES_MISMATCH",
         "BARE_ARRAY",
         "CHUNK_EXCEEDS_SHAPE",
@@ -182,12 +183,15 @@
         "NDIM_DRIFT",
         "NOT_A_ZARR_GROUP",
         "NOT_MULTISCALE",
+        "OME_VERSION_UNMODELLED",
         "PHYSICAL_SCALE_CONTRADICTION",
         "PHYSICAL_SCALE_UNKNOWN",
         "ROOT_ABSENT",
         "SCALE_NONMONOTONIC",
         "SCALE_SHAPE_MISMATCH",
-        "SEPARATOR_DRIFT"
+        "SEPARATOR_DRIFT",
+        "TRANSFORM_ARITY",
+        "TRANSFORM_SCALE_COUNT"
       ]
     },
     "int_list_or_null": {

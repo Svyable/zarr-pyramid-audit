@@ -27,7 +27,42 @@ needs, in the same PR:
 
 ## Unreleased
 
-_Nothing yet._
+### Contract 1.1.0 — OME-NGFF conformance codes
+
+`contract-fingerprint: 569547603cf1`
+
+Minor schema bump (`schema_version` `1.1.0`): four codes added, none changed
+or removed, no field changes. Migration notes for consumers:
+
+- **New audit codes**, all non-blocking (`integrity` stays `PASS` unless
+  something else fires), each isolated by a fixture:
+  - `TRANSFORM_SCALE_COUNT` (`low`) — a dataset declares zero or several
+    `scale` transforms; NGFF requires exactly one (`transform_scale_count`).
+  - `TRANSFORM_ARITY` (`low`) — a `scale`/`translation` length differs from
+    the axes count, or the array ndim when no axes are declared
+    (`transform_arity`).
+  - `AXES_INVALID` (`low`) — duplicate axis names, or typed axes outside
+    NGFF's count/order rules (`axes_invalid`).
+  - `OME_VERSION_UNMODELLED` (`info`) — a declared NGFF version newer than
+    0.5 (or unparseable); the conformance checks above are then skipped
+    instead of applying 0.4/0.5 rules to a different model
+    (`ome_version_unmodelled`).
+  They are `low` deliberately: the known corpus shows none of them, so
+  there is no evidence yet that they mean "do not train". Raising any of
+  them is a further contract change.
+- **Existing golden changed:** `axes_mismatch` (2 axes on 3-D arrays) now
+  also reports `TRANSFORM_ARITY` on each level, because its 3-entry scales
+  disagree with its 2 axes. Integrity is unchanged (`PASS`).
+- **New chunk-probe code** `SHARD_INDEX_CHECKSUM_MISMATCH` (`low`): a
+  volcomp shard index whose CRC32C does not match is not sampled (its
+  offsets are untrusted); other shards still are. The run summary gains an
+  `index_crc` tally separating `verified` from `unchecksummed`, so a clean
+  run is only clean where it says `verified`. Shards whose index sits at the
+  start (`index_location: start`) are reported `undecodable` rather than
+  misread. Not in the report schema (chunk-probe output is a CSV).
+- `zpa.chunkscan` now exports `STATUS_CODES` / `FALLBACK_STATUS_CODE`;
+  `zpa.scan_empty_chunks.SAMPLE_FINDINGS` / `FALLBACK_FINDING` are derived
+  from them for compatibility.
 
 ## 0.4.0 — 2026-10-01
 

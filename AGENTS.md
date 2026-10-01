@@ -160,7 +160,10 @@ endpoint is unreachable from some networks, including some sandboxes).
 2. **Volcomp chunks decode over HTTP byte ranges.** Shard indexes are parsed
    with `zpa/volcomp.py`; never assume zarr-python can read them. The
    vendored decoder is Linux x86-64 only — on other platforms set
-   `$VOLCOMP_LIB`.
+   `$VOLCOMP_LIB`. `parse_index` only *strips* the index's crc32c;
+   `verify_index_checksum` checks it (a mismatch is the low-severity
+   `SHARD_INDEX_CHECKSUM_MISMATCH`, not proof of corruption). Indexes with
+   `index_location: "start"` are refused, not read from the shard tail.
 3. **Full-v2 campaigns:** every level must be accounted for as decoded
    evidence, confirmed chunklessness, or explicit coverage gap. Never claim
    "all levels probed" without the coverage table.

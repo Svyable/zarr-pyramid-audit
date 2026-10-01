@@ -23,7 +23,7 @@ detail strings and environment-specific values (paths, tool version).
 Regenerate after an intentional change, then review the diff:
 
     python fixtures/corpus.py build            # rewrite zarr/ trees
-    python fixtures/corpus.py expected         # rewrite expected/*.json
+    python fixtures/corpus.py expected         # rewrite expected/*.json + README table
 """
 
 from __future__ import annotations
@@ -202,6 +202,31 @@ def _phys(marker, *, units=False, base=S1):
         axes=axes, extra_ms={"metadata": {"physical_size": marker}})
 
 
+def _with_datasets(path, mutate):
+    """Build the clean pyramid, then edit its multiscales datasets in place."""
+    pyramid(path, _clean_levels())
+    zattrs = os.path.join(path, ".zattrs")
+    with open(zattrs, encoding="utf-8") as fh:
+        attrs = json.load(fh)
+    mutate(attrs["multiscales"][0])
+    _dump(zattrs, attrs)
+
+
+def _two_scales_on_level_1(ms):
+    ms["datasets"][1]["coordinateTransformations"].append(
+        {"type": "scale", "scale": S2})
+
+
+def _short_translation_on_level_1(ms):
+    ms["datasets"][1]["coordinateTransformations"].append(
+        {"type": "translation", "translation": [0.5, 0.5]})
+
+
+def _duplicate_axis_name(ms):
+    ms["axes"] = [{"name": "z", "type": "space"}, {"name": "y", "type": "space"},
+                  {"name": "y", "type": "space"}]
+
+
 def _build_pyramid_case(path, spec):
     levels = spec.pop("levels")
     pyramid(path, levels, **spec)
@@ -264,6 +289,15 @@ ZARR_CASES = [
          p, [("0", [7.91] * 3, [8, 16, 16], C, {}),
              ("1", [15.82] * 3, [4, 8, 8], C, {"seed": 1})],
          axes=[{**a, "unit": "micrometer"} for a in AXES3])),
+    ("ome_version_unmodelled",
+     "declares OME-NGFF 0.6, newer than the audit models: conformance checks skipped (info)",
+     lambda p: pyramid(p, _clean_levels(), extra_ms={"version": "0.6"})),
+    ("transform_scale_count", "level 1 declares two scale transforms (spec: exactly one)",
+     lambda p: _with_datasets(p, _two_scales_on_level_1)),
+    ("transform_arity", "level 1 translation has 2 entries for 3 axes",
+     lambda p: _with_datasets(p, _short_translation_on_level_1)),
+    ("axes_invalid", "two axes share the name 'y'",
+     lambda p: _with_datasets(p, _duplicate_axis_name)),
     ("multiscale_empty", "multiscales key present with an empty datasets list",
      lambda p: v2_group(p, [], attrs={"multiscales": [{"version": "0.4",
                                                        "datasets": []}]})),
@@ -518,12 +552,48 @@ def write_expected() -> None:
         _dump(os.path.join(EXPECTED_DIR, f"{name}.json"), compute(name))
 
 
+def case_table() -> str:
+    """The README's case table, rendered from the committed goldens."""
+    rows = ["| case | property isolated | findings (severity, evidence) "
+            "| integrity | gate | chunk probe |",
+            "|---|---|---|---|---|---|"]
+    for name in all_case_names():
+        with open(os.path.join(EXPECTED_DIR, f"{name}.json"), encoding="utf-8") as fh:
+            g = json.load(fh)
+        findings = ", ".join(
+            f"`{f['code']}` ({f['severity']}, {f['evidence_state']})"
+            for f in g["findings"]) or "—"
+        scan = "—"
+        if "chunk_scan" in g:
+            statuses = sorted({x for lv in g["chunk_scan"] for x in lv["samples"]})
+            codes = sorted({c for lv in g["chunk_scan"] for c in lv["level_codes"]})
+            scan = ", ".join(statuses) + (
+                "; " + ", ".join(f"`{c}`" for c in codes) if codes else "")
+            scan = scan or "—"
+        rows.append(f"| `{name}` | {g['property']} | {findings} | "
+                    f"{g['integrity']} | {g['gate']['verdict']} | {scan} |")
+    return "\n".join(rows) + "\n"
+
+
+def write_readme_table() -> None:
+    """Replace everything after '## Cases' in fixtures/README.md."""
+    path = os.path.join(HERE, "README.md")
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    head = text[:text.index("## Cases")]
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(head + "## Cases\n\n" + case_table())
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv == ["build"]:
         build()
     elif argv == ["expected"]:
         write_expected()
+        write_readme_table()
+    elif argv == ["readme"]:
+        write_readme_table()
     else:
         print(__doc__)
         return 2

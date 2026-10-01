@@ -53,6 +53,10 @@ CODE_BLURB = {
     "METADATA_UNREADABLE": "metadata exists but could not be decoded",
     "PHYSICAL_SCALE_UNKNOWN": "metadata says absolute physical size is unknown — informational",
     "PHYSICAL_SCALE_CONTRADICTION": "physical size marked unknown but metadata also claims an absolute scale",
+    "OME_VERSION_UNMODELLED": "declared OME-NGFF version is newer than the audit models — informational",
+    "TRANSFORM_SCALE_COUNT": "dataset declares zero or several scale transforms",
+    "TRANSFORM_ARITY": "scale/translation length does not match the axes",
+    "AXES_INVALID": "duplicate axis names, or typed axes out of NGFF count/order",
     "EMPTY_ZARR_DIR": "*.zarr directory with no contents",
     "NOT_A_ZARR_GROUP": "no .zgroup / zarr.json and nothing Zarr-like inside",
     "NOT_MULTISCALE": "valid Zarr group, never claimed to be a pyramid",
@@ -519,6 +523,8 @@ SEVERITY = {
     "NOT_A_ZARR_GROUP": "info", "NOT_MULTISCALE": "info",
     "BARE_ARRAY": "info", "CHUNK_EXCEEDS_SHAPE": "info",
     "PHYSICAL_SCALE_CONTRADICTION": "high", "PHYSICAL_SCALE_UNKNOWN": "info",
+    "OME_VERSION_UNMODELLED": "info", "TRANSFORM_SCALE_COUNT": "low",
+    "TRANSFORM_ARITY": "low", "AXES_INVALID": "low",
 }
 # Kept in lockstep with zpa.audit_pyramid.SEVERITY by tests/test_dashboard.py.
 # It is duplicated (not imported) so the Pages CI can regenerate the dashboard

@@ -54,8 +54,12 @@ class ChunkSample:
     chunk_index: tuple[int, ...]
     key: str
     status: str          # populated | empty | undecodable | fetch_error
+    #                      (+ missing | absent | index_checksum_mismatch)
     detail: str = ""
     bytes_fetched: int = 0
+    # Shard-index CRC32C evidence for sharded probes: "verified" |
+    # "mismatch" | "unchecksummed" (index has no crc32c codec); "" elsewhere.
+    index_crc: str = ""
 
 
 def sample_indices(grid: list[int], k: int) -> list[tuple[int, ...]]:
@@ -413,6 +417,12 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
     if info.inner_codec != "volcomp":
         return fail("undecodable",
                     f"inner codec is {info.inner_codec!r}, not volcomp")
+    if info.index_location != "end":
+        # The probe fetches the shard tail; for a start-located index that is
+        # chunk payload, which would parse into garbage offsets.
+        return fail("undecodable",
+                    f"index_location={info.index_location!r} unsupported "
+                    f"(probe reads the index from the shard tail)")
 
     shard_grid = [max(1, (s + o - 1) // o)
                   for s, o in zip(info.shape, info.outer_chunks)]
@@ -447,6 +457,22 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
         entries = vc.parse_index(raw_index, n_inner, info.index_codecs)
         if entries is None:
             return fail("fetch_error", "shard index failed to parse", sc)
+        crc_ok = vc.verify_index_checksum(raw_index, info.index_codecs)
+        if crc_ok is False:
+            # The index parses but its offsets cannot be trusted, so no
+            # chunk payload is read from this shard. Other shards are still
+            # sampled. Not proof the data is bad -- a non-conforming writer
+            # would look the same -- hence a review flag, not a verdict.
+            out.append(ChunkSample(
+                root=root, level=level, chunk_index=sc,
+                key=f"{level}/c/" + "/".join(map(str, sc)),
+                status="index_checksum_mismatch",
+                detail=("shard index crc32c does not match its stored "
+                        "checksum; inner-chunk offsets untrusted, shard "
+                        "not sampled"),
+                bytes_fetched=len(raw_index), index_crc="mismatch"))
+            continue
+        index_crc = "verified" if crc_ok else "unchecksummed"
         for ic in sample_indices(list(cps), inner_per_shard):
             flat = 0
             mult = 1
@@ -463,7 +489,8 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
                 out.append(ChunkSample(
                     root=root, level=level, chunk_index=gic, key=key,
                     status="missing",
-                    detail="inner chunk absent from shard index"))
+                    detail="inner chunk absent from shard index",
+                    index_crc=index_crc))
                 continue
             try:
                 blob = store.get_range(skey, off, ln)
@@ -472,7 +499,7 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
                 out.append(ChunkSample(
                     root=root, level=level, chunk_index=gic, key=key,
                     status="fetch_error", detail=f"chunk fetch failed: {exc}",
-                    bytes_fetched=fetched))
+                    bytes_fetched=fetched, index_crc=index_crc))
                 fetched = 0
                 continue
             # cheap first pass: decode the central 16^3 block only
@@ -501,7 +528,8 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
                               f"fill ({fill_value!r}); {len(blob)} stored bytes")
             out.append(ChunkSample(root=root, level=level, chunk_index=gic,
                                    key=key, status=status, detail=detail,
-                                   bytes_fetched=fetched))
+                                   bytes_fetched=fetched,
+                                   index_crc=index_crc))
             fetched = 0
     return out
 
@@ -517,16 +545,23 @@ SCAN_SEVERITY = {
     "CHUNK_LEVEL_NO_SAMPLES": "info",
     "CHUNK_UNDECODEABLE": "low",
     "CHUNK_FETCH_ERROR": "low",
+    # low until a live run shows mismatches are rare: a non-conforming
+    # writer would flag every shard, and medium maps to CAUTION downstream.
+    "SHARD_INDEX_CHECKSUM_MISMATCH": "low",
     "CHUNK_SAMPLE_ALL_EMPTY": "medium",
 }
 
-_STATUS_CODE = {
+# Sample status -> finding code. Any other status (fetch_error) is
+# FALLBACK_STATUS_CODE.
+STATUS_CODES = {
     "populated": "CHUNK_SAMPLE_POPULATED",
     "empty": "CHUNK_SAMPLE_EMPTY",
     "missing": "CHUNK_SAMPLE_MISSING",
     "absent": "CHUNK_SAMPLE_ABSENT",
     "undecodable": "CHUNK_UNDECODEABLE",
+    "index_checksum_mismatch": "SHARD_INDEX_CHECKSUM_MISMATCH",
 }
+FALLBACK_STATUS_CODE = "CHUNK_FETCH_ERROR"
 
 
 def classify_level(root: str, level: str, has_chunks,
@@ -563,7 +598,7 @@ def classify_level(root: str, level: str, has_chunks,
                          "sampling"))
         return out, False
     for smp in samples:
-        emit(_STATUS_CODE.get(smp.status, "CHUNK_FETCH_ERROR"),
+        emit(STATUS_CODES.get(smp.status, FALLBACK_STATUS_CODE),
              ".".join(map(str, smp.chunk_index)), smp.detail,
              smp.bytes_fetched)
     decodable = [smp for smp in samples if smp.status in ("populated", "empty")]

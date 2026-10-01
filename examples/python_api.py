@@ -4,7 +4,7 @@
     python examples/python_api.py                      # offline, fixture corpus
     python examples/python_api.py s3://vesuvius-challenge-open-data/ <root> ...
 
-The stable surface (schema_version 1.0.0):
+The stable surface (schema_version 1.1.0):
 
   zpa.httpstore.open_store(base)  -> store for http(s)://, s3://, file:// or a path
   zpa.report.audit_root(store, root) -> report dict; never raises, never clean on error

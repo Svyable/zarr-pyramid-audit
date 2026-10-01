@@ -7,7 +7,7 @@ directory.
 metadata says it is: every declared level present and readable, shapes consistent with the declared
 scales, dtype/fill/codec/separator consistent across levels, chunk keys actually stored, physical-scale
 claims not self-contradictory. A sampled probe also checks whether stored chunks hold data. It emits
-evidence, not verdicts: a [versioned JSON report](docs/INTEGRATION.md#the-report-schema-100) per
+evidence, not verdicts: a [versioned JSON report](docs/INTEGRATION.md#the-report-schema-1x) per
 root, with every finding's code, severity and the evidence state it rests on (`PRESENT` / `ABSENT` /
 `UNKNOWN`), an integrity summary (`PASS` / `WARN` / `UNKNOWN` / `FAIL`), and a fail-closed CI gate.
 It **cannot** certify that voxels are semantically correct, that a sampled probe saw every chunk, or
@@ -103,10 +103,10 @@ group) and are never counted as defects.
 | tool | what it does | cost |
 |---|---|---|
 | `zpa-discover` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
-| `zpa-audit` | 26 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
+| `zpa-audit` | 30 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
 | `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`), on evidence it could not observe, and on roots that do not exist. `--format github` emits `::error`/`::warning` workflow annotations for CI; `--out` writes the versioned JSON report. `--base` may be a local staging directory. Proven live: fails on the header-only PHerc0814 surface volume, passes its populated sibling, fails a nonexistent path ([`2026-10-01-gate-proof`](artifacts/2026-10-01-gate-proof/)). | ~KB per pyramid |
-| `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
+| `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Each shard index's CRC32C is verified before its offsets are trusted: a failing index yields `SHARD_INDEX_CHECKSUM_MISMATCH` (low until validated on a live run — that shard is not sampled, and a non-conforming writer would look the same as corruption); the run summary's `index_crc` tally separates `verified` from `unchecksummed` (index declares no `crc32c`) so a clean run is only read as clean where it says `verified`. Shards with a start-located index are reported `undecodable` rather than misread. Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
 | `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
 | `zpa-bench` | Measures what an audit costs per root: wall time, store calls (metadata reads / listings / HEADs / chunk reads) and payload bytes, for the header audit and the sampled chunk probe separately. | the audit's own cost |
@@ -124,6 +124,7 @@ NOT_MULTISCALE                [info]   valid Zarr group, but not an OME pyramid
 CHUNK_EXCEEDS_SHAPE           [info]   chunk larger than the level itself on every axis
 ACCESS_UNKNOWN                [info]   attempted access could not establish presence or absence
 PHYSICAL_SCALE_UNKNOWN        [info]   metadata explicitly says absolute physical size is unknown
+OME_VERSION_UNMODELLED        [info]   declared OME-NGFF version is newer than 0.5 (or unparseable); the TRANSFORM_*/AXES_INVALID checks are skipped
 HEADERLESS_CHUNK_STORE        [high]   chunk keys present but no header -- undecodable
 METADATA_UNREADABLE           [high]   metadata exists but cannot be decoded
 MULTISCALE_EMPTY              [high]   declares multiscales but yields no usable datasets
@@ -141,10 +142,26 @@ MIXED_ROUNDING                [medium] ceil at some levels, floor at others
 FILL_DRIFT                    [medium] fill_value changes between levels
 COMPRESSOR_DRIFT              [low]    codec changes between levels
 AXES_MISMATCH                 [low]    declared axes count != array ndim
+TRANSFORM_SCALE_COUNT         [low]    dataset has zero or several scale transforms
+TRANSFORM_ARITY               [low]    scale/translation length != axes count (or array ndim)
+AXES_INVALID                  [low]    duplicate axis names, or typed axes out of NGFF count/order (2-5 axes, 2-3 space, time<channel<space)
 CONTAINER_NO_GROUP_HEADER     [low]    children are Zarr nodes but root has no group header
 ROOT_ABSENT                   [low]    requested Zarr root is confirmed absent
 EMPTY_ZARR_DIR                [low]    *.zarr directory with no contents
 ```
+
+`OME_VERSION_UNMODELLED`, `TRANSFORM_SCALE_COUNT`, `TRANSFORM_ARITY` and
+`AXES_INVALID` are OME-NGFF spec-conformance checks. They are `low`/`info` on
+purpose: the 2026-09-29 S3 audit
+(`artifacts/2026-09-29-s3/audit_pyramid.{levels,pyramids}.jsonl`) contains no
+level without a declared scale, no scale/array length mismatch and no duplicate
+axis names, so there is no corpus evidence yet that they mean "do not train". Reproduce with
+`python artifacts/log-2026-10-01/corpus_check.py`; the session log
+([`artifacts/log-2026-10-01/`](artifacts/log-2026-10-01/)) records the tests,
+mutation checks and what is still unverified on live data.
+They never fire on untyped axes, an undeclared version, or pre-0.4 metadata,
+and an unmodelled version (e.g. OME-Zarr 0.6 / RFC-5 coordinate systems) is
+reported rather than judged by 0.4/0.5 rules.
 
 The physical-scale checks are deliberately conservative. They do not guess whether
 a voxel size is plausible and they do not infer that an absolute scale is known
@@ -197,7 +214,7 @@ spend GPU or expert time on this volume?* — from opposite ends:
   `zpa.audit_pyramid.audit_one` (finding fields `code`, `severity`, `level`, `detail`), `zpa.volcomp`,
   and, new with contract 1.0.0, `zpa.report.audit_root` / `build_report`, which return a report
   validated by [`src/zpa/data/audit-report.schema.json`](src/zpa/data/audit-report.schema.json)
-  (`schema_version` 1.0.0). `tests/test_contract.py` pins the signatures, fields, severities and the
+  (`schema_version` 1.1.0). `tests/test_contract.py` pins the signatures, fields, severities and the
   recommended verdict mapping (`FAIL`/`UNKNOWN` → DO NOT TRAIN, `WARN` → CAUTION). Contract changes
   need a migration note in [`CHANGELOG.md`](CHANGELOG.md). Full guide, including where ScrolIQ's
   current rules differ (it reads `ACCESS_UNKNOWN` and `ROOT_ABSENT` as integrity PASS):

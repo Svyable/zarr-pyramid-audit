@@ -50,6 +50,27 @@
       "evidence_state": "PRESENT",
       "level": "0",
       "severity": "low"
+    },
+    {
+      "actionable": true,
+      "code": "TRANSFORM_ARITY",
+      "evidence_state": "PRESENT",
+      "level": "0",
+      "severity": "low"
+    },
+    {
+      "actionable": true,
+      "code": "TRANSFORM_ARITY",
+      "evidence_state": "PRESENT",
+      "level": "1",
+      "severity": "low"
+    },
+    {
+      "actionable": true,
+      "code": "TRANSFORM_ARITY",
+      "evidence_state": "PRESENT",
+      "level": "2",
+      "severity": "low"
     }
   ],
   "fixture": "axes_mismatch",

@@ -6,7 +6,7 @@
 #   <base>  a local staging directory, file://..., https://... or s3://...
 #   <root>  path of a Zarr root relative to <base>
 #
-# Writes zpa-preflight.json (schema_version 1.0.0; one full audit report per
+# Writes zpa-preflight.json (schema_version 1.1.0; one full audit report per
 # root, see src/zpa/data/audit-report.schema.json) and exits non-zero when any
 # root has a high-severity finding, unreadable evidence, or does not exist.
 #

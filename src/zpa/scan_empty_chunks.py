@@ -18,6 +18,11 @@ Findings:
   CHUNK_SAMPLE_MISSING     [info]   inner chunk absent from a v3 shard index
                                     (masked background legitimately unstored)
   CHUNK_SAMPLE_ABSENT      [info]   v2 chunk key not present (sparse level)
+  SHARD_INDEX_CHECKSUM_MISMATCH [low]    a v3 shard's index fails its crc32c;
+                                    its offsets are untrusted so that shard is
+                                    not sampled. Human review -- not proof the
+                                    data is bad (a non-conforming writer looks
+                                    the same)
   CHUNK_LEVEL_NO_CHUNKS    [info]   level holds no stored chunks at all
                                     (audit-flagged, probe-confirmed)
   CHUNK_LEVEL_NO_SAMPLES   [info]   sparse level the spread sampling could not
@@ -40,7 +45,8 @@ import random
 import sys
 from collections import Counter
 
-from zpa.chunkscan import (classify_level, probe_level,
+from zpa.chunkscan import (FALLBACK_STATUS_CODE, SCAN_SEVERITY,
+                            STATUS_CODES, classify_level, probe_level,
                             probe_level_v3_sharded,
                             probe_level_volcomp_sharded)  # noqa: E402
 from zpa.httpstore import open_store                        # noqa: E402
@@ -49,6 +55,15 @@ from zpa.runio import RunManifest, write_json               # noqa: E402
 
 FINDING_HEADER = ["code", "severity", "root", "level", "chunk",
                   "detail", "bytes_fetched"]
+
+# ChunkSample.status -> (finding code, severity). Anything not listed keeps
+# the historical CHUNK_FETCH_ERROR fallback, so a new status must be added
+# here deliberately or it will read as a network error.
+# Status -> (code, severity), kept for callers of the 0.4.0 CLI module;
+# derived from zpa.chunkscan, the single source of truth.
+SAMPLE_FINDINGS = {status: (code, SCAN_SEVERITY[code])
+                   for status, code in STATUS_CODES.items()}
+FALLBACK_FINDING = (FALLBACK_STATUS_CODE, SCAN_SEVERITY[FALLBACK_STATUS_CODE])
 
 
 def main() -> int:
@@ -110,6 +125,7 @@ def main() -> int:
     fd_path = os.path.join(out_dir, "scan_empty_chunks.findings.csv")
     sm_path = os.path.join(out_dir, "scan_empty_chunks.summary.json")
     codes = Counter()
+    index_crc_counts = Counter()   # verified | mismatch | unchecksummed | n/a
     bytes_total = 0
     levels_scanned = 0
     levels_all_empty = []
@@ -175,6 +191,8 @@ def main() -> int:
                 level_findings, all_empty = classify_level(
                     root, level, has_chunks, samples,
                     n_candidates=args.samples_per_level * 3)
+                for smp in samples:
+                    index_crc_counts[smp.index_crc or "n/a"] += 1
                 for f in level_findings:
                     bytes_total += int(f["bytes_fetched"] or 0)
                     w.writerow(f)
@@ -189,6 +207,9 @@ def main() -> int:
             "n_levels_all_empty": len(levels_all_empty),
             "bytes_fetched": bytes_total,
             "by_code": dict(codes.most_common()),
+            # Coverage of the shard-index checksum, per sample: absence of a
+            # mismatch finding only means something where this says verified.
+            "index_crc": dict(index_crc_counts.most_common()),
         }
         write_json(sm_path, summary)
         man.set("summary", summary)

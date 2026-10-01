@@ -164,6 +164,8 @@ COVERAGE_EXEMPT = {
     "CHUNK_SAMPLE_MISSING": "volcomp shard-index path only (tests/test_volcomp.py)",
     "CHUNK_SAMPLE_ABSENT": "probe_level skips absent keys; see sparse_level",
     "CHUNK_FETCH_ERROR": "transport failure; range-cases.json pins the reads",
+    "SHARD_INDEX_CHECKSUM_MISMATCH":
+        "volcomp shard-index path only (tests/test_chunkscan_index_checksum.py)",
 }
 
 _STATUS_CODE = {"populated": "CHUNK_SAMPLE_POPULATED",
@@ -220,8 +222,11 @@ def test_missing_empty_and_zero_filled_stay_distinct():
     assert scan("sparse_unsampled")["0"]["level_codes"] == ["CHUNK_LEVEL_NO_SAMPLES"]
 
 
-def test_fixture_readme_lists_every_case():
+def test_fixture_readme_matches_the_goldens():
     with open(os.path.join(REPO, "fixtures", "README.md"), encoding="utf-8") as fh:
         text = fh.read()
-    for name in ALL_NAMES:
-        assert f"| `{name}` |" in text, f"fixtures/README.md is missing {name}"
+    assert text.endswith("## Cases\n\n" + corpus.case_table()), (
+        "fixtures/README.md is stale: run python fixtures/corpus.py readme")
+    assert (f"{len(corpus.ZARR_CASES)} on-disk cases, "
+            f"{len(corpus.HTTP_CASES)} replayed-HTTP cases") in text
+    assert f"{len(RANGE_CASES)} byte-range cases" in " ".join(text.split())

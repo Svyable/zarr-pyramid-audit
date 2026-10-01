@@ -1,0 +1,113 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "1",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "2",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    }
+  ],
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 3,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 3,
+    "levels_present": 3,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TRANSFORM_SCALE_COUNT",
+      "evidence_state": "PRESENT",
+      "level": "1",
+      "severity": "low"
+    }
+  ],
+  "fixture": "transform_scale_count",
+  "gate": {
+    "codes": [],
+    "fail": false,
+    "verdict": "pass"
+  },
+  "integrity": "PASS",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        8,
+        8
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "2",
+      "present": true,
+      "shape": [
+        2,
+        4,
+        4
+      ]
+    }
+  ],
+  "max_severity": "low",
+  "property": "level 1 declares two scale transforms (spec: exactly one)",
+  "source": "zarr/transform_scale_count.zarr"
+}

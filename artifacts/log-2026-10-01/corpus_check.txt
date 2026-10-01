@@ -1,0 +1,6 @@
+present levels: 5348
+no declared scale: 0
+scale length != ndim: 0
+pyramids: 957
+duplicate axis names: 0
+axes length outside 2..5 (non-empty): 0

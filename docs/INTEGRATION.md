@@ -24,7 +24,7 @@ that does not exist / is empty (`GATE_ROOT_ABSENT`) · `2` usage error. The two
 escape hatches, `--ignore-unreadable` and `--allow-absent`, are explicit
 policy choices. Do not set them by default.
 
-## The report (schema 1.0.0)
+## The report (schema 1.x)
 
 `zpa.report.audit_root(store, root)` and `zpa-gate --out` (one per root)
 emit a report validated by
