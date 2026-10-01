@@ -105,7 +105,22 @@ PHYSICAL_SCALE_UNKNOWN    [info] metadata explicitly says absolute physical size
 PHYSICAL_SCALE_CONTRADICTION
                            physical_size=unknown conflicts with spatial units or
                            a non-identity level-0 spatial scale
+OME_VERSION_UNMODELLED    [info] declared OME-NGFF version is newer than 0.5 (or
+                           unparseable); the three checks below are skipped
+TRANSFORM_SCALE_COUNT     [low] dataset has zero or several scale transforms
+TRANSFORM_ARITY           [low] scale/translation length != axes count (or ndim)
+AXES_INVALID              [low] duplicate axis names, or typed axes out of NGFF
+                           count/order (2-5 axes, 2-3 space, time<channel<space)
 ```
+
+The last four are OME-NGFF spec-conformance checks. They are `low`/`info` on
+purpose: the 2026-09-29 S3 audit
+(`artifacts/2026-09-29-s3/audit_pyramid.{levels,pyramids}.jsonl`) contains no
+level without a declared scale, no scale/array length mismatch and no duplicate
+axis names, so there is no corpus evidence yet that they mean "do not train". They never fire on untyped
+axes, an undeclared version, or pre-0.4 metadata, and an unmodelled version
+(e.g. OME-Zarr 0.6 / RFC-5 coordinate systems) is reported rather than judged by
+0.4/0.5 rules.
 
 The physical-scale checks are deliberately conservative. They do not guess whether
 a voxel size is plausible and they do not infer that an absolute scale is known

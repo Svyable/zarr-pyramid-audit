@@ -45,6 +45,12 @@ CHECK CODES
                      is unknown; level scales are relative only
   PHYSICAL_SCALE_CONTRADICTION  metadata says physical size is unknown but also
                      carries spatial units or a non-identity base spatial scale
+  OME_VERSION_UNMODELLED [info] declared OME-NGFF version is newer than 0.5 (or
+                     unparseable); transform/axes conformance checks are skipped
+  TRANSFORM_SCALE_COUNT  [low] dataset has zero or several scale transforms
+  TRANSFORM_ARITY    [low] scale/translation length != axes count (or array ndim)
+  AXES_INVALID       [low] duplicate axis names, or typed axes out of NGFF
+                     count/order (2-5 axes, 2-3 space, time < channel < space)
 
 Outputs (into --out-dir; existing files are backed up, never overwritten):
     audit_pyramid.levels.jsonl    one record per pyramid level
@@ -65,6 +71,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 from collections import Counter
 
@@ -96,6 +103,11 @@ SEVERITY = {
     "EMPTY_ZARR_DIR": "low",
     "METADATA_UNREADABLE": "high",
     "PHYSICAL_SCALE_CONTRADICTION": "high",
+    # OME-NGFF spec conformance. Low on purpose: the known corpus shows none
+    # of these, so there is no evidence yet that they mean "do not train".
+    "TRANSFORM_SCALE_COUNT": "low",
+    "TRANSFORM_ARITY": "low",
+    "AXES_INVALID": "low",
 }
 
 # Codes that describe what a node IS, not that anything is wrong. They are
@@ -107,7 +119,7 @@ SEVERITY = {
 # of constant chunking, not a defect.
 INFO_CODES = {"NOT_A_ZARR_GROUP", "NOT_MULTISCALE", "BARE_ARRAY",
               "CHUNK_EXCEEDS_SHAPE", "ACCESS_UNKNOWN",
-              "PHYSICAL_SCALE_UNKNOWN"}
+              "PHYSICAL_SCALE_UNKNOWN", "OME_VERSION_UNMODELLED"}
 for _c in INFO_CODES:
     SEVERITY[_c] = "info"
 
@@ -129,6 +141,147 @@ def _first_multiscale(attrs: dict) -> dict:
     if isinstance(ms, list) and ms and isinstance(ms[0], dict):
         return ms[0]
     return {}
+
+
+# Newest OME-NGFF version whose multiscales model this audit understands. 0.6
+# (RFC-5) replaces per-dataset scale/translation with coordinate systems and
+# transformation sequences, so the transform checks below do not apply to it.
+_MODELLED_OME_MAX = (0, 5)
+_VERSION_RE = re.compile(r"^(\d+)\.(\d+)(?:\.\d+)?$")
+_TRANSFORM_PAYLOAD = {"scale": "scale", "translation": "translation"}
+
+
+def _ome_version(attrs: dict, ms: dict) -> tuple[object, tuple[int, int] | None, bool]:
+    """Return (raw, parsed, unmodelled) for the declared NGFF version.
+
+    The version lives under the top-level ``ome`` key from 0.5 and inside the
+    multiscales block before that. An absent version is not a finding: many
+    producers never declare one. A declared version that cannot be parsed, or
+    is newer than ``_MODELLED_OME_MAX``, is *unmodelled* -- the audit says so
+    instead of judging the pyramid by rules from a different model.
+    """
+    ome = attrs.get("ome")
+    if isinstance(ome, dict) and "version" in ome:
+        raw = ome["version"]
+    elif "version" in ms:
+        raw = ms["version"]
+    else:
+        # No version, but coordinateSystems is the 0.6 data model's marker.
+        return None, None, "coordinateSystems" in ms
+    match = _VERSION_RE.match(raw) if isinstance(raw, str) else None
+    if match is None:
+        return raw, None, True
+    parsed = (int(match.group(1)), int(match.group(2)))
+    return raw, parsed, parsed > _MODELLED_OME_MAX
+
+
+def _axes_violations(axes_raw: list) -> list[str]:
+    """NGFF 0.4/0.5 axes rules, applied only where the metadata is explicit.
+
+    Untyped axes (legacy strings, or dicts with no ``type``) are never judged
+    on type; a null/custom type occupies the single channel-or-custom slot.
+    """
+    names: list[str] = []
+    types: list[object] = []
+    for a in axes_raw:
+        if isinstance(a, dict):
+            names.append(str(a.get("name", "?")))
+            types.append(a.get("type"))
+        else:
+            names.append(str(a))
+            types.append(None)
+    out: list[str] = []
+    dups = sorted({n for n in names if names.count(n) > 1})
+    if dups:
+        out.append("duplicate axis names: " + ", ".join(dups))
+    if names and not 2 <= len(names) <= 5:
+        out.append(f"axes length {len(names)} is outside 2..5")
+    if any(isinstance(t, str) and t for t in types):
+        n_space, n_time = types.count("space"), types.count("time")
+        n_other = len(types) - n_space - n_time
+        if n_space not in (2, 3):
+            out.append(f"{n_space} space axes (need 2 or 3)")
+        if n_time > 1:
+            out.append(f"{n_time} time axes (at most 1)")
+        if n_other > 1:
+            out.append(f"{n_other} channel/custom axes (at most 1)")
+        rank = [0 if t == "time" else 2 if t == "space" else 1 for t in types]
+        if rank != sorted(rank):
+            out.append("axes not ordered time, channel/custom, space: "
+                       + ",".join(f"{n}:{t or 'none'}" for n, t in zip(names, types)))
+    return out
+
+
+def _spec_conformance(pm) -> tuple[list[tuple], object]:
+    """Header-only OME-NGFF conformance findings and the declared version.
+
+    Returns ``([(code, level, detail, observed, expected), ...], version)``.
+    Reads only the already-fetched multiscales block, so it costs no requests.
+    """
+    ms = _first_multiscale(pm.attrs_raw)
+    raw, parsed, unmodelled = _ome_version(pm.attrs_raw, ms)
+    out: list[tuple] = []
+    if unmodelled:
+        out.append((
+            "OME_VERSION_UNMODELLED", None,
+            f"declared OME-NGFF version is newer than the audit models "
+            f"(<= {_MODELLED_OME_MAX[0]}.{_MODELLED_OME_MAX[1]}); transform and "
+            f"axes conformance checks were not applied",
+            repr(raw) if raw is not None else "coordinateSystems present",
+            f"<= {_MODELLED_OME_MAX[0]}.{_MODELLED_OME_MAX[1]}"))
+        return out, raw
+
+    axes_raw = ms.get("axes") if isinstance(ms.get("axes"), list) else []
+    violations = _axes_violations(axes_raw)
+    if violations:
+        out.append(("AXES_INVALID", None, "; ".join(violations),
+                    json.dumps(axes_raw, sort_keys=True),
+                    "2-5 uniquely named axes ordered time, channel/custom, space"))
+
+    datasets = [d for d in (ms.get("datasets") or []) if isinstance(d, dict)]
+    has_transforms = any("coordinateTransformations" in d for d in datasets)
+    # Before 0.4 there was no coordinateTransformations at all; with no
+    # declared version, only hold a pyramid to the model it visibly uses.
+    if parsed is not None:
+        transforms_apply = parsed >= (0, 4)
+    else:
+        transforms_apply = has_transforms
+    if not transforms_apply:
+        return out, raw
+
+    by_path = {l.path: l for l in pm.levels}
+    for i, ds in enumerate(datasets):
+        path = str(ds.get("path", i))
+        ctl = ds.get("coordinateTransformations")
+        tfs = [t for t in ctl if isinstance(t, dict)] if isinstance(ctl, list) else []
+        n_scale = sum(1 for t in tfs if t.get("type") == "scale")
+        if n_scale != 1:
+            out.append((
+                "TRANSFORM_SCALE_COUNT", path,
+                f"dataset declares {n_scale} scale transforms; the spec requires "
+                f"exactly one, so consumers cannot place this level",
+                n_scale, 1))
+        lm = by_path.get(path)
+        want = len(axes_raw) or (len(lm.shape) if lm is not None and lm.shape else 0)
+        if not want:
+            continue
+        for t in tfs:
+            kind = _TRANSFORM_PAYLOAD.get(t.get("type"))
+            if kind is None:
+                continue
+            payload = t.get(kind)
+            if not isinstance(payload, (list, tuple)):
+                out.append((
+                    "TRANSFORM_ARITY", path,
+                    f"{kind} transform payload is not a list",
+                    repr(payload), f"list of {want} numbers"))
+            elif len(payload) != want:
+                out.append((
+                    "TRANSFORM_ARITY", path,
+                    f"{kind} has {len(payload)} entries but the "
+                    f"{'axes' if axes_raw else 'array'} has {want}",
+                    len(payload), want))
+    return out, raw
 
 
 def _physical_scale_contract(pm, base) -> tuple[dict, list[str]]:
@@ -349,6 +502,11 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
             "known physical size for absolute-distance use",
         )
 
+    # ---- OME-NGFF spec conformance (version-gated) -------------------------
+    spec_findings, ome_version = _spec_conformance(pm)
+    for code, level, detail, observed, expected in spec_findings:
+        add(code, level, detail, observed, expected)
+
     # ---- attribute drift across levels ------------------------------------
     def drift(attr_fn, code, label):
         vals = {}
@@ -440,6 +598,7 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         "evidence_state": getattr(pm, "evidence_state", None),
         "evidence_reason": getattr(pm, "evidence_reason", None),
         "base_shape": base.shape, "base_dtype": base.dtype,
+        "ome_version": ome_version,
         "physical_scale": physical_scale,
         "rounding": sorted(roundings),
         "undeclared_levels": pm.extra_level_dirs,
