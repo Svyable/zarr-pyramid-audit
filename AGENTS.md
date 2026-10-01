@@ -88,7 +88,9 @@ endpoint is unreachable from some networks, including some sandboxes).
 - `data/known-defects.json` — machine-readable defect kill list
 - `docs/` — GitHub Pages: `index.html` (**generated** by `build_dashboard.py`;
   edit the generator, never the HTML), and `september-2026.html`, which is
-  hand-written and frozen at the 2026-09-30 evidence
+  hand-written and frozen at the 2026-09-30 evidence; only dated, clearly
+  marked corrections of claims later found false (e.g. the 2026-10-01 gate
+  proof correction)
 - `artifacts/<date>-<name>/` — campaign outputs; the evidence behind
   published numbers. Each has a README/MD stating the command that made it.
 - `issues/` — drafts of issues filed against ScrollPrize/villa (index in
