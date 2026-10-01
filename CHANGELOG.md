@@ -50,9 +50,12 @@ or removed, no field changes. Migration notes for consumers:
   They are `low` deliberately: the known corpus shows none of them, so
   there is no evidence yet that they mean "do not train". Raising any of
   them is a further contract change.
-- **Existing golden changed:** `axes_mismatch` (2 axes on 3-D arrays) now
-  also reports `TRANSFORM_ARITY` on each level, because its 3-entry scales
-  disagree with its 2 axes. Integrity is unchanged (`PASS`).
+- **No existing golden changed.** `TRANSFORM_ARITY` is not reported where the
+  *axes list* is the odd one out: if the axes length differs from the array
+  ndim (`AXES_MISMATCH`) while the transform matches the array, that is one
+  root cause and it is reported once, not once per level. The `axes_mismatch`
+  fixture (2 axes on 3-D arrays) therefore keeps its original golden. A
+  transform that matches neither the axes nor the array is still flagged.
 - **New chunk-probe code** `SHARD_INDEX_CHECKSUM_MISMATCH` (`low`): a
   volcomp shard index whose CRC32C does not match is not sampled (its
   offsets are untrusted); other shards still are. The run summary gains an
