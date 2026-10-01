@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zarr-pyramid-audit"
-version = "0.3.0"
+version = "0.4.0"
 description = "Integrity auditing for OME-Zarr multiscale pyramids: find silent corruption before it burns GPU time"
 readme = "README.md"
 license = { text = "MIT" }

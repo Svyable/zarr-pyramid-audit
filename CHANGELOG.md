@@ -27,6 +27,14 @@ needs, in the same PR:
 
 ## Unreleased
 
+_Nothing yet._
+
+## 0.4.0 — 2026-10-01
+
+Package version 0.4.0 ships report contract (`schema_version`) 1.0.0. The two
+are versioned independently: the package version follows features and fixes,
+the schema version follows the report's shape and meaning.
+
 ### Contract 1.0.0 — first versioned contract
 
 `contract-fingerprint: 63b0a248b758`
@@ -89,3 +97,13 @@ Migration notes for consumers:
   audit and the chunk probe (`artifacts/2026-10-01-bench/`).
 - `examples/`: GitHub Actions gate job, local preflight script, Python API
   example. `docs/INTEGRATION.md`: integration guide and ScrolIQ surface.
+
+### Documentation
+
+- README leads with what ZPA audits, emits and cannot certify; adds
+  "Reproduce in 60 seconds", Limitations, the ScrolIQ integration surface and
+  the audit-cost benchmark table.
+- `docs/september-2026.html`: dated correction of the gate-proof claim (the
+  "clean sibling" path does not exist); the reproduce block now names the
+  populated sibling `2.399um-0.22m-78keV-volume-20260309142202.zarr`.
+- `artifacts/2026-09-30-gate-proof/README.md`: erratum, logs kept unchanged.
