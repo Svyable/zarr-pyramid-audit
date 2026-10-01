@@ -38,6 +38,7 @@ class LevelMeta:
     dimension_separator: str = "."
     zarr_format: int | None = None
     order: str | None = None
+    dimension_names: list | None = None     # zarr v3 arrays only
     present: bool = False
     error: str | None = None
     evidence_state: str = "UNKNOWN"
@@ -206,6 +207,8 @@ def _parse_v3_array(j: dict[str, Any]) -> dict[str, Any]:
         dimension_separator=sep,
         zarr_format=3,
         order=None,
+        dimension_names=(list(j["dimension_names"])
+                         if isinstance(j.get("dimension_names"), list) else None),
     )
 
 

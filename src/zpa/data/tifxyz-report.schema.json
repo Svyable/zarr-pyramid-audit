@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Svyable/zarr-pyramid-audit/blob/main/src/zpa/data/tifxyz-report.schema.json",
+  "title": "zarr-pyramid-audit tifxyz surface report",
+  "description": "One audited tifxyz surface (meta.json + x/y/z.tif). Produced by zpa.tifxyz.audit_surface / zpa-tifxyz. Same contract as the pyramid report: integrity UNKNOWN is never PASS; every finding carries the evidence state it rests on. Shares schema_version with audit-report.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool",
+    "tool_version",
+    "root",
+    "kind",
+    "evidence",
+    "integrity",
+    "max_severity",
+    "tiers",
+    "surface",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.2.0"
+    },
+    "tool": {
+      "type": "string",
+      "const": "zarr-pyramid-audit"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "const": "tifxyz"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "reason"
+      ],
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "integrity": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "WARN",
+        "UNKNOWN",
+        "FAIL"
+      ],
+      "description": "FAIL: any high finding. UNKNOWN: no high finding but no clean verdict can be issued (required evidence not observed, or nothing to audit: ROOT_ABSENT / EMPTY_ZARR_DIR). WARN: a medium finding. PASS: nothing above low and all required evidence observed."
+    },
+    "max_severity": {
+      "type": "string",
+      "enum": [
+        "none",
+        "info",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "header",
+        "content"
+      ],
+      "properties": {
+        "header": {
+          "type": "boolean"
+        },
+        "content": {
+          "type": "boolean",
+          "description": "content tier requested (--content); see surface.content_checked for whether it ran"
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meta",
+        "grid",
+        "channels",
+        "valid_fraction",
+        "data_bbox",
+        "content_checked"
+      ],
+      "properties": {
+        "meta": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "format/type/uuid/scale/bbox as declared in meta.json"
+        },
+        "grid": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "description": "[height, width] shared by x/y/z"
+        },
+        "channels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "state"
+            ],
+            "properties": {
+              "state": {
+                "$ref": "#/$defs/evidence_state"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "tiff": {
+                "type": "boolean"
+              },
+              "width": {
+                "type": "integer"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "bits": {
+                "type": "integer"
+              },
+              "sample_format": {
+                "type": "string"
+              },
+              "compression": {
+                "type": "integer"
+              },
+              "tiled": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "valid_fraction": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "data_bbox": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "[[xmin,ymin,zmin],[xmax,ymax,zmax]] of the valid stored points"
+        },
+        "content_checked": {
+          "type": "boolean"
+        },
+        "content_skipped": {
+          "type": "string"
+        },
+        "decoders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "builtin",
+              "tifffile"
+            ]
+          }
+        },
+        "bbox_points_outside": {
+          "type": "integer",
+          "description": "valid stored points outside the declared bbox (present only when the bbox mismatches)"
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "ABSENT",
+        "UNKNOWN"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "check_code": {
+      "type": "string",
+      "enum": [
+        "ACCESS_UNKNOWN",
+        "TIFXYZ_ABSENT",
+        "TIFXYZ_BBOX_MISMATCH",
+        "TIFXYZ_CHANNEL_MISSING",
+        "TIFXYZ_CHANNEL_SHAPE_MISMATCH",
+        "TIFXYZ_CONTENT_UNDECODED",
+        "TIFXYZ_EMPTY",
+        "TIFXYZ_INVALID_MASK_MISMATCH",
+        "TIFXYZ_META_INCOMPLETE",
+        "TIFXYZ_META_MISSING",
+        "TIFXYZ_META_UNREADABLE",
+        "TIFXYZ_NEGATIVE_COORDINATE",
+        "TIFXYZ_NONFINITE",
+        "TIFXYZ_SAMPLE_FORMAT",
+        "TIFXYZ_TIFF_UNREADABLE"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "level",
+        "detail",
+        "observed",
+        "expected",
+        "evidence_state",
+        "actionable"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/check_code"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "level": {
+          "type": "string",
+          "description": "meta.json, x.tif, y.tif, z.tif, or empty for a surface-wide finding"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "observed": {
+          "type": "string"
+        },
+        "expected": {
+          "type": "string"
+        },
+        "evidence_state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "actionable": {
+          "type": "boolean",
+          "description": "false for info codes that describe what a node is"
+        }
+      }
+    }
+  }
+}

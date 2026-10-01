@@ -27,6 +27,70 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Contract 1.2.0 — tifxyz surfaces; OME 0.5 dimension_names
+
+`contract-fingerprint: 08f47eac96db`
+
+Minor schema bump (`schema_version` `1.2.0`): a second report kind and new
+codes, nothing removed or renamed, the pyramid report's fields unchanged.
+Migration notes for consumers:
+
+- **New report kind `"tifxyz"`** from `zpa-tifxyz` /
+  `zpa.tifxyz.audit_surface`, validated by
+  `src/zpa/data/tifxyz-report.schema.json`. It has the same finding fields,
+  evidence states and `integrity` rules as the pyramid report, so an
+  existing consumer policy applies unchanged. `validate_report()` picks the
+  schema by `kind`; `load_schema(kind)` takes `"pyramid"` (default) or
+  `"tifxyz"`.
+- **New tifxyz codes** (`contract()["tifxyz_codes"]`), none `high`:
+  - medium: `TIFXYZ_META_MISSING`, `TIFXYZ_META_UNREADABLE`,
+    `TIFXYZ_CHANNEL_MISSING`, `TIFXYZ_TIFF_UNREADABLE`,
+    `TIFXYZ_CHANNEL_SHAPE_MISMATCH`, `TIFXYZ_EMPTY`;
+  - low: `TIFXYZ_ABSENT`, `TIFXYZ_META_INCOMPLETE`, `TIFXYZ_SAMPLE_FORMAT`,
+    `TIFXYZ_INVALID_MASK_MISMATCH`, `TIFXYZ_NONFINITE`,
+    `TIFXYZ_NEGATIVE_COORDINATE`, `TIFXYZ_BBOX_MISMATCH`;
+  - info: `TIFXYZ_CONTENT_UNDECODED` (coverage gap), `ACCESS_UNKNOWN`.
+
+  `TIFXYZ_ABSENT` joins `ROOT_ABSENT` / `EMPTY_ZARR_DIR` as "nothing to
+  audit": integrity `UNKNOWN`, never `PASS`. Each code is isolated by a
+  fixture in `fixtures/surfaces/`.
+- **Evidence for the severities**: all 1,539 tifxyz surfaces in the public
+  S3 bucket (`artifacts/2026-10-01-s3-tifxyz/`).
+  - Header tier: all structurally complete; none of the medium codes fires.
+  - Content tier on the 1,391 surfaces with channels ≤ 32 MiB: no empty
+    surface, no channel-mask disagreement, no non-finite coordinate.
+  - 161 `TIFXYZ_NEGATIVE_COORDINATE`, with metadata that honestly declares
+    the extent.
+  - 30 `TIFXYZ_BBOX_MISMATCH`: 28 where the `-1` invalid marker leaked into
+    the declared bbox minimum (one PHercParis4 batch), and 2 where stored
+    points lie outside the declared bbox.
+
+  That is review-grade evidence, not do-not-train evidence, so nothing is
+  above medium.
+- **New audit code `DIMENSION_NAMES_MISMATCH` (`low`)**: when OME-Zarr ≥ 0.5
+  is declared, every v3 array's `dimension_names` must equal the multiscales
+  axes names. It cannot fire on the S3 bucket, where every root declares 0.4
+  (`artifacts/2026-10-01-s3-conformance/`). Fixture:
+  `dimension_names_missing`.
+- `zpa-discover` writes `discover_zarr.surfaces.jsonl` (tifxyz surfaces seen
+  in listings, at no extra request cost). Existing outputs are unchanged.
+- `open_store()` and `LocalStore` accept `os.PathLike`.
+- New optional extra `[tifxyz]` (`tifffile`, `imagecodecs`) for the content
+  tier on tiled / LZW / predictor TIFFs. The header tier needs neither, and
+  neither does CI.
+
+### Evidence and documentation
+
+- `docs/SUBMISSION.md`: submission criteria mapped to the command, file or
+  artifact behind each claim, including the known gaps.
+- `artifacts/2026-10-01-baseline-comparison/` and
+  `fixtures/compare_baselines.py`: zarr-python and ome-zarr-models run on the
+  live PHerc0814 defect (the validator accepts it; zarr-python reads all zeros
+  without error) and on the fixture corpus, with the selection bias stated.
+- Fixture `clean_v3` now carries the `dimension_names` OME-Zarr 0.5 requires.
+  ome-zarr-models rejected the old version; ZPA did not, which led to
+  `DIMENSION_NAMES_MISMATCH` (contract 1.2.0 below).
+
 ### Contract 1.1.0 — OME-NGFF conformance codes
 
 `contract-fingerprint: 569547603cf1`

@@ -48,3 +48,18 @@ def test_dashboard_explains_the_scroliq_relationship(page):
         assert verdict in page
     # The legacy brand may only appear in the naming note, not as the product name.
     assert page.count("ScrollQ") == 1
+
+
+def test_tifxyz_panel_reads_the_committed_summary(tmp_path):
+    import json
+    summary = {"surfaces": 7, "by_integrity": {"PASS": 6, "WARN": 1},
+               "by_code": {"TIFXYZ_EMPTY": 1, "TIFXYZ_CONTENT_UNDECODED": 2},
+               "by_severity": {"medium": 1, "info": 2}}
+    p = tmp_path / "tifxyz.summary.json"
+    p.write_text(json.dumps(summary))
+    panel = build_dashboard.render_tifxyz_panel(str(p))
+    assert "<b>7</b> surfaces audited" in panel
+    assert "<b>6</b> integrity PASS" in panel and "1 WARN" in panel
+    assert "medium or above: <b>1</b>" in panel
+    assert "skipped on 2 surfaces" in panel
+    assert build_dashboard.render_tifxyz_panel(str(tmp_path / "absent.json")) == ""

@@ -1,0 +1,37 @@
+{
+  "consumer_verdict": "CAUTION",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_TIFF_UNREADABLE",
+      "evidence_state": "PRESENT",
+      "level": "z.tif",
+      "severity": "medium"
+    }
+  ],
+  "fixture": "tifxyz_tiff_unreadable",
+  "integrity": "WARN",
+  "kind": "tifxyz",
+  "max_severity": "medium",
+  "property": "z.tif is not a TIFF",
+  "source": "surfaces/tifxyz_tiff_unreadable.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": false,
+    "data_bbox": null,
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": null
+  }
+}

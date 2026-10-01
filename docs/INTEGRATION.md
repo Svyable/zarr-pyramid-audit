@@ -12,6 +12,7 @@ actually observed.
 |---|---|---|
 | Block a CI job on a bad root | [`examples/github-actions/zarr-gate.yml`](../examples/github-actions/zarr-gate.yml) | a `zarr-gate` job audits the published roots (header-only), annotates findings, uploads the JSON report; the downstream job `needs:` it |
 | Check before you upload, train or publish | [`examples/preflight.sh`](../examples/preflight.sh) | `zpa-gate` on a local staging directory or any store, writes `zpa-preflight.json`, exits 1 on high severity, unreadable evidence or a missing root |
+| Gate tifxyz surfaces before use | `zpa-tifxyz --base <store> --roots discover_zarr.surfaces.jsonl --content --fail-on medium --out-dir out/` | exits 1 when a surface has a medium finding or `UNKNOWN` integrity; one schema'd report per surface in `tifxyz.reports.jsonl` |
 | Feed a ranking / training pipeline | [`examples/python_api.py`](../examples/python_api.py) | calls `zpa.report.audit_root`, applies an example policy (drop FAIL/UNKNOWN, down-weight WARN) and keeps the evidence attached to each decision |
 
 All three run offline against the committed fixture corpus, and
@@ -70,6 +71,19 @@ its own codes. Its only non-informational flag, `CHUNK_SAMPLE_ALL_EMPTY`, is
 `medium` (a review flag). It reports a sample and does not prove the whole
 volume is populated.
 
+### tifxyz surfaces
+
+`zpa.tifxyz.audit_surface(store, root, content=...)` and `zpa-tifxyz`
+(`tifxyz.reports.jsonl`, one per surface) emit a second report kind,
+`"kind": "tifxyz"`, validated by
+[`src/zpa/data/tifxyz-report.schema.json`](../src/zpa/data/tifxyz-report.schema.json).
+It shares `schema_version`, the finding fields, the evidence states and the
+`integrity` rules with the pyramid report, so the same consumer policy
+applies unchanged. `zpa.report.validate_report(report)` picks the schema by
+`kind`. The `surface` block records the grid, the declared metadata, the
+valid-point fraction, the stored-coordinate bbox, whether the content tier
+actually ran (`content_checked`), and which decoder produced it.
+
 ## ScrolIQ integration surface
 
 [ScrolIQ](https://github.com/Svyable/scrollq) depends on this repo (never the
@@ -84,6 +98,7 @@ may rely on:
 | `zpa.volcomp` (shard-index parsing, vendored decoder) | stable |
 | `zpa.report.audit_root`, `build_report`, `integrity_of`, `consumer_verdict`, `SCHEMA_VERSION`, `contract()` | **new in contract 1.0.0**; versioned by `schema_version` |
 | `src/zpa/data/audit-report.schema.json` | versioned by `schema_version` (semver) |
+| `zpa.tifxyz.audit_surface`, `src/zpa/data/tifxyz-report.schema.json` | **new in contract 1.2.0**; same `schema_version` |
 
 `tests/test_contract.py` pins the signatures and finding fields above.
 

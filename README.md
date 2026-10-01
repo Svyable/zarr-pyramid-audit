@@ -14,6 +14,10 @@ It **cannot** certify that voxels are semantically correct, that a sampled probe
 that data it could not read is fine. Unreadable evidence stays `UNKNOWN` and is never reported as
 clean. See [Limitations](#limitations).
 
+**Reviewing a submission?** [`docs/SUBMISSION.md`](docs/SUBMISSION.md) maps each criterion to the command
+or artifact behind it, including how ZPA compares with zarr-python and the OME-NGFF validator on the
+same live defect ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)).
+
 ## Reproduce in 60 seconds
 
 One public store, one expected output
@@ -103,12 +107,13 @@ group) and are never counted as defects.
 | tool | what it does | cost |
 |---|---|---|
 | `zpa-discover` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
-| `zpa-audit` | 30 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
+| `zpa-audit` | 31 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
 | `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`), on evidence it could not observe, and on roots that do not exist. `--format github` emits `::error`/`::warning` workflow annotations for CI; `--out` writes the versioned JSON report. `--base` may be a local staging directory. Proven live: fails on the header-only PHerc0814 surface volume, passes its populated sibling, fails a nonexistent path ([`2026-10-01-gate-proof`](artifacts/2026-10-01-gate-proof/)). | ~KB per pyramid |
 | `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Each shard index's CRC32C is verified before its offsets are trusted: a failing index yields `SHARD_INDEX_CHECKSUM_MISMATCH` (low until validated on a live run — that shard is not sampled, and a non-conforming writer would look the same as corruption); the run summary's `index_crc` tally separates `verified` from `unchecksummed` (index declares no `crc32c`) so a clean run is only read as clean where it says `verified`. Shards with a start-located index are reported `undecodable` rather than misread. Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
 | `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
+| `zpa-tifxyz` | Audits **tifxyz surface patches** (`meta.json` + float32 `x/y/z.tif`), the Volume Cartographer segment format. Header tier (default): `meta.json` present and well-formed, the three channels present, valid TIFFs (classic or BigTIFF) on one grid, floating-point samples — read with strict range requests, no imaging library. Content tier (`--content`): the surface has valid points, channels agree on the `-1` invalid marker, coordinates are finite, and the declared `bbox` matches the stored coordinates. Tiled/LZW/predictor layouts decode via the optional `[tifxyz]` extra (`tifffile`); without it they are a reported coverage gap. `--fail-on` makes it a gate. | header: ~KB per surface; content: the three channels |
 | `zpa-bench` | Measures what an audit costs per root: wall time, store calls (metadata reads / listings / HEADs / chunk reads) and payload bytes, for the header audit and the sampled chunk probe separately. | the audit's own cost |
 | `zpa-dashboard` | Regenerates the [public dashboard](https://svyable.github.io/zarr-pyramid-audit/) (`docs/index.html`) from the committed artifacts; every number on it is read from `artifacts/`, none are hand-typed. | local files only |
 | `zpa-known-defects` | Regenerates `data/known-defects.json`, the machine-readable kill list of confirmed defective pyramids. | local files only |
@@ -145,13 +150,14 @@ AXES_MISMATCH                 [low]    declared axes count != array ndim
 TRANSFORM_SCALE_COUNT         [low]    dataset has zero or several scale transforms
 TRANSFORM_ARITY               [low]    scale/translation length != axes count (or array ndim)
 AXES_INVALID                  [low]    duplicate axis names, or typed axes out of NGFF count/order (2-5 axes, 2-3 space, time<channel<space)
+DIMENSION_NAMES_MISMATCH      [low]    OME-Zarr 0.5+: a v3 array's dimension_names are missing or differ from the axes names
 CONTAINER_NO_GROUP_HEADER     [low]    children are Zarr nodes but root has no group header
 ROOT_ABSENT                   [low]    requested Zarr root is confirmed absent
 EMPTY_ZARR_DIR                [low]    *.zarr directory with no contents
 ```
 
-`OME_VERSION_UNMODELLED`, `TRANSFORM_SCALE_COUNT`, `TRANSFORM_ARITY` and
-`AXES_INVALID` are OME-NGFF spec-conformance checks. They are `low`/`info` on
+`OME_VERSION_UNMODELLED`, `TRANSFORM_SCALE_COUNT`, `TRANSFORM_ARITY`,
+`AXES_INVALID` and `DIMENSION_NAMES_MISMATCH` are OME-NGFF spec-conformance checks. They are `low`/`info` on
 purpose: the 2026-09-29 S3 audit
 (`artifacts/2026-09-29-s3/audit_pyramid.{levels,pyramids}.jsonl`) contains no
 level without a declared scale, no scale/array length mismatch and no duplicate
@@ -170,6 +176,28 @@ explicitly unknown scale, or fail on metadata that simultaneously says the
 physical size is unknown while making an incompatible absolute-scale claim.
 This matters for generated scroll renders because an explicitly unknown physical
 scale cannot, by itself, support a trustworthy physical-distance scale bar.
+
+### tifxyz surface codes (`zpa-tifxyz`)
+
+| code | severity | fires when |
+|---|---|---|
+| `TIFXYZ_ABSENT` | low | nothing at the path: no `meta.json`, no channels (integrity `UNKNOWN`, never `PASS`) |
+| `TIFXYZ_META_MISSING` | medium | `meta.json` confirmed absent |
+| `TIFXYZ_META_UNREADABLE` | medium | `meta.json` present but not a JSON object |
+| `TIFXYZ_META_INCOMPLETE` | low | `format` is not `tifxyz`, or `scale` / `bbox` missing or malformed |
+| `TIFXYZ_CHANNEL_MISSING` | medium | `x.tif`, `y.tif` or `z.tif` confirmed absent |
+| `TIFXYZ_TIFF_UNREADABLE` | medium | a channel is not a parseable TIFF |
+| `TIFXYZ_CHANNEL_SHAPE_MISMATCH` | medium | the three channels disagree on the grid |
+| `TIFXYZ_SAMPLE_FORMAT` | low | samples are not single floating-point values |
+| `TIFXYZ_EMPTY` | medium | *(content)* no valid point at all: the surface has no geometry |
+| `TIFXYZ_INVALID_MASK_MISMATCH` | low | *(content)* cells that are `-1` in some channels but not all |
+| `TIFXYZ_NONFINITE` | low | *(content)* NaN/inf where the cell is not marked invalid |
+| `TIFXYZ_NEGATIVE_COORDINATE` | low | *(content)* valid points with a negative coordinate: outside any CT volume |
+| `TIFXYZ_BBOX_MISMATCH` | low | *(content)* declared `bbox` differs from the extent of the stored coordinates |
+| `TIFXYZ_CONTENT_UNDECODED` | info | *(content)* layout not decodable here, or over `--max-content-bytes`: a coverage gap |
+| `ACCESS_UNKNOWN` | info | a read failed (timeout, 403, 5xx): `UNKNOWN`, never a finding about the data |
+
+None is `high`: promoting one needs corpus-wide evidence (see the 2026-10-01 tifxyz survey below).
 
 ## How this fits with ScrolIQ
 
@@ -214,7 +242,7 @@ spend GPU or expert time on this volume?* — from opposite ends:
   `zpa.audit_pyramid.audit_one` (finding fields `code`, `severity`, `level`, `detail`), `zpa.volcomp`,
   and, new with contract 1.0.0, `zpa.report.audit_root` / `build_report`, which return a report
   validated by [`src/zpa/data/audit-report.schema.json`](src/zpa/data/audit-report.schema.json)
-  (`schema_version` 1.1.0). `tests/test_contract.py` pins the signatures, fields, severities and the
+  (`schema_version` 1.2.0). `tests/test_contract.py` pins the signatures, fields, severities and the
   recommended verdict mapping (`FAIL`/`UNKNOWN` → DO NOT TRAIN, `WARN` → CAUTION). Contract changes
   need a migration note in [`CHANGELOG.md`](CHANGELOG.md). Full guide, including how ScrolIQ's
   `scrollq-health` used to read `ACCESS_UNKNOWN` and `ROOT_ABSENT` as integrity PASS and now
@@ -294,6 +322,21 @@ zpa-surface-depth-profile \
 ```
 
 This catches silent input-window mistakes that ordinary Zarr integrity checks cannot see: an unexpected slice count, sampled all-zero depth planes, or duplicated sampled layers. It also records where gradient energy and dynamic range peak relative to the stack center, which is useful because ink models can be depth-offset sensitive. See [`docs/surface-depth-profile.md`](docs/surface-depth-profile.md).
+
+Audit tifxyz surface patches (header tier; add `--content` to check the coordinates themselves):
+
+```bash
+pip install 'zarr-pyramid-audit[tifxyz] @ git+https://github.com/Svyable/zarr-pyramid-audit.git'
+zpa-discover --base s3://vesuvius-challenge-open-data/ --max-depth 10 --out-dir tmp/s3
+zpa-tifxyz --base s3://vesuvius-challenge-open-data/ --roots tmp/s3/discover_zarr.surfaces.jsonl \
+  --content --max-content-bytes 33554432 --out-dir tmp/tifxyz
+zpa-tifxyz --base ./staging --root seg.tifxyz --content --fail-on medium   # local preflight
+```
+
+`zpa-discover` lists every tifxyz surface it sees in `discover_zarr.surfaces.jsonl` at no extra
+request cost (directories ending in `.tifxyz`, and directories holding `x.tif`/`y.tif`/`z.tif`, such
+as `mesh/intermediate/tifxyz_original/`). Reports validate against
+[`src/zpa/data/tifxyz-report.schema.json`](src/zpa/data/tifxyz-report.schema.json).
 
 Gate a publish (fails closed on high-severity findings, unreadable evidence and absent roots;
 exit 0 = clean):
@@ -420,6 +463,25 @@ exactly what is and is not counted.
 All 957 S3 roots re-audited with the spec-conformance checks on: 0 `TRANSFORM_SCALE_COUNT`,
 `TRANSFORM_ARITY`, `AXES_INVALID` or `OME_VERSION_UNMODELLED`; every root declares OME-NGFF 0.4; the
 2026-09-29 findings are reproduced row for row (956 clean, 1 defective).
+
+**tifxyz surfaces** ([`artifacts/2026-10-01-s3-tifxyz/`](artifacts/2026-10-01-s3-tifxyz/), `zpa-tifxyz`).
+All 1,539 tifxyz surface patches in the S3 bucket, found by `zpa-discover`, were audited. All 1,539 are
+integrity `PASS`: every one has a readable `meta.json` and three float channels on one grid. The content
+tier ran on 1,391 surfaces; 148 have a channel over the 32 MiB cap and are reported as a coverage gap. It
+found no empty surface, no channel-mask disagreement and no non-finite coordinate. It did find:
+- **161 surfaces with points outside any CT volume** (`TIFXYZ_NEGATIVE_COORDINATE`), mostly final
+  registered surfaces (143 of 709), mostly on z, median 4.5% of a surface's points and up to 39.7%. In
+  a worked PHerc0139 example the surface runs past both ends of its target volume's z range, so a render
+  from that volume has no CT data there. Every one of these surfaces' `meta.json` bbox already shows the
+  negative extent.
+- **30 surfaces whose `meta.json` bbox disagrees with the stored coordinates**
+  (`TIFXYZ_BBOX_MISMATCH`):
+  - 28 have the `-1` invalid marker leaked into the declared minimum (one PHercParis4 batch of
+    `tifxyz_original` intermediates);
+  - 2 store points outside the declared box, 2,375 and 755 points, so cropping to the bbox would drop
+    geometry.
+
+All are `low` review findings.
 
 **Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
 defective pyramids across both stores, with finding codes, severity and evidence pointers.

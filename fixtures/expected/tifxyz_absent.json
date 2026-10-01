@@ -1,0 +1,34 @@
+{
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": "NOT_FOUND",
+    "state": "ABSENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_ABSENT",
+      "evidence_state": "ABSENT",
+      "level": "",
+      "severity": "low"
+    }
+  ],
+  "fixture": "tifxyz_absent",
+  "integrity": "UNKNOWN",
+  "kind": "tifxyz",
+  "max_severity": "low",
+  "property": "requested surface does not exist (nothing to audit)",
+  "source": "surfaces/tifxyz_absent.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "ABSENT",
+      "y": "ABSENT",
+      "z": "ABSENT"
+    },
+    "content_checked": false,
+    "data_bbox": null,
+    "grid": null,
+    "valid_fraction": null
+  }
+}

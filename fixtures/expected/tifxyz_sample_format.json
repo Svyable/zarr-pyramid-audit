@@ -1,0 +1,51 @@
+{
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_SAMPLE_FORMAT",
+      "evidence_state": "PRESENT",
+      "level": "x.tif",
+      "severity": "low"
+    },
+    {
+      "actionable": true,
+      "code": "TIFXYZ_SAMPLE_FORMAT",
+      "evidence_state": "PRESENT",
+      "level": "y.tif",
+      "severity": "low"
+    },
+    {
+      "actionable": true,
+      "code": "TIFXYZ_SAMPLE_FORMAT",
+      "evidence_state": "PRESENT",
+      "level": "z.tif",
+      "severity": "low"
+    }
+  ],
+  "fixture": "tifxyz_sample_format",
+  "integrity": "PASS",
+  "kind": "tifxyz",
+  "max_severity": "low",
+  "property": "channels hold uint16, not floating point",
+  "source": "surfaces/tifxyz_sample_format.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": false,
+    "data_bbox": null,
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": null
+  }
+}

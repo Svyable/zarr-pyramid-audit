@@ -369,6 +369,11 @@ scrollq-health --root &lt;volume&gt;</code></div>
   The tool is published for anyone to rerun at larger sample sizes.</p>
 </div>
 
+<div class="panel" id="surfaces"><h2>tifxyz surfaces<span class="sub">2026-10-01 · <code>zpa-tifxyz --content</code> on every surface patch in the S3 bucket</span></h2>
+  <p><b>1539</b> surfaces audited: <b>1539</b> integrity PASS, 0 WARN, 0 UNKNOWN, 0 FAIL. Findings at medium or above: <b>0</b>. Content tier skipped on 148 surfaces (channels over the 32 MiB cap) &mdash; reported as a coverage gap, not a pass.</p>
+  <table><thead><tr><th>code</th><th class="num">surfaces</th><th>meaning</th></tr></thead><tbody><tr><td><code>TIFXYZ_NEGATIVE_COORDINATE</code></td><td class="num">161</td><td style="color:var(--muted)">valid points with a negative coordinate (outside any volume)</td></tr><tr><td><code>TIFXYZ_CONTENT_UNDECODED</code></td><td class="num">148</td><td style="color:var(--muted)">content tier skipped (size cap or layout): coverage gap</td></tr><tr><td><code>TIFXYZ_BBOX_MISMATCH</code></td><td class="num">30</td><td style="color:var(--muted)">declared bbox differs from the stored coordinates</td></tr></tbody></table>
+  <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-tifxyz">Run artifacts &rarr;</a></p>
+</div>
 <div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
@@ -394,7 +399,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
 </main>
 
 <footer><div class="wrap">
-  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 30 check codes over
+  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 31 check codes over
   <code>.zattrs</code> + one <code>.zarray</code> per level — a few KB per pyramid
   regardless of array size. Chunk-presence via one listing per level. Chunk-content via
   sampled decode (vendored libvolcomp for the sharded volcomp levels). Full evidence,

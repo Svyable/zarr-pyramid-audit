@@ -1,0 +1,37 @@
+{
+  "consumer_verdict": "CAUTION",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": "PARTS_ABSENT",
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_CHANNEL_MISSING",
+      "evidence_state": "ABSENT",
+      "level": "z.tif",
+      "severity": "medium"
+    }
+  ],
+  "fixture": "tifxyz_channel_missing",
+  "integrity": "WARN",
+  "kind": "tifxyz",
+  "max_severity": "medium",
+  "property": "z.tif confirmed absent",
+  "source": "surfaces/tifxyz_channel_missing.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "ABSENT"
+    },
+    "content_checked": false,
+    "data_bbox": null,
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": null
+  }
+}

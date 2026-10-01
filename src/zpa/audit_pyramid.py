@@ -51,6 +51,8 @@ CHECK CODES
   TRANSFORM_ARITY    [low] scale/translation length != axes count (or array ndim)
   AXES_INVALID       [low] duplicate axis names, or typed axes out of NGFF
                      count/order (2-5 axes, 2-3 space, time < channel < space)
+  DIMENSION_NAMES_MISMATCH [low] OME-Zarr 0.5+: a v3 array's dimension_names
+                     are missing or differ from the multiscales axes names
 
 Outputs (into --out-dir; existing files are backed up, never overwritten):
     audit_pyramid.levels.jsonl    one record per pyramid level
@@ -108,6 +110,8 @@ SEVERITY = {
     "TRANSFORM_SCALE_COUNT": "low",
     "TRANSFORM_ARITY": "low",
     "AXES_INVALID": "low",
+    # OME-Zarr 0.5: every v3 array's dimension_names must equal the axes names.
+    "DIMENSION_NAMES_MISMATCH": "low",
 }
 
 # Codes that describe what a node IS, not that anything is wrong. They are
@@ -237,6 +241,23 @@ def _spec_conformance(pm) -> tuple[list[tuple], object]:
         out.append(("AXES_INVALID", None, "; ".join(violations),
                     json.dumps(axes_raw, sort_keys=True),
                     "2-5 uniquely named axes ordered time, channel/custom, space"))
+
+    # OME-Zarr 0.5 (the first zarr-v3 version) requires each array's
+    # dimension_names to equal the multiscales axes names, in order. Only
+    # applied when 0.5+ is declared and the level is a v3 array.
+    axis_names = [str(a.get("name")) if isinstance(a, dict) else str(a)
+                  for a in axes_raw]
+    if parsed is not None and parsed >= (0, 5) and axis_names:
+        for lm in pm.levels:
+            if not lm.present or lm.zarr_format != 3:
+                continue
+            got = lm.dimension_names
+            if got is None or [str(n) for n in got] != axis_names:
+                out.append((
+                    "DIMENSION_NAMES_MISMATCH", lm.path,
+                    "zarr.json has no dimension_names" if got is None else
+                    "zarr.json dimension_names differ from the multiscales axes",
+                    json.dumps(got), json.dumps(axis_names)))
 
     datasets = [d for d in (ms.get("datasets") or []) if isinstance(d, dict)]
     has_transforms = any("coordinateTransformations" in d for d in datasets)

@@ -1,0 +1,1241 @@
+{
+  "rows": [
+    {
+      "fixture": "clean_v2",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "clean 3-level v2 pyramid; no findings at any severity",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "clean_v3",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "clean 2-level zarr v3 / OME 0.5 pyramid with raw 'bytes' chunks",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "missing_level",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "level 2 declared in multiscales, no header on disk",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read: KeyError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "LEVEL_MISSING"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "level_no_chunks",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 header present, zero chunk keys (silent fill_value)",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "LEVEL_NO_CHUNKS"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": [
+          "CHUNK_LEVEL_NO_CHUNKS"
+        ]
+      }
+    },
+    {
+      "fixture": "level_undeclared",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level directory 3 exists with a header but is not declared",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "LEVEL_UNDECLARED"
+        ],
+        "gate": "pass",
+        "integrity": "WARN",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "scale_shape_mismatch",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 shape matches neither ceil nor floor of base/2",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "SCALE_SHAPE_MISMATCH"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "mixed_rounding",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 rounds up (ceil), level 2 rounds down (floor)",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "MIXED_ROUNDING"
+        ],
+        "gate": "pass",
+        "integrity": "WARN",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "scale_nonmonotonic",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "declared scale does not increase from level 1 to level 2",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "SCALE_NONMONOTONIC"
+        ],
+        "gate": "pass",
+        "integrity": "WARN",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "dtype_drift",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 is uint16 while level 0 is uint8",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "DTYPE_DRIFT"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "fill_drift",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 fill_value differs from level 0",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "FILL_DRIFT"
+        ],
+        "gate": "pass",
+        "integrity": "WARN",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "compressor_drift",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 is blosc-compressed, levels 0 and 2 are raw",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "COMPRESSOR_DRIFT"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "separator_drift",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 uses '/' dimension_separator, others '.'",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "SEPARATOR_DRIFT"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "ndim_drift",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "level 1 is 2-D inside a 3-D pyramid",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "NDIM_DRIFT"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "axes_mismatch",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "two axes declared for 3-D arrays",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "AXES_MISMATCH"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "degenerate_level",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "level 1 has a zero extent",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "DEGENERATE_LEVEL",
+          "LEVEL_NO_CHUNKS",
+          "SCALE_SHAPE_MISMATCH"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": [
+          "CHUNK_LEVEL_NO_CHUNKS"
+        ]
+      }
+    },
+    {
+      "fixture": "chunk_exceeds_shape",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "deepest level chunk exceeds its shape on every axis (benign info)",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "CHUNK_EXCEEDS_SHAPE"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "physical_scale_unknown",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "physical_size explicitly 'unknown', no contradicting claim (info)",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "PHYSICAL_SCALE_UNKNOWN"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "physical_scale_contradiction_units",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "physical_size 'unknown' but spatial axes declare micrometer units",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "PHYSICAL_SCALE_CONTRADICTION"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "physical_scale_contradiction_scale",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "physical_size 'unknown' but level-0 spatial scale is not identity",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "PHYSICAL_SCALE_CONTRADICTION"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "physical_scale_unspecified",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "no physical_size marker plus units and a real voxel size: nothing is guessed",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "ome_version_unmodelled",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "declares OME-NGFF 0.6, newer than the audit models: conformance checks skipped (info)",
+      "truth": "out-of-model",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "OME_VERSION_UNMODELLED"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "transform_scale_count",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "level 1 declares two scale transforms (spec: exactly one)",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "TRANSFORM_SCALE_COUNT"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "transform_arity",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "level 1 translation has 2 entries for 3 axes",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "TRANSFORM_ARITY"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "dimension_names_missing",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "OME-Zarr 0.5 v3 pyramid whose arrays have no dimension_names",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "DIMENSION_NAMES_MISMATCH"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "axes_invalid",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "two axes share the name 'y'",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 3 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "AXES_INVALID"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "multiscale_empty",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "multiscales key present with an empty datasets list",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 0 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "MULTISCALE_EMPTY"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "not_multiscale",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "valid Zarr group that never claims to be a pyramid (info)",
+      "truth": "out-of-model",
+      "zarr_python": {
+        "detail": "read 0 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "NOT_MULTISCALE"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "bare_array",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "GroupNotFoundError",
+        "outcome": "rejects"
+      },
+      "property": "single-scale v2 array at the root (info)",
+      "truth": "out-of-model",
+      "zarr_python": {
+        "detail": "array read",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "BARE_ARRAY"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "headerless_chunk_store",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "GroupNotFoundError",
+        "outcome": "rejects"
+      },
+      "property": "chunk keys present, no .zarray/.zgroup/zarr.json",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "open: GroupNotFoundError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "HEADERLESS_CHUNK_STORE"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "container_no_group_header",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "GroupNotFoundError",
+        "outcome": "rejects"
+      },
+      "property": "children are Zarr arrays; no group header at root",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "open: GroupNotFoundError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "CONTAINER_NO_GROUP_HEADER"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "not_a_zarr_group",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "GroupNotFoundError",
+        "outcome": "rejects"
+      },
+      "property": "directory named *.zarr with nothing Zarr-like inside (info)",
+      "truth": "out-of-model",
+      "zarr_python": {
+        "detail": "open: GroupNotFoundError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "NOT_A_ZARR_GROUP"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "root_absent",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "FileNotFoundError",
+        "outcome": "rejects"
+      },
+      "property": "requested root does not exist (confirmed absence)",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "open: FileNotFoundError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "ROOT_ABSENT"
+        ],
+        "gate": "absent",
+        "integrity": "UNKNOWN",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "malformed_zgroup",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "JSONDecodeError",
+        "outcome": "rejects"
+      },
+      "property": "truncated .zgroup JSON",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "open: JSONDecodeError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "METADATA_UNREADABLE"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "malformed_zattrs",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "JSONDecodeError",
+        "outcome": "rejects"
+      },
+      "property": "valid .zgroup, truncated .zattrs JSON",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "open: JSONDecodeError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "METADATA_UNREADABLE"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "malformed_level_header",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "level 1 .zarray is truncated JSON",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read: JSONDecodeError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [
+          "METADATA_UNREADABLE"
+        ],
+        "gate": "fail",
+        "integrity": "FAIL",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "present_all_fill",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "every chunk is stored but decodes to fill_value 0",
+      "truth": "suspicious",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_SAMPLE_ALL_EMPTY"
+        ]
+      }
+    },
+    {
+      "fixture": "zero_data_nonzero_fill",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "chunks hold zeros but fill_value is 255: zero-filled is data, not empty",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "nan_fill_all_empty",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "float32 chunks all NaN with fill_value \"NaN\" (v2 string form)",
+      "truth": "suspicious",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_SAMPLE_ALL_EMPTY"
+        ]
+      }
+    },
+    {
+      "fixture": "sparse_level",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "only 3 of 8 level-0 chunks stored: missing is not empty",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
+      "fixture": "all_fill_nonzero",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "every stored byte equals fill_value 255: empty, though no byte is zero",
+      "truth": "suspicious",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_SAMPLE_ALL_EMPTY"
+        ]
+      }
+    },
+    {
+      "fixture": "sparse_unsampled",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": false,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "one stored chunk in a 64-chunk level, outside every spread sample: a coverage gap",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_LEVEL_NO_SAMPLES"
+        ]
+      }
+    },
+    {
+      "fixture": "undecodable_codec",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": true,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "chunks use a codec the probe cannot decode (zstd): reported, never guessed",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read: RuntimeError",
+        "outcome": "raises"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_UNDECODEABLE"
+        ]
+      }
+    },
+    {
+      "fixture": "partially_empty",
+      "flagged": {
+        "ome-zarr-models": false,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": false
+      },
+      "ome_zarr_models": {
+        "detail": "Image",
+        "outcome": "accepts"
+      },
+      "property": "one populated chunk among seven all-fill ones; the 3-sample probe sees only fill and raises the review flag: a sample is evidence, not exhaustive validation",
+      "truth": "benign",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": [
+          "CHUNK_SAMPLE_ALL_EMPTY"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "ome-zarr-models": {
+      "benign": {
+        "flagged": 0,
+        "of": 10
+      },
+      "defect": {
+        "flagged": 14,
+        "of": 26
+      },
+      "out-of-model": {
+        "flagged": 4,
+        "of": 4
+      },
+      "suspicious": {
+        "flagged": 0,
+        "of": 3
+      }
+    },
+    "zarr-python": {
+      "benign": {
+        "flagged": 0,
+        "of": 10
+      },
+      "defect": {
+        "flagged": 8,
+        "of": 26
+      },
+      "out-of-model": {
+        "flagged": 1,
+        "of": 4
+      },
+      "suspicious": {
+        "flagged": 0,
+        "of": 3
+      }
+    },
+    "zpa (+ chunk probe)": {
+      "benign": {
+        "flagged": 2,
+        "of": 10
+      },
+      "defect": {
+        "flagged": 26,
+        "of": 26
+      },
+      "out-of-model": {
+        "flagged": 4,
+        "of": 4
+      },
+      "suspicious": {
+        "flagged": 3,
+        "of": 3
+      }
+    },
+    "zpa (header audit)": {
+      "benign": {
+        "flagged": 1,
+        "of": 10
+      },
+      "defect": {
+        "flagged": 25,
+        "of": 26
+      },
+      "out-of-model": {
+        "flagged": 4,
+        "of": 4
+      },
+      "suspicious": {
+        "flagged": 0,
+        "of": 3
+      }
+    }
+  },
+  "versions": {
+    "fixture corpus": "1",
+    "ome-zarr-models": "1.7",
+    "zarr": "3.1.6",
+    "zarr-pyramid-audit": "0.4.0"
+  }
+}

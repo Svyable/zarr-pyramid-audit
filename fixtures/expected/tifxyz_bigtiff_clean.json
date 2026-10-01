@@ -1,0 +1,40 @@
+{
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [],
+  "fixture": "tifxyz_bigtiff_clean",
+  "integrity": "PASS",
+  "kind": "tifxyz",
+  "max_severity": "none",
+  "property": "clean surface stored as BigTIFF",
+  "source": "surfaces/tifxyz_bigtiff_clean.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": true,
+    "data_bbox": [
+      [
+        100.0,
+        200.0,
+        301.0
+      ],
+      [
+        114.0,
+        210.0,
+        311.0
+      ]
+    ],
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": 0.958333
+  }
+}

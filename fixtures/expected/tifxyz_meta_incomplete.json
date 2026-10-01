@@ -1,0 +1,48 @@
+{
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_META_INCOMPLETE",
+      "evidence_state": "PRESENT",
+      "level": "meta.json",
+      "severity": "low"
+    }
+  ],
+  "fixture": "tifxyz_meta_incomplete",
+  "integrity": "PASS",
+  "kind": "tifxyz",
+  "max_severity": "low",
+  "property": "meta.json says format 'tifxyz' but has no scale",
+  "source": "surfaces/tifxyz_meta_incomplete.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": true,
+    "data_bbox": [
+      [
+        100.0,
+        200.0,
+        301.0
+      ],
+      [
+        114.0,
+        210.0,
+        311.0
+      ]
+    ],
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": 0.958333
+  }
+}

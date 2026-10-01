@@ -22,7 +22,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.1.0"
+      "const": "1.2.0"
     },
     "tool": {
       "type": "string",
@@ -168,6 +168,7 @@
         "COMPRESSOR_DRIFT",
         "CONTAINER_NO_GROUP_HEADER",
         "DEGENERATE_LEVEL",
+        "DIMENSION_NAMES_MISMATCH",
         "DTYPE_DRIFT",
         "EMPTY_ZARR_DIR",
         "FILL_DRIFT",

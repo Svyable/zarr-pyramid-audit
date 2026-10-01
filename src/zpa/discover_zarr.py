@@ -36,8 +36,15 @@ pruned by a naming heuristic.
 
 Outputs (into --out-dir, existing files backed up, never overwritten):
     discover_zarr.roots.jsonl     one record per Zarr root found
+    discover_zarr.surfaces.jsonl  one record per tifxyz surface seen (input
+                                  for zpa-tifxyz); costs no extra requests
     discover_zarr.dirs.jsonl      one record per directory listed
     discover_zarr.manifest.json   provenance for the run
+
+A tifxyz surface is recorded when a child directory name ends in .tifxyz
+(seen in the parent listing, so rule 4 can still prune it) or when a listed
+directory itself holds x.tif, y.tif and z.tif (e.g. mesh/intermediate/
+tifxyz_original/).
 
 Usage:
     python bin/discover_zarr.py --base https://dl.ash2txt.org/ \
@@ -86,6 +93,14 @@ LEAF_DIR_SUFFIXES = (".tifxyz",)
 def is_leaf_format_dir(name: str) -> bool:
     n = name.lower().rstrip("/")
     return n.endswith(LEAF_DIR_SUFFIXES)
+
+
+TIFXYZ_CHANNEL_FILES = frozenset({"x.tif", "y.tif", "z.tif"})
+
+
+def holds_tifxyz_channels(files) -> bool:
+    """True when a directory listing shows all three tifxyz channel files."""
+    return TIFXYZ_CHANNEL_FILES <= set(files)
 
 
 def looks_like_zarr_name(name: str) -> bool:
@@ -152,14 +167,26 @@ def main() -> int:
     store = open_store(args.base, timeout=args.timeout, max_rps=args.max_rps)
 
     roots_path = os.path.join(out_dir, "discover_zarr.roots.jsonl")
+    surfaces_path = os.path.join(out_dir, "discover_zarr.surfaces.jsonl")
     dirs_path = os.path.join(out_dir, "discover_zarr.dirs.jsonl")
 
     seen: set[str] = set()
     seen_lock = threading.Lock()
     roots: list[dict] = []
+    surfaces: set[str] = set()
+
+    def record_surface(path: str, depth: int, detected_by: str) -> None:
+        with seen_lock:
+            if path in surfaces:
+                return
+            surfaces.add(path)
+        w_surf.write({"root": path, "depth": depth, "format": "tifxyz",
+                      "detected_by": detected_by})
+        man.count("tifxyz_surfaces")
 
     with RunManifest("discover_zarr", out_dir) as man, \
          JsonlWriter(roots_path) as w_roots, \
+         JsonlWriter(surfaces_path) as w_surf, \
          JsonlWriter(dirs_path) as w_dirs:
 
         man.set("base", args.base)
@@ -201,6 +228,8 @@ def main() -> int:
                               "n_subdirs": len(r["subdirs"]),
                               "n_files": len(r["files"]),
                               "is_zarr_root": self_is_zarr})
+                if not self_is_zarr and holds_tifxyz_channels(fileset):
+                    record_surface(r["path"], r["depth"], "files")
                 if self_is_zarr:
                     rec = {"root": r["path"], "depth": r["depth"],
                            "detected_by": ".zgroup/zarr.json" if
@@ -237,6 +266,8 @@ def main() -> int:
                         man.count("pruned_coordinate_dir")
                         continue
                     # --- rule 4: leaf-format artifact dirs -----------------
+                    if is_leaf_format_dir(d):
+                        record_surface(child, r["depth"] + 1, "name")
                     if not args.crawl_leaf_formats and is_leaf_format_dir(d):
                         man.count("pruned_leaf_format")
                         continue
@@ -254,9 +285,12 @@ def main() -> int:
 
         c = man.data["counters"]
         man.set("zarr_roots_found", len(roots))
+        man.set("tifxyz_surfaces_found", len(surfaces))
         man.add_output(roots_path, "one record per Zarr root")
+        man.add_output(surfaces_path, "one record per tifxyz surface")
         man.add_output(dirs_path, "one record per directory listed")
         print(f"\nzarr roots found     : {len(roots)}")
+        print(f"tifxyz surfaces      : {len(surfaces)}")
         print(f"dirs listed          : {c.get('dirs_listed', 0)}")
         print(f"list errors          : {c.get('list_errors', 0)}")
         print(f"pruned coordinate    : {c.get('pruned_coordinate_dir', 0)}")
