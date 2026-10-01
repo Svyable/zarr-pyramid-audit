@@ -302,6 +302,52 @@ class HttpStore:
                 )
         return data
 
+    def get_suffix(self, path: str, length: int) -> bytes:
+        """Read exactly the final ``length`` bytes of an object.
+
+        A 206 response must prove the requested suffix coordinates with a
+        complete Content-Range. Servers that ignore Range and return 200 are
+        supported by slicing the full response. Short or ambiguous reads fail
+        closed so callers cannot parse a truncated shard index as complete.
+        """
+        if length < 0:
+            raise ValueError("length must be non-negative")
+        if length == 0:
+            return b""
+        r = self._request(
+            "GET",
+            path,
+            headers={"Range": f"bytes=-{length}"},
+            allow_redirects=True,
+        )
+        if r.status_code == 404:
+            raise StoreError(f"404 Not Found: {self.url(path)}")
+        if r.status_code == 206:
+            data = r.content
+            content_range = getattr(r, "headers", {}).get("Content-Range", "")
+            match = _CONTENT_RANGE_RE.fullmatch(content_range)
+            if match is None or match.group(3) == "*":
+                raise StoreError(
+                    f"invalid Content-Range {content_range!r} for suffix GET: "
+                    f"{self.url(path)}"
+                )
+            start, end, total = (int(match.group(i)) for i in range(1, 4))
+            if total < length or start != total - length or end != total - 1:
+                raise StoreError(
+                    f"invalid Content-Range {content_range!r}; expected final "
+                    f"{length} bytes: {self.url(path)}"
+                )
+        elif r.status_code == 200:
+            data = r.content[-length:]
+        else:
+            raise StoreError(f"HTTP {r.status_code} on suffix GET: {self.url(path)}")
+        if len(data) != length:
+            raise StoreError(
+                f"short suffix GET: expected {length} bytes, got {len(data)}: "
+                f"{self.url(path)}"
+            )
+        return data
+
     def get_json(self, path: str) -> Any:
         import json
         return json.loads(self.get(path).decode("utf-8"))
@@ -421,6 +467,36 @@ class S3Store:
                 raise StoreError(
                     f"short ranged read: expected {length} bytes, got {len(data)}: "
                     f"{path}"
+                )
+            return data
+        except StoreError:
+            raise
+        except Exception as e:
+            raise StoreError(f"{type(e).__name__}: {e}") from e
+
+    def get_suffix(self, path: str, length: int) -> bytes:
+        """Read exactly the final ``length`` bytes of an S3 object."""
+        if length < 0:
+            raise ValueError("length must be non-negative")
+        if length == 0:
+            return b""
+        try:
+            object_path = self._p(path)
+            size = self.fs.info(object_path).get("size")
+            if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+                raise StoreError(f"object size unavailable for suffix read: {path}")
+            if size < length:
+                raise StoreError(
+                    f"short suffix read: expected {length} bytes, object has "
+                    f"{size}: {path}"
+                )
+            with self.fs.open(object_path, "rb") as fh:
+                fh.seek(size - length)
+                data = fh.read(length)
+            if len(data) != length:
+                raise StoreError(
+                    f"short suffix read: expected {length} bytes, got "
+                    f"{len(data)}: {path}"
                 )
             return data
         except StoreError:
