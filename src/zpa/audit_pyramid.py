@@ -297,6 +297,13 @@ def _spec_conformance(pm) -> tuple[list[tuple], object]:
                     f"{kind} transform payload is not a list",
                     repr(payload), f"list of {want} numbers"))
             elif len(payload) != want:
+                if (axes_raw and lm is not None and lm.shape
+                        and len(axes_raw) != len(lm.shape)
+                        and len(payload) == len(lm.shape)):
+                    # The transform agrees with the array and the axes list
+                    # is the odd one out: AXES_MISMATCH already reports that
+                    # root cause, so don't repeat it once per level.
+                    continue
                 out.append((
                     "TRANSFORM_ARITY", path,
                     f"{kind} has {len(payload)} entries but the "

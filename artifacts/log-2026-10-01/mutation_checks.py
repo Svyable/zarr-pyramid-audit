@@ -22,6 +22,10 @@ MUTATIONS = [
      "crc_ok = None"),
     ("stored checksum read big-endian", "src/zpa/volcomp.py",
      'int.from_bytes(raw[-4:], "little")', 'int.from_bytes(raw[-4:], "big")'),
+    ("arity reported even when the axes list is the odd one out",
+     "src/zpa/audit_pyramid.py",
+     "                        and len(axes_raw) != len(lm.shape)\n",
+     "                        and False\n"),
     ("start-located index not refused", "src/zpa/chunkscan.py",
      'if info.index_location != "end":', "if False:"),
 ]

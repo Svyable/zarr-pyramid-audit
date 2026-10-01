@@ -1,9 +1,9 @@
 # python -m pytest tests/ -q
-........................................................................ [ 88%]
-..................                                                       [100%]
-162 passed in 0.53s
+........................................................................ [ 96%]
+............                                                             [100%]
+372 passed in 4.60s
 
-# new test files, verbose
+# new/extended test files, verbose
 tests/test_spec_conformance.py::test_new_codes_are_registered_with_conservative_severities PASSED
 tests/test_spec_conformance.py::test_clean_v04_pyramid_has_no_new_findings PASSED
 tests/test_spec_conformance.py::test_clean_v05_pyramid_with_ome_wrapper_has_no_new_findings PASSED
@@ -44,6 +44,8 @@ tests/test_spec_conformance.py::test_existing_axes_mismatch_still_fires_independ
 tests/test_spec_conformance.py::test_new_codes_never_reach_high_severity_in_audit_output PASSED
 tests/test_spec_conformance.py::test_conformance_findings_do_not_block_the_default_gate PASSED
 tests/test_spec_conformance.py::test_unmodelled_version_is_informational_at_every_gate_threshold_but_info PASSED
+tests/test_spec_conformance.py::test_axes_that_disagree_with_the_array_do_not_also_blame_every_transform PASSED
+tests/test_spec_conformance.py::test_transform_that_matches_neither_axes_nor_array_is_still_flagged PASSED
 tests/test_volcomp.py::test_parse_zarr_json_ok PASSED
 tests/test_volcomp.py::test_parse_zarr_json_not_sharded PASSED
 tests/test_volcomp.py::test_index_roundtrip PASSED
@@ -61,6 +63,13 @@ tests/test_volcomp.py::test_verify_ignores_corruption_outside_the_index PASSED
 tests/test_volcomp.py::test_verify_is_not_applicable_without_a_crc32c_codec PASSED
 tests/test_volcomp.py::test_verify_too_short_to_hold_a_checksum_is_a_mismatch PASSED
 tests/test_volcomp.py::test_parse_zarr_json_reads_index_location PASSED
+tests/test_volcomp.py::test_valid_suffix_index_is_parsed PASSED
+tests/test_volcomp.py::test_invalid_content_range_fails_closed PASSED
+tests/test_volcomp.py::test_missing_content_range_fails_closed PASSED
+tests/test_volcomp.py::test_absent_shard_is_missing_not_error PASSED
+tests/test_volcomp.py::test_unsatisfiable_suffix_is_undecodable PASSED
+tests/test_volcomp.py::test_rejected_suffix_range_falls_back_to_strict_range PASSED
+tests/test_volcomp.py::test_server_error_is_fetch_error_not_missing PASSED
 tests/test_chunkscan_index_checksum.py::test_valid_index_is_verified_and_sampling_proceeds PASSED
 tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[0] PASSED
 tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[40] PASSED
@@ -71,7 +80,7 @@ tests/test_chunkscan_index_checksum.py::test_index_without_crc32c_codec_is_repor
 tests/test_chunkscan_index_checksum.py::test_start_located_index_is_refused_not_misread_as_corruption PASSED
 tests/test_chunkscan_index_checksum.py::test_status_table_preserves_historical_codes_and_adds_the_new_one PASSED
 tests/test_chunkscan_index_checksum.py::test_cli_emits_the_finding_and_reports_checksum_coverage PASSED
-============================== 67 passed in 0.35s ==============================
+============================== 76 passed in 0.46s ==============================
 
 # environment
 Python 3.11.15
@@ -79,4 +88,4 @@ google-crc32c             1.9.0
 numcodecs                 0.16.5
 pytest                    9.1.1
 zarr                      3.1.6
-a1bb82e
+base: origin/main 54cd30e (contract 1.0.0 -> 1.1.0)

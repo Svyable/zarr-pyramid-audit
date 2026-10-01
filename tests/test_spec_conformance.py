@@ -386,3 +386,25 @@ def test_unmodelled_version_is_informational_at_every_gate_threshold_but_info():
         assert result["verdict"] == "pass"
         assert [i["code"] for i in result["informational"]] == [
             "OME_VERSION_UNMODELLED"]
+
+
+# ---- one root cause is reported once ------------------------------------------
+
+def test_axes_that_disagree_with_the_array_do_not_also_blame_every_transform():
+    # Two axes declared for 3-D arrays (AXES_MISMATCH). The scales match the
+    # arrays, so the axes list is the odd one out: flagging each level's scale
+    # as well would report one defect once per level.
+    ms = multiscale(axes=ZYX[1:])
+    result = audit(ms, ndim=3)
+    all_codes = [f["code"] for f in result[0]]
+    assert "AXES_MISMATCH" in all_codes
+    assert "TRANSFORM_ARITY" not in all_codes
+
+
+def test_transform_that_matches_neither_axes_nor_array_is_still_flagged():
+    ms = multiscale(axes=ZYX[1:])          # axes say 2, array is 3-D
+    ms["datasets"][1]["coordinateTransformations"] = [
+        {"type": "translation", "translation": [0, 0, 0, 0]}]  # 4: neither
+    ms["datasets"][1]["coordinateTransformations"].append(scale_tf(2, 2, 2))
+    found = [f for f in audit(ms)[0] if f["code"] == "TRANSFORM_ARITY"]
+    assert [f["level"] for f in found] == ["1"]
