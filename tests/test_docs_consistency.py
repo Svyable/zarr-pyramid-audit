@@ -19,7 +19,8 @@ from zpa.build_dashboard import CODE_BLURB
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC_FILES = [ROOT / "README.md", ROOT / "AGENTS.md",
-             ROOT / ".github" / "CONTRIBUTING.md"]
+             ROOT / ".github" / "CONTRIBUTING.md", ROOT / "docs" / "INTEGRATION.md",
+             ROOT / "fixtures" / "README.md"]
 FENCE = re.compile(r"```(?:bash|shell|sh)?\n(.*?)```", re.S)
 COMMAND = re.compile(r"\s*(?:\w+=\S+\s+)*(zpa-[a-z-]+)(.*)")
 FLAG = re.compile(r"--[a-z][a-z0-9-]*")
@@ -95,6 +96,15 @@ def test_readme_check_codes_match_severity():
         f"extra={sorted(set(listed) - set(SEVERITY))} "
         f"wrong severity={sorted(c for c in listed if c in SEVERITY and listed[c] != SEVERITY[c])}"
     )
+
+
+def test_readme_check_code_count_matches_severity():
+    readme = ROOT / "README.md"
+    if not readme.exists():
+        pytest.skip("README not available")
+    counts = re.findall(r"(\d+) check codes", readme.read_text())
+    assert counts and all(int(n) == len(SEVERITY) for n in counts), (
+        f"README says {counts} check codes; SEVERITY has {len(SEVERITY)}")
 
 
 def test_dashboard_describes_every_check_code():

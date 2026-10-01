@@ -55,8 +55,13 @@ endpoint is unreachable from some networks, including some sandboxes).
   - `audit_pyramid.py` — `audit_one(pm)`; **`SEVERITY` is the single source of
     truth for check codes and their severities**
   - `zarrmeta.py` — `read_pyramid(store, root)` (header-only, fast)
-  - `httpstore.py` — `open_store(base)` → `HttpStore` / `S3Store`; read-only,
-    strict range reads, tri-state evidence results
+  - `httpstore.py` — `open_store(base)` → `HttpStore` / `S3Store` /
+    `LocalStore` (https://, s3://, file:// or a path); read-only, strict range
+    reads, tri-state evidence results
+  - `report.py` — versioned audit report (`schema_version`, `integrity`
+    PASS/WARN/UNKNOWN/FAIL), schema in `data/audit-report.schema.json`,
+    `contract()` / `contract_fingerprint()`
+  - `bench.py` — `zpa-bench`: per-root latency, store calls, payload bytes
   - `gate.py` — publish-time gate over `audit_one`
   - `discover_zarr.py`, `count_chunks.py` — root discovery; measured chunk counts
   - `chunkscan.py` + `scan_empty_chunks.py` — chunk-content probe (engine + CLI)
@@ -73,10 +78,19 @@ endpoint is unreachable from some networks, including some sandboxes).
   `test_docs_consistency.py` checks that documented flags exist, the README
   check-code list matches `SEVERITY`, and the dashboard describes every code —
   if it fails, fix the docs, don't delete the test.
+- `fixtures/` — fixture corpus: one property per Zarr tree / replayed HTTP
+  case, golden outputs in `fixtures/expected/` (`python fixtures/corpus.py
+  expected` to regenerate; review the diff). See `fixtures/README.md`.
+- `examples/` — CI gate job, preflight script, Python API example (not active
+  workflows; tested by `tests/test_integration_surface.py`)
+- `CHANGELOG.md` — contract changes need a migration note quoting the
+  `contract-fingerprint` (enforced by `tests/test_contract.py`)
 - `data/known-defects.json` — machine-readable defect kill list
 - `docs/` — GitHub Pages: `index.html` (**generated** by `build_dashboard.py`;
   edit the generator, never the HTML), and `september-2026.html`, which is
-  hand-written and frozen at the 2026-09-30 evidence
+  hand-written and frozen at the 2026-09-30 evidence; only dated, clearly
+  marked corrections of claims later found false (e.g. the 2026-10-01 gate
+  proof correction)
 - `artifacts/<date>-<name>/` — campaign outputs; the evidence behind
   published numbers. Each has a README/MD stating the command that made it.
 - `issues/` — drafts of issues filed against ScrollPrize/villa (index in
@@ -88,7 +102,8 @@ endpoint is unreachable from some networks, including some sandboxes).
   `zpa.zarrmeta.read_pyramid`, `zpa.audit_pyramid.audit_one` and
   `zpa.volcomp`, and pins a tested commit of this repo in its
   `requirements-ci.txt`. Don't change those signatures or the finding fields
-  (`code`, `severity`, `level`, `detail`) without checking it.
+  (`code`, `severity`, `level`, `detail`) without checking it. The supported
+  machine-readable surface is `zpa.report` + its schema (`docs/INTEGRATION.md`).
 
 ## What CI enforces (reproduce locally before pushing)
 
@@ -122,12 +137,19 @@ endpoint is unreachable from some networks, including some sandboxes).
 
 1. Add it to `SEVERITY` in `audit_pyramid.py` (info-only codes go in
    `INFO_CODES`).
-2. Unit test on a synthetic pyramid (see `tests/test_evidence_semantics.py`).
+2. Add a fixture that isolates it to `fixtures/corpus.py`, then
+   `python fixtures/corpus.py build && python fixtures/corpus.py expected` and
+   review the new golden. `tests/test_fixture_corpus.py` fails if a code has
+   no fixture.
 3. `high` needs corpus-wide evidence — see lesson 5.
 4. Add it to the check-code list in `README.md` (with severity) and to
    `CODE_BLURB` in `build_dashboard.py`; regenerate the dashboard.
    `tests/test_docs_consistency.py` fails if either is out of sync.
-5. Known defects it finds go in `data/known-defects.json` via the generator.
+5. It is a contract change: add it to the schema's `check_code` enum
+   (`src/zpa/data/audit-report.schema.json`) and a migration note to
+   `CHANGELOG.md` quoting the new `contract-fingerprint`
+   (`tests/test_contract.py` fails until you do).
+6. Known defects it finds go in `data/known-defects.json` via the generator.
 
 ## Hard-won lessons (do not re-learn)
 
@@ -186,7 +208,8 @@ first (`runio.py`; `*.bak` is git-ignored). Scratch runs go to `tmp/`
   squash-merged, so write the PR title as the commit subject. Details in
   `.github/CONTRIBUTING.md`.
 - Merge only on green CI at the PR's latest commit.
-- New check codes need a unit test on a synthetic pyramid.
+- New check codes need a fixture in `fixtures/` with a reviewed golden output
+  and a CHANGELOG migration note (contract change).
 - Every number in docs/PRs must trace to a command + artifact in this repo.
 - Add new defects to `data/known-defects.json` via the generator, not by hand.
 - The maintainer's explicit approval is required before: opening PRs or

@@ -118,7 +118,7 @@ That failure can waste training runs or invalidate downstream segmentation and i
 <div class="pitch">
 <div class="point"><div class="k">Find</div><p><b>957 S3 roots</b> audited in about five minutes; one live structural corruption case independently re-confirmed on September 30.</p></div>
 <div class="point"><div class="k">Prove</div><p>A direct zarr-python read returned <b>all zeros without error</b>; a populated control returned 64,498 nonzero voxels.</p></div>
-<div class="point"><div class="k">Prevent</div><p><code>zpa-gate</code> turns the finding into a <b>publish-time CI failure</b>: defective root exit 1, clean sibling exit 0.</p></div>
+<div class="point"><div class="k">Prevent</div><p><code>zpa-gate</code> turns the finding into a <b>publish-time CI failure</b>: defective root exit 1, populated sibling exit 0, nonexistent path exit 1.</p></div>
 </div>
 <p class="smalllink">Evidence is committed and reproducible; the page links every headline claim to a repo artifact below.</p></div>
 
@@ -158,9 +158,14 @@ the only point of leverage, which is exactly what the gate provides.</li>
 </ul>
 <div class="gatebox"><b>The fix ships with the repo.</b> <code>zpa-gate</code>
 audits roots <i>before</i> they publish and fails closed — the gate can block
-this defect class before publication when used. Proven end-to-end 2026-09-30
-(<code>artifacts/2026-09-30-gate-proof/</code>): rejects the defective
-PHerc0814 root (exit 1), passes its clean sibling (exit 0).</div></div>
+this defect class before publication when used. Proven end-to-end 2026-10-01
+(<code>artifacts/2026-10-01-gate-proof/</code>): rejects the defective
+PHerc0814 root (exit 1), passes its populated sibling (exit 0), and rejects a
+path that does not exist (exit 1).<br><b>Correction (2026-10-01):</b> the
+2026-09-30 proof's "clean sibling" path does not exist in the bucket; the gate
+passed it because a missing root was only <code>low</code> severity. The gate
+now fails closed on missing roots, and the proof was re-run with a real sibling
+(erratum in <code>artifacts/2026-09-30-gate-proof/</code>).</div></div>
 
 <div class="panel" id="novelty"><h2><span class="q">(3)</span> What does it enable that was not possible before?</h2>
 <ul>
@@ -231,18 +236,22 @@ defects (#1892, #1755–#1760) are credited to their reporters and independently
 confirmed here.</p></div>
 
 <div class="panel" id="reproduce"><h2>Reproduce the headline result</h2>
-<p>The end-to-end proof uses the same public S3 bucket and the exact defective/clean sibling pair.
-After installing the repo, these two commands should disagree by design:</p>
+<p>The end-to-end proof uses the same public S3 bucket: the defective root and a populated sibling
+render of the same segment. After installing the repo, these two commands should disagree by design:</p>
 <div class="proof"># defect: expected exit 1
 zpa-gate --base s3://vesuvius-challenge-open-data \
   --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr" \
   --fail-on high
 
-# clean sibling: expected exit 0
+# populated sibling: expected exit 0
 zpa-gate --base s3://vesuvius-challenge-open-data \
-  --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630.zarr" \
+  --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr" \
   --fail-on high</div>
-<p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-gate-proof">Committed logs and README →</a> ·
+<p class="smalllink"><b>Correction (2026-10-01):</b> this block originally named
+<code>…-20260521123630.zarr</code> as the clean sibling. That path does not exist, and the gate
+now rejects it (exit 1, <code>GATE_ROOT_ABSENT</code>) instead of passing it.</p>
+<p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-gate-proof">Committed logs and README →</a> ·
+<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-gate-proof">original 2026-09-30 proof + erratum →</a> ·
 <a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-s3-reverify">same-day re-verification →</a></p></div>
 
 <div class="panel"><h2>Why this matters for the 2027 Grand Prize pipeline</h2>

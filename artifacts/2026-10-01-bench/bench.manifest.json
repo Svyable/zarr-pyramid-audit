@@ -1,0 +1,67 @@
+{
+  "run_name": "bench",
+  "started_utc": "2026-10-01T03:41:24.054552+00:00",
+  "argv": [
+    "/tmp/claude-0/venv/bin/zpa-bench",
+    "--base",
+    "s3://vesuvius-challenge-open-data/",
+    "--root",
+    "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+    "--root",
+    "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr",
+    "--root",
+    "PHerc1447/segments/20250702235910-auto_grown_20250702235910292/surface-volumes/8.64um-1.2m-116keV-volume-20250521151220.zarr",
+    "--root",
+    "PHerc0009B/representations/predictions/surfaces/20260319104112-surface-20260413222639-surface-m7-L2-th0.2.zarr",
+    "--root",
+    "PHerc0343/volumes/20250521140437-8.640um-1.2m-116keV-masked.zarr",
+    "--root",
+    "PHercParis4/segments/20260603024952-5753_-2/ink-detection/PHercParis4-20260603024952-2.4um-0.22m-78keV-volume-20260411134726-L2-3d-ink-max.zarr",
+    "--samples-per-level",
+    "3",
+    "--out-dir",
+    "artifacts/2026-10-01-bench"
+  ],
+  "cwd": "/home/user/zarr-pyramid-audit",
+  "host": "vm",
+  "platform": "Linux-6.18.44-fc-v50-x86_64-with-glibc2.39",
+  "python": "3.11.15",
+  "python_exe": "/tmp/claude-0/venv/bin/python",
+  "packages": {
+    "numpy": "2.4.6",
+    "zarr": "3.1.6",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.106"
+  },
+  "counters": {},
+  "outputs": [
+    {
+      "path": "artifacts/2026-10-01-bench/bench.jsonl",
+      "exists": true,
+      "bytes": 3970,
+      "desc": "per-root measurements"
+    },
+    {
+      "path": "artifacts/2026-10-01-bench/bench.summary.md",
+      "exists": true,
+      "bytes": 1221,
+      "desc": "markdown table"
+    }
+  ],
+  "notes": [],
+  "base": "s3://vesuvius-challenge-open-data/",
+  "roots": [
+    "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+    "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr",
+    "PHerc1447/segments/20250702235910-auto_grown_20250702235910292/surface-volumes/8.64um-1.2m-116keV-volume-20250521151220.zarr",
+    "PHerc0009B/representations/predictions/surfaces/20260319104112-surface-20260413222639-surface-m7-L2-th0.2.zarr",
+    "PHerc0343/volumes/20250521140437-8.640um-1.2m-116keV-masked.zarr",
+    "PHercParis4/segments/20260603024952-5753_-2/ink-detection/PHercParis4-20260603024952-2.4um-0.22m-78keV-volume-20260411134726-L2-3d-ink-max.zarr"
+  ],
+  "samples_per_level": 3,
+  "ended_utc": "2026-10-01T03:41:59.161792+00:00",
+  "wall_seconds": 35.107
+}

@@ -1,0 +1,41 @@
+{
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": "SERVER_ERROR",
+    "state": "UNKNOWN"
+  },
+  "findings": [
+    {
+      "actionable": false,
+      "code": "ACCESS_UNKNOWN",
+      "evidence_state": "UNKNOWN",
+      "level": "",
+      "severity": "info"
+    }
+  ],
+  "fixture": "http_503_everywhere",
+  "gate": {
+    "codes": [
+      "GATE_UNREADABLE"
+    ],
+    "fail": true,
+    "verdict": "unreadable"
+  },
+  "integrity": "UNKNOWN",
+  "kind": "access_unknown",
+  "levels": [],
+  "max_severity": "info",
+  "property": "every request answers 503: nothing can be concluded (UNKNOWN, gate fails closed)",
+  "source": "http/http_503_everywhere.json"
+}

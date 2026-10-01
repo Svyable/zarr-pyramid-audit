@@ -1,0 +1,40 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": false,
+      "code": "NOT_A_ZARR_GROUP",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "info"
+    }
+  ],
+  "fixture": "not_a_zarr_group",
+  "gate": {
+    "codes": [],
+    "fail": false,
+    "verdict": "pass"
+  },
+  "integrity": "PASS",
+  "kind": "not_zarr",
+  "levels": [],
+  "max_severity": "info",
+  "property": "directory named *.zarr with nothing Zarr-like inside (info)",
+  "source": "zarr/not_a_zarr_group.zarr"
+}

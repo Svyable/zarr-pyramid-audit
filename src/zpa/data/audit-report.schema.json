@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Svyable/zarr-pyramid-audit/blob/main/src/zpa/data/audit-report.schema.json",
+  "title": "zarr-pyramid-audit report",
+  "description": "One audited Zarr root. Produced by zpa.report.build_report / audit_root and embedded per root in `zpa-gate --out`. Contract rules: integrity UNKNOWN is never PASS; findings carry the evidence state they rest on; coverage records optional evidence that was not observed. Bump schema_version (semver) on any change and add a migration note to CHANGELOG.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool",
+    "tool_version",
+    "root",
+    "kind",
+    "zarr_format",
+    "evidence",
+    "integrity",
+    "max_severity",
+    "coverage",
+    "levels",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.1.0"
+    },
+    "tool": {
+      "type": "string",
+      "const": "zarr-pyramid-audit"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "description": "pyramid, array, headerless_chunks, container, absent, empty, not_zarr, not_a_zarr_group, not_multiscale, multiscale_empty, access_unknown, metadata_unreadable, audit_error"
+    },
+    "zarr_format": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "reason"
+      ],
+      "properties": {
+        "state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "integrity": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "WARN",
+        "UNKNOWN",
+        "FAIL"
+      ],
+      "description": "FAIL: any high finding. UNKNOWN: no high finding but no clean verdict can be issued (required evidence not observed, or nothing to audit: ROOT_ABSENT / EMPTY_ZARR_DIR). WARN: a medium finding. PASS: nothing above low and all required evidence observed."
+    },
+    "max_severity": {
+      "type": "string",
+      "enum": [
+        "none",
+        "info",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "levels_declared",
+        "levels_present",
+        "levels_unknown",
+        "chunk_presence"
+      ],
+      "properties": {
+        "levels_declared": {
+          "type": "integer"
+        },
+        "levels_present": {
+          "type": "integer"
+        },
+        "levels_unknown": {
+          "type": "integer"
+        },
+        "chunk_presence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "PRESENT",
+            "ABSENT",
+            "UNKNOWN"
+          ],
+          "description": "Chunk-presence evidence per present level. UNKNOWN includes levels not checked (--no-chunk-presence) and listings that could not prove anything; see each level's chunk_evidence_reason.",
+          "properties": {
+            "PRESENT": {
+              "type": "integer"
+            },
+            "ABSENT": {
+              "type": "integer"
+            },
+            "UNKNOWN": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/level"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "PRESENT",
+        "ABSENT",
+        "UNKNOWN"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "check_code": {
+      "type": "string",
+      "enum": [
+        "ACCESS_UNKNOWN",
+        "AUDIT_ERROR",
+        "AXES_INVALID",
+        "AXES_MISMATCH",
+        "BARE_ARRAY",
+        "CHUNK_EXCEEDS_SHAPE",
+        "COMPRESSOR_DRIFT",
+        "CONTAINER_NO_GROUP_HEADER",
+        "DEGENERATE_LEVEL",
+        "DTYPE_DRIFT",
+        "EMPTY_ZARR_DIR",
+        "FILL_DRIFT",
+        "GATE_ROOT_ABSENT",
+        "GATE_UNREADABLE",
+        "HEADERLESS_CHUNK_STORE",
+        "LEVEL_MISSING",
+        "LEVEL_NO_CHUNKS",
+        "LEVEL_UNDECLARED",
+        "METADATA_UNREADABLE",
+        "MIXED_ROUNDING",
+        "MULTISCALE_EMPTY",
+        "NDIM_DRIFT",
+        "NOT_A_ZARR_GROUP",
+        "NOT_MULTISCALE",
+        "OME_VERSION_UNMODELLED",
+        "PHYSICAL_SCALE_CONTRADICTION",
+        "PHYSICAL_SCALE_UNKNOWN",
+        "ROOT_ABSENT",
+        "SCALE_NONMONOTONIC",
+        "SCALE_SHAPE_MISMATCH",
+        "SEPARATOR_DRIFT",
+        "TRANSFORM_ARITY",
+        "TRANSFORM_SCALE_COUNT"
+      ]
+    },
+    "int_list_or_null": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "integer"
+      }
+    },
+    "level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "index",
+        "present",
+        "evidence_state",
+        "evidence_reason",
+        "shape",
+        "chunks",
+        "dtype",
+        "declared_scale",
+        "zarr_format",
+        "has_chunks",
+        "chunk_evidence_state",
+        "chunk_evidence_reason"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "evidence_state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "evidence_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "shape": {
+          "$ref": "#/$defs/int_list_or_null"
+        },
+        "chunks": {
+          "$ref": "#/$defs/int_list_or_null"
+        },
+        "dtype": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "declared_scale": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          }
+        },
+        "zarr_format": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "has_chunks": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Tri-state: true observed chunk keys, false confirmed none, null not observable. null is never 'no chunks'."
+        },
+        "chunk_evidence_state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "chunk_evidence_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "severity",
+        "level",
+        "detail",
+        "observed",
+        "expected",
+        "evidence_state",
+        "actionable"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/check_code"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "level": {
+          "type": "string",
+          "description": "level path, or empty for a root-scoped finding"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "observed": {
+          "type": "string"
+        },
+        "expected": {
+          "type": "string"
+        },
+        "evidence_state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "actionable": {
+          "type": "boolean",
+          "description": "false for info codes that describe what a node is"
+        }
+      }
+    }
+  }
+}

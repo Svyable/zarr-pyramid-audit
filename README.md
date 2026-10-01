@@ -1,6 +1,39 @@
 # zarr-pyramid-audit
 
-Read-only integrity auditing for OME-Zarr multiscale pyramids served over HTTP or S3.
+Read-only integrity auditing for OME-Zarr multiscale pyramids served over HTTP, S3 or a local
+directory.
+
+**What it audits, what it emits, what it cannot certify.** ZPA checks whether a pyramid is what its
+metadata says it is: every declared level present and readable, shapes consistent with the declared
+scales, dtype/fill/codec/separator consistent across levels, chunk keys actually stored, physical-scale
+claims not self-contradictory. A sampled probe also checks whether stored chunks hold data. It emits
+evidence, not verdicts: a [versioned JSON report](docs/INTEGRATION.md#the-report-schema-1x) per
+root, with every finding's code, severity and the evidence state it rests on (`PRESENT` / `ABSENT` /
+`UNKNOWN`), an integrity summary (`PASS` / `WARN` / `UNKNOWN` / `FAIL`), and a fail-closed CI gate.
+It **cannot** certify that voxels are semantically correct, that a sampled probe saw every chunk, or
+that data it could not read is fine. Unreadable evidence stays `UNKNOWN` and is never reported as
+clean. See [Limitations](#limitations).
+
+## Reproduce in 60 seconds
+
+One public store, one expected output
+([`artifacts/2026-10-01-gate-proof/`](artifacts/2026-10-01-gate-proof/)):
+
+```bash
+pip install git+https://github.com/Svyable/zarr-pyramid-audit.git
+export AWS_ENDPOINT_URL_S3=https://s3.us-east-1.amazonaws.com   # anonymous, no credentials
+zpa-gate --base s3://vesuvius-challenge-open-data \
+  --root PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr
+# expected: FAIL, 6 x [high] LEVEL_NO_CHUNKS (levels 0-5), exit 1
+#           (artifacts/2026-10-01-gate-proof/gate-rejects-defective.log)
+```
+
+Offline, from a checkout, against the [fixture corpus](fixtures/README.md):
+
+```bash
+zpa-gate --base fixtures/zarr --root clean_v2.zarr --root missing_level.zarr
+# expected: PASS clean_v2.zarr, FAIL missing_level.zarr ([high] LEVEL_MISSING level=2), exit 1
+```
 
 **[Live data-health dashboard](https://svyable.github.io/zarr-pyramid-audit/)** — the public,
 visual summary generated from the committed audit artifacts. The deployable source lives in
@@ -70,12 +103,13 @@ group) and are never counted as defects.
 | tool | what it does | cost |
 |---|---|---|
 | `zpa-discover` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
-| `zpa-audit` | 26 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
+| `zpa-audit` | 30 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
-| `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
+| `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`), on evidence it could not observe, and on roots that do not exist. `--format github` emits `::error`/`::warning` workflow annotations for CI; `--out` writes the versioned JSON report. `--base` may be a local staging directory. Proven live: fails on the header-only PHerc0814 surface volume, passes its populated sibling, fails a nonexistent path ([`2026-10-01-gate-proof`](artifacts/2026-10-01-gate-proof/)). | ~KB per pyramid |
 | `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Each shard index's CRC32C is verified before its offsets are trusted: a failing index yields `SHARD_INDEX_CHECKSUM_MISMATCH` (low until validated on a live run — that shard is not sampled, and a non-conforming writer would look the same as corruption); the run summary's `index_crc` tally separates `verified` from `unchecksummed` (index declares no `crc32c`) so a clean run is only read as clean where it says `verified`. Shards with a start-located index are reported `undecodable` rather than misread. Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
 | `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
+| `zpa-bench` | Measures what an audit costs per root: wall time, store calls (metadata reads / listings / HEADs / chunk reads) and payload bytes, for the header audit and the sampled chunk probe separately. | the audit's own cost |
 | `zpa-dashboard` | Regenerates the [public dashboard](https://svyable.github.io/zarr-pyramid-audit/) (`docs/index.html`) from the committed artifacts; every number on it is read from `artifacts/`, none are hand-typed. | local files only |
 | `zpa-known-defects` | Regenerates `data/known-defects.json`, the machine-readable kill list of confirmed defective pyramids. | local files only |
 
@@ -176,6 +210,16 @@ spend GPU or expert time on this volume?* — from opposite ends:
 - **Shared discovery data.** ScrolIQ's label-coverage join (`scrollq-coverage`) reads the
   `discover_zarr.roots.jsonl` that `zpa-discover` writes for the S3 bucket.
 
+- **Exact integration surface.** `zpa.httpstore.open_store`, `zpa.zarrmeta.read_pyramid`,
+  `zpa.audit_pyramid.audit_one` (finding fields `code`, `severity`, `level`, `detail`), `zpa.volcomp`,
+  and, new with contract 1.0.0, `zpa.report.audit_root` / `build_report`, which return a report
+  validated by [`src/zpa/data/audit-report.schema.json`](src/zpa/data/audit-report.schema.json)
+  (`schema_version` 1.1.0). `tests/test_contract.py` pins the signatures, fields, severities and the
+  recommended verdict mapping (`FAIL`/`UNKNOWN` → DO NOT TRAIN, `WARN` → CAUTION). Contract changes
+  need a migration note in [`CHANGELOG.md`](CHANGELOG.md). Full guide, including where ScrolIQ's
+  current rules differ (it reads `ACCESS_UNKNOWN` and `ROOT_ABSENT` as integrity PASS):
+  [`docs/INTEGRATION.md`](docs/INTEGRATION.md#scroliq-integration-surface).
+
 Integrity only, from this repo; or integrity plus scan quality (installing ScrolIQ installs this
 package too):
 
@@ -250,12 +294,18 @@ zpa-surface-depth-profile \
 
 This catches silent input-window mistakes that ordinary Zarr integrity checks cannot see: an unexpected slice count, sampled all-zero depth planes, or duplicated sampled layers. It also records where gradient energy and dynamic range peak relative to the stack center, which is useful because ink models can be depth-offset sensitive. See [`docs/surface-depth-profile.md`](docs/surface-depth-profile.md).
 
-Gate a publish (fails closed on high-severity findings; exit 0 = clean):
+Gate a publish (fails closed on high-severity findings, unreadable evidence and absent roots;
+exit 0 = clean):
 
 ```bash
 zpa-gate --base s3://my-bucket/staging/ --roots manifest.jsonl --fail-on high
 zpa-gate --base s3://my-bucket/staging/ --root path/to/volume.zarr --format github
+zpa-gate --base ./staging --root volume.zarr --out preflight.json   # local tree, before upload
 ```
+
+Ready-to-copy CI job, preflight script and Python API example: [`examples/`](examples/), explained
+in [`docs/INTEGRATION.md`](docs/INTEGRATION.md). ZPA produces the evidence; your workflow owns the
+policy.
 
 Outputs land in `--out-dir`: `*.findings.csv` (the reviewable artifact), `*.levels.jsonl`,
 `*.pyramids.jsonl`, `*.summary.json`, `*.manifest.json`.
@@ -275,7 +325,10 @@ Three workflows guard different failure modes:
 
 GitHub Pages continues to serve the static `docs/` tree from `main`; `docs/.nojekyll` keeps the
 deployment literal and dependency-free. Unit tests can also be run locally with
-`python -m pytest tests/ -q`.
+`python -m pytest tests/ -q`. They include the [fixture corpus](fixtures/README.md): one Zarr
+fixture per property (clean, missing level, bad ratios, contradictory or unknown physical scale,
+empty / zero-filled / NaN-filled chunks, malformed metadata, HTTP failures, invalid range
+responses) with golden structured outputs, replayed both from disk and over a local HTTP server.
 
 `data/known-defects.json` is the machine-readable kill list — every confirmed
 defective pyramid across both stores with finding codes, severity, evidence
@@ -303,7 +356,7 @@ Full artifacts of the 2026-09-29 S3 run (957 roots discovered, 957 audited,
 one confirmed header-only pyramid) are in
 [`artifacts/2026-09-29-s3/`](artifacts/2026-09-29-s3/).
 
-## Latest results (2026-09-29 – 2026-09-30)
+## Latest results (2026-09-29 – 2026-10-01)
 
 Every figure below is read from a committed artifact; the
 [dashboard](https://svyable.github.io/zarr-pyramid-audit/) is generated from the same files.
@@ -339,9 +392,28 @@ The 7 all-empty levels are `other/dev/meshes/20231022170900-ome.zarr` L1–L7: a
 are deliberately not counted as empty or as defects. "Not observed" in a sample is not proof of
 absence in the corpus.
 
-**Publish gate, end to end** ([`artifacts/2026-09-30-gate-proof/`](artifacts/2026-09-30-gate-proof/)).
-`zpa-gate --fail-on high` exits 1 on the defective PHerc0814 root and 0 on its clean sibling, live
-against S3.
+**Publish gate, end to end** ([`artifacts/2026-10-01-gate-proof/`](artifacts/2026-10-01-gate-proof/)).
+`zpa-gate --fail-on high`, live against S3, exits 1 on the defective PHerc0814 root, 0 on its
+populated sibling `2.399um-0.22m-78keV-volume-20260309142202.zarr`, and 1 on a path that does not
+exist. *Correction:* the 2026-09-30 proof's "clean sibling" was such a nonexistent path, which the
+gate then passed because `ROOT_ABSENT` is `low` severity. The gate now fails closed on absent roots;
+see the erratum in [`2026-09-30-gate-proof`](artifacts/2026-09-30-gate-proof/README.md#erratum-2026-10-01).
+
+**What an audit costs** ([`artifacts/2026-10-01-bench/`](artifacts/2026-10-01-bench/), `zpa-bench`,
+six public S3 pyramids, one run each from one cloud container). Confidence costs bytes:
+
+| root (S3) | header audit: time · store calls · payload | findings | sampled chunk probe (3/level): time · reads · payload |
+|---|---|---|---|
+| PHerc0814 `…-20260521123630-L1.zarr` (defective) | 1.77 s · 16 · 4.6 KiB | 6 × `LEVEL_NO_CHUNKS` | 4.35 s · 0 reads + 41 HEAD · 0 B (no chunks exist) |
+| PHerc0814 `2.399um-…-20260309142202.zarr` | 1.50 s · 16 · 4.6 KiB | none | 5.39 s · 20 reads · 5.0 MiB, 17 populated |
+| PHerc1447 `8.64um-…-20250521151220.zarr` | 1.75 s · 16 · 3.6 KiB | none | 1.23 s · 13 reads · 877.7 KiB, 13 populated, 1 sparse level not sampled |
+| PHerc0009B surface prediction (Blosc/zstd) | 1.52 s · 16 · 5.3 KiB | none | 6.64 s · 12 reads · 2.8 MiB, 12 populated |
+| PHerc0343 masked volume (17998 × 8595 × 8595 at L0) | 1.47 s · 16 · 4.4 KiB | none | 6.89 s · 21 reads · 8.1 MiB, 17 populated |
+| PHercParis4 ink detection (v3 sharded) | 2.30 s · 22 · 8.9 KiB | none | not measured (sharded path bypasses the counted store API) |
+
+Header audits cost under 9 KiB regardless of array size. The probe costs roughly 240–1,900× more
+bytes. Payload bytes exclude HTTP/TLS overhead and S3 listing responses; see the artifact README for
+exactly what is and is not counted.
 
 **Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
 defective pyramids across both stores, with finding codes, severity and evidence pointers.
@@ -392,6 +464,31 @@ drift, non-monotonic scales, mixed ceil/floor rounding, or undeclared level dire
 B=https://dl.ash2txt.org/other/dev/inked_zarrs/3336_predictions.zarr
 for l in 0 1 2 3 4 5; do printf "L$l .zarray="; curl -s -o /dev/null -w "%{http_code}" $B/$l/.zarray; printf "  chunks="; curl -s $B/$l/ | grep -c 'href="[^.]'; done
 ```
+
+## Limitations
+
+- **Metadata consistency is not volumetric semantic correctness.** A pyramid can pass every check
+  and still hold the wrong scan, a misregistered render, or a bad segmentation. ZPA checks structure,
+  presence and self-consistency, not meaning.
+- **A sampled chunk probe is evidence, not exhaustive validation.** `zpa-scan-chunks` decodes a few
+  chunks per level (3 by default). It can miss a populated chunk among empty ones (fixture
+  `partially_empty`) or find no stored chunk at its sample positions on a sparse level
+  (`CHUNK_LEVEL_NO_SAMPLES`, a coverage gap). `CHUNK_SAMPLE_ALL_EMPTY` is a `medium` review flag,
+  because genuinely empty background exists.
+- **Network and access failures stay unknown.** A timeout, 401/403, 429, 5xx or unreadable listing is
+  recorded as `UNKNOWN`. It never becomes "missing" or "empty", and the report's `integrity` is then
+  `UNKNOWN`, never `PASS`. The gate fails closed on it unless you pass `--ignore-unreadable`.
+- **Chunk presence needs a trustworthy listing.** Without an autoindex that shows the level header,
+  `LEVEL_NO_CHUNKS` cannot be proven and the level's chunk evidence stays `UNKNOWN`. That is
+  reported under `coverage`, not as a finding.
+- **Missing ≠ empty ≠ zero-filled.** A chunk absent from a listing or shard index is masked
+  background. A stored chunk equal to `fill_value` is "empty". Stored zeros with a non-zero fill
+  are data. The fixture corpus pins all three.
+- **Severities are policy-laden.** `high` means "do not train / do not publish" for the failure class
+  this project targets. Your pipeline may need a stricter threshold (`--fail-on medium`).
+- **Coverage of codecs and hosts.** The chunk probe decodes raw, Blosc and volcomp-sharded chunks
+  (Linux x86-64 for the vendored decoder). Other codecs are reported `CHUNK_UNDECODEABLE`, never
+  guessed.
 
 ## Accuracy policy
 

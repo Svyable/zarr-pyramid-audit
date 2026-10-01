@@ -41,15 +41,6 @@ def shard_bytes(*, with_crc=True, flip=None):
     return b"\xAA" * 64 + index          # arbitrary payload, then the index
 
 
-class Resp:
-    def __init__(self, status, content=b""):
-        self.status_code, self.content, self.headers = status, content, {}
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise RuntimeError(self.status_code)
-
-
 class FakeStore:
     def __init__(self, zarr_json, shard):
         self.zarr_json, self.shard = zarr_json, shard
@@ -59,18 +50,10 @@ class FakeStore:
     def get_json(self, path):
         return self.zarr_json
 
-    def url(self, path):
-        return "https://fx.invalid/" + path
-
-    def _session(self):
-        outer = self
-
-        class Sess:
-            def get(self, url, headers=None, timeout=None):
-                n = int(headers["Range"].split("=-")[1])
-                outer.suffix_reads += 1
-                return Resp(206, outer.shard[-n:])
-        return Sess()
+    def get_suffix(self, key, n):
+        # the probe reads shard indexes through the store's strict suffix read
+        self.suffix_reads += 1
+        return self.shard[-n:]
 
     def get_range(self, key, off, ln):
         self.range_reads += 1
@@ -110,15 +93,9 @@ def test_a_corrupt_shard_does_not_abort_the_rest_of_the_level():
     good, bad = shard_bytes(), shard_bytes(flip=3)
 
     class Two(FakeStore):
-        def _session(self):
-            outer = self
-
-            class Sess:
-                def get(self, url, headers=None, timeout=None):
-                    n = int(headers["Range"].split("=-")[1])
-                    blob = bad if "/c/0/" in url else good
-                    return Resp(206, blob[-n:])
-            return Sess()
+        def get_suffix(self, key, n):
+            blob = bad if "/c/0/" in key else good
+            return blob[-n:]
 
     samples = probe_level_volcomp_sharded(
         Two(m, good), "root.zarr", LEVEL, samples_per_level=2,

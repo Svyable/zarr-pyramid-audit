@@ -1,0 +1,5 @@
+$ zpa-gate --base s3://vesuvius-challenge-open-data --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr" --fail-on high --out gate-passes-clean.json
+PASS  PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr
+
+gate: 1 pass, 0 fail out of 1 roots (threshold: high+)
+exit=0

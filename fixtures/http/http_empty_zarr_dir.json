@@ -1,0 +1,19 @@
+{
+  "property": "listing succeeds and is empty, all header probes 404: EMPTY_ZARR_DIR",
+  "root": "root",
+  "routes": {
+    "root/": {
+      "status": 200,
+      "text": "<html><body><a href=\"../\">../</a></body></html>"
+    },
+    "root/.zarray": {
+      "status": 404
+    },
+    "root/.zgroup": {
+      "status": 404
+    },
+    "root/zarr.json": {
+      "status": 404
+    }
+  }
+}

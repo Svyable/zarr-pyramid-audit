@@ -1,0 +1,108 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "1",
+      "level_codes": [
+        "CHUNK_LEVEL_NO_CHUNKS"
+      ],
+      "samples": []
+    }
+  ],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 1,
+      "PRESENT": 1,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 2,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "DEGENERATE_LEVEL",
+      "evidence_state": "PRESENT",
+      "level": "1",
+      "severity": "high"
+    },
+    {
+      "actionable": true,
+      "code": "LEVEL_NO_CHUNKS",
+      "evidence_state": "ABSENT",
+      "level": "1",
+      "severity": "high"
+    },
+    {
+      "actionable": true,
+      "code": "SCALE_SHAPE_MISMATCH",
+      "evidence_state": "PRESENT",
+      "level": "1",
+      "severity": "high"
+    }
+  ],
+  "fixture": "degenerate_level",
+  "gate": {
+    "codes": [
+      "DEGENERATE_LEVEL",
+      "LEVEL_NO_CHUNKS",
+      "SCALE_SHAPE_MISMATCH"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": "NO_CHUNK_KEYS",
+      "chunk_evidence_state": "ABSENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": false,
+      "path": "1",
+      "present": true,
+      "shape": [
+        0,
+        8,
+        8
+      ]
+    }
+  ],
+  "max_severity": "high",
+  "property": "level 1 has a zero extent",
+  "source": "zarr/degenerate_level.zarr"
+}

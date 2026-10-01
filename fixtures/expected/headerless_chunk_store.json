@@ -1,0 +1,42 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "HEADERLESS_CHUNK_STORE",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "high"
+    }
+  ],
+  "fixture": "headerless_chunk_store",
+  "gate": {
+    "codes": [
+      "HEADERLESS_CHUNK_STORE"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "headerless_chunks",
+  "levels": [],
+  "max_severity": "high",
+  "property": "chunk keys present, no .zarray/.zgroup/zarr.json",
+  "source": "zarr/headerless_chunk_store.zarr"
+}

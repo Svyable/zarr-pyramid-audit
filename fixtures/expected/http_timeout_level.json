@@ -1,0 +1,67 @@
+{
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 1,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 2,
+    "levels_present": 1,
+    "levels_unknown": 1
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": false,
+      "code": "ACCESS_UNKNOWN",
+      "evidence_state": "UNKNOWN",
+      "level": "1",
+      "severity": "info"
+    }
+  ],
+  "fixture": "http_timeout_level",
+  "gate": {
+    "codes": [
+      "GATE_UNREADABLE"
+    ],
+    "fail": true,
+    "verdict": "unreadable"
+  },
+  "integrity": "UNKNOWN",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        8
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "UNKNOWN",
+      "dtype": null,
+      "evidence_reason": "TIMEOUT",
+      "evidence_state": "UNKNOWN",
+      "has_chunks": null,
+      "path": "1",
+      "present": false,
+      "shape": null
+    }
+  ],
+  "max_severity": "info",
+  "property": "a level header read times out: UNKNOWN, not missing",
+  "source": "http/http_timeout_level.json"
+}

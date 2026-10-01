@@ -169,3 +169,108 @@ def test_parse_zarr_json_reads_index_location():
     meta = _meta()
     meta["codecs"][0]["configuration"]["index_location"] = "start"
     assert vc.parse_zarr_json(meta).index_location == "start"
+
+
+# ---- shard-index reads go through the strict suffix read --------------------
+
+from zpa.chunkscan import probe_level_volcomp_sharded  # noqa: E402
+from zpa.httpstore import HttpStore  # noqa: E402
+
+_SMALL = {
+    "shape": [256, 256, 256],
+    "chunk_grid": {"configuration": {"chunk_shape": [256, 256, 256]}},
+    "codecs": [{"name": "sharding_indexed", "configuration": {
+        "chunk_shape": [128, 128, 128],
+        "codecs": [{"name": "volcomp"}],
+        "index_codecs": [{"name": "bytes"}]}}],
+}
+_INDEX_ALL_MISSING = struct.pack("<QQ", vc.MISSING, vc.MISSING) * 8   # 128 B
+_SHARD = b"\x00" * 64 + _INDEX_ALL_MISSING                           # 192 B
+_LEVEL = {"level": "0", "fill_value": 0}
+
+
+class _Resp:
+    def __init__(self, status, body=b"", headers=None):
+        self.status_code, self.content = status, body
+        self.headers = {"Content-Length": str(len(body)), **(headers or {})}
+
+    @property
+    def ok(self):
+        return 200 <= self.status_code < 400
+
+    def close(self):
+        pass
+
+
+def _probe(shard_responses):
+    """shard_responses: callable(method, headers) -> _Resp for the shard."""
+    import json
+    store = HttpStore("https://fixture.invalid/", tries=1)
+    seen = []
+
+    def request(method, path, **kw):
+        if path == "r/0/zarr.json":
+            return _Resp(200, json.dumps(_SMALL).encode())
+        assert path == "r/0/c/0/0/0", path
+        seen.append((method, kw.get("headers", {}).get("Range")))
+        return shard_responses(method, kw.get("headers", {}))
+
+    store._request = request
+    return probe_level_volcomp_sharded(store, "r", _LEVEL), seen
+
+
+@pytest.fixture(autouse=False)
+def needs_volcomp():
+    ok, reason = vc.available()
+    if not ok:
+        pytest.skip(f"volcomp unavailable: {reason}")
+
+
+def test_valid_suffix_index_is_parsed(needs_volcomp):
+    out, seen = _probe(lambda m, h: _Resp(
+        206, _INDEX_ALL_MISSING, {"Content-Range": "bytes 64-191/192"}))
+    assert [s.status for s in out] == ["missing"] * 3
+    assert seen == [("GET", "bytes=-128")]
+
+
+def test_invalid_content_range_fails_closed(needs_volcomp):
+    # right length, wrong window: must not be parsed as the index
+    out, _ = _probe(lambda m, h: _Resp(
+        206, _INDEX_ALL_MISSING, {"Content-Range": "bytes 0-127/192"}))
+    assert [s.status for s in out] == ["fetch_error"]
+    assert "invalid Content-Range" in out[0].detail
+
+
+def test_missing_content_range_fails_closed(needs_volcomp):
+    out, _ = _probe(lambda m, h: _Resp(206, _INDEX_ALL_MISSING))
+    assert [s.status for s in out] == ["fetch_error"]
+
+
+def test_absent_shard_is_missing_not_error(needs_volcomp):
+    out, _ = _probe(lambda m, h: _Resp(404))
+    assert [s.status for s in out] == ["missing"]
+
+
+def test_unsatisfiable_suffix_is_undecodable(needs_volcomp):
+    out, _ = _probe(lambda m, h: _Resp(416))
+    assert [s.status for s in out] == ["undecodable"]
+
+
+def test_rejected_suffix_range_falls_back_to_strict_range(needs_volcomp):
+    def shard(method, headers):
+        rng = headers.get("Range")
+        if method == "HEAD":
+            return _Resp(200, b"", {"Content-Length": "192"})
+        if rng == "bytes=-128":
+            return _Resp(400)
+        assert rng == "bytes=64-191", rng
+        return _Resp(206, _INDEX_ALL_MISSING, {"Content-Range": "bytes 64-191/192"})
+
+    out, seen = _probe(shard)
+    assert [s.status for s in out] == ["missing"] * 3
+    assert [m for m, _ in seen] == ["GET", "HEAD", "GET"]
+
+
+def test_server_error_is_fetch_error_not_missing(needs_volcomp):
+    out, _ = _probe(lambda m, h: _Resp(503))
+    assert [s.status for s in out] == ["fetch_error"]

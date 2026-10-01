@@ -45,7 +45,9 @@ import random
 import sys
 from collections import Counter
 
-from zpa.chunkscan import (probe_level, probe_level_v3_sharded,
+from zpa.chunkscan import (FALLBACK_STATUS_CODE, SCAN_SEVERITY,
+                            STATUS_CODES, classify_level, probe_level,
+                            probe_level_v3_sharded,
                             probe_level_volcomp_sharded)  # noqa: E402
 from zpa.httpstore import open_store                        # noqa: E402
 from zpa.pool import parallel_map                           # noqa: E402
@@ -57,18 +59,11 @@ FINDING_HEADER = ["code", "severity", "root", "level", "chunk",
 # ChunkSample.status -> (finding code, severity). Anything not listed keeps
 # the historical CHUNK_FETCH_ERROR fallback, so a new status must be added
 # here deliberately or it will read as a network error.
-SAMPLE_FINDINGS = {
-    "populated": ("CHUNK_SAMPLE_POPULATED", "info"),
-    "empty": ("CHUNK_SAMPLE_EMPTY", "info"),
-    "missing": ("CHUNK_SAMPLE_MISSING", "info"),
-    "absent": ("CHUNK_SAMPLE_ABSENT", "info"),
-    "undecodable": ("CHUNK_UNDECODEABLE", "low"),
-    # low until a live run shows mismatches are rare: if the writer were
-    # non-conforming every shard would flag, and medium maps to CAUTION in
-    # ScrolIQ's per-volume verdict.
-    "index_checksum_mismatch": ("SHARD_INDEX_CHECKSUM_MISMATCH", "low"),
-}
-FALLBACK_FINDING = ("CHUNK_FETCH_ERROR", "low")
+# Status -> (code, severity), kept for callers of the 0.4.0 CLI module;
+# derived from zpa.chunkscan, the single source of truth.
+SAMPLE_FINDINGS = {status: (code, SCAN_SEVERITY[code])
+                   for status, code in STATUS_CODES.items()}
+FALLBACK_FINDING = (FALLBACK_STATUS_CODE, SCAN_SEVERITY[FALLBACK_STATUS_CODE])
 
 
 def main() -> int:
@@ -193,43 +188,17 @@ def main() -> int:
             root, per_level = res.value
             for level, has_chunks, samples in per_level:
                 levels_scanned += 1
-                if not samples:
-                    if has_chunks is False:
-                        # Audit-flagged chunkless level, confirmed: no
-                        # chunk keys among the probe's spread candidates.
-                        emit("CHUNK_LEVEL_NO_CHUNKS", "info", root,
-                             level, "",
-                             "level holds no stored chunks (audit: "
-                             "has_chunks=false; probe: no keys among 9 "
-                             "spread candidates)", 0)
-                    else:
-                        # Sparse level the spread sampling couldn't cover:
-                        # not evidence of absence, reported as a coverage
-                        # gap rather than a finding.
-                        emit("CHUNK_LEVEL_NO_SAMPLES", "info", root,
-                             level, "",
-                             "no chunk keys among 9 spread candidates; "
-                             "sparse level not coverable by spread "
-                             "sampling", 0)
-                    continue
-                for s in samples:
-                    bytes_total += s.bytes_fetched
-                    index_crc_counts[s.index_crc or "n/a"] += 1
-                    code, severity = SAMPLE_FINDINGS.get(s.status,
-                                                         FALLBACK_FINDING)
-                    emit(code, severity, s.root, s.level,
-                         ".".join(map(str, s.chunk_index)), s.detail,
-                         s.bytes_fetched)
-                # Only *present* chunks count toward the all-empty verdict;
-                # missing inner chunks legitimately read as fill (masked).
-                decodable = [s for s in samples
-                             if s.status in ("populated", "empty")]
-                if decodable and all(s.status == "empty" for s in decodable):
+                level_findings, all_empty = classify_level(
+                    root, level, has_chunks, samples,
+                    n_candidates=args.samples_per_level * 3)
+                for smp in samples:
+                    index_crc_counts[smp.index_crc or "n/a"] += 1
+                for f in level_findings:
+                    bytes_total += int(f["bytes_fetched"] or 0)
+                    w.writerow(f)
+                    codes[f["code"]] += 1
+                if all_empty:
                     levels_all_empty.append((root, level))
-                    emit("CHUNK_SAMPLE_ALL_EMPTY", "medium", root, level,
-                         "",
-                         f"all {len(decodable)} sampled chunks decode to "
-                         f"fill_value; human review needed", 0)
 
         summary = {
             "roots_scanned": len(roots),

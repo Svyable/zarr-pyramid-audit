@@ -1,0 +1,103 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "2",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    }
+  ],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 2,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 3,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "METADATA_UNREADABLE",
+      "evidence_state": "PRESENT",
+      "level": "1",
+      "severity": "high"
+    }
+  ],
+  "fixture": "malformed_level_header",
+  "gate": {
+    "codes": [
+      "METADATA_UNREADABLE"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "UNKNOWN",
+      "dtype": null,
+      "evidence_reason": "METADATA_UNREADABLE",
+      "evidence_state": "PRESENT",
+      "has_chunks": null,
+      "path": "1",
+      "present": false,
+      "shape": null
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "2",
+      "present": true,
+      "shape": [
+        2,
+        4,
+        4
+      ]
+    }
+  ],
+  "max_severity": "high",
+  "property": "level 1 .zarray is truncated JSON",
+  "source": "zarr/malformed_level_header.zarr"
+}

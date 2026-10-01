@@ -1,0 +1,52 @@
+# Copy into .github/workflows/ of the repository that PUBLISHES or CONSUMES
+# a Zarr dataset. The `zarr-gate` job audits the roots first; the downstream
+# job only runs when the gate exits 0.
+#
+# ZPA produces evidence; this workflow owns the policy. Tune it with:
+#   --fail-on high|medium|low   severity that fails the job (default high)
+#   --ignore-unreadable         let roots whose evidence is UNKNOWN pass (not recommended)
+#   --allow-absent              let roots that do not exist pass (not recommended)
+#
+# Pin ZPA to a tested commit, as downstream consumers should.
+name: dataset-pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ["publish/roots.jsonl"]
+
+permissions:
+  contents: read
+
+jobs:
+  zarr-gate:
+    runs-on: ubuntu-latest
+    env:
+      ZPA_REF: main                    # replace with a tested commit SHA
+      STORE: s3://vesuvius-challenge-open-data/
+      AWS_ENDPOINT_URL_S3: https://s3.us-east-1.amazonaws.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install zarr-pyramid-audit
+        run: pip install "git+https://github.com/Svyable/zarr-pyramid-audit.git@${ZPA_REF}"
+      - name: Gate the roots (header-only, a few KB per pyramid)
+        # roots.jsonl: one {"root": "<path/to/volume.zarr>"} per line,
+        # relative to $STORE. Use --root <path> for a single volume.
+        run: |
+          zpa-gate --base "$STORE" --roots publish/roots.jsonl \
+            --fail-on high --format github --out zpa-gate.json
+      - name: Keep the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zpa-gate-report
+          path: zpa-gate.json
+
+  train-or-publish:
+    needs: zarr-gate                   # skipped unless the gate passed
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "gate passed; downstream dataset work runs here"

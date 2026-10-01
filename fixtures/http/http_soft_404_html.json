@@ -1,0 +1,13 @@
+{
+  "property": "server answers 200 with an HTML error page for .zgroup (soft 404): unreadable metadata, fails closed",
+  "root": "root",
+  "routes": {
+    "root/.zgroup": {
+      "status": 200,
+      "text": "<html><body>404 - page not found</body></html>"
+    },
+    "root/zarr.json": {
+      "status": 404
+    }
+  }
+}

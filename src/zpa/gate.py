@@ -14,8 +14,14 @@ CI or a publish script:
     python bin/gate.py --base s3://my-bucket/publish/ \\
         --roots publish_manifest.jsonl --fail-on high
 
-Exit codes: 0 = all roots clean, 1 = gate failed (defects or unreadable
-roots), 2 = usage error.
+Exit codes: 0 = all roots clean, 1 = gate failed (defects, unreadable
+roots, or roots that do not exist), 2 = usage error.
+
+``--out`` writes a JSON report carrying ``schema_version``; each result
+embeds the full per-root audit report described by
+``zpa/data/audit-report.schema.json`` (see ``zpa.report``). ``--base`` may
+also be a local directory (``file://`` or a plain path) to gate a staging
+tree before upload.
 
 Usage:
     python bin/gate.py --base https://dl.ash2txt.org/ --root <path> [--root ...]
@@ -45,6 +51,7 @@ INFO_CODES, SEVERITY, audit_one, load_roots = (
 
 from zpa.httpstore import open_store                                       # noqa: E402
 from zpa.pool import parallel_map                                          # noqa: E402
+from zpa.report import NOTHING_TO_AUDIT, SCHEMA_VERSION, build_report      # noqa: E402
 from zpa.zarrmeta import read_pyramid                                      # noqa: E402
 
 SEV_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}
@@ -54,7 +61,7 @@ def parse_args(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--base", required=True,
-                    help="store base URL (http(s):// or s3://)")
+                    help="store base: http(s)://, s3://, file:// or a local directory")
     ap.add_argument("--roots", help="JSONL from discover_zarr.py")
     ap.add_argument("--root", action="append", default=[],
                     help="explicit root (repeatable)")
@@ -65,6 +72,10 @@ def parse_args(argv=None):
     ap.add_argument("--ignore-unreadable", action="store_true",
                     help="do not fail the gate when a root cannot be read at "
                          "all (default: unreadable roots fail the gate)")
+    ap.add_argument("--allow-absent", action="store_true",
+                    help="do not fail the gate when a root is confirmed absent "
+                         "or an empty directory (default: a root with nothing "
+                         "to audit fails the gate)")
     ap.add_argument("--format", default="text", choices=["text", "github"],
                     help="'github' emits ::error/::warning workflow annotations")
     ap.add_argument("--out", default=None,
@@ -84,10 +95,11 @@ def check_one(store, root: str, args) -> dict:
     """Audit a single root; return its gate verdict."""
     try:
         pm = read_pyramid(store, root, check_chunks=not args.no_chunk_presence)
-        findings, _, _ = audit_one(pm)
+        findings, _, pyr_rec = audit_one(pm)
+        report = build_report(pm, findings=findings, pyramid_record=pyr_rec)
     except Exception as e:  # noqa: BLE001 -- a gate must report, not crash
         return {"root": root, "verdict": "unreadable",
-                "fail": not args.ignore_unreadable,
+                "fail": not args.ignore_unreadable, "integrity": "UNKNOWN",
                 "findings": [{"code": "GATE_UNREADABLE", "severity": "high",
                               "level": "", "detail": f"{type(e).__name__}: {e}"}]}
     access_unknown = [f for f in findings if f["code"] == "ACCESS_UNKNOWN"]
@@ -100,6 +112,8 @@ def check_one(store, root: str, args) -> dict:
             "root": root,
             "verdict": "unreadable",
             "fail": not args.ignore_unreadable,
+            "integrity": report["integrity"],
+            "report": report,
             "findings": [{
                 "code": "GATE_UNREADABLE",
                 "severity": "high",
@@ -111,28 +125,60 @@ def check_one(store, root: str, args) -> dict:
             ],
         }
 
+    # A root that does not exist (or is an empty directory) has nothing to
+    # audit. In a publish manifest that is a typo or a failed upload, and
+    # it must not read as a pass just because ROOT_ABSENT is low severity.
+    absent = [f for f in findings if f["code"] in NOTHING_TO_AUDIT]
+    if absent:
+        return {
+            "root": root,
+            "verdict": "absent",
+            "fail": not getattr(args, "allow_absent", False),
+            "integrity": report["integrity"],
+            "report": report,
+            "findings": [{
+                "code": "GATE_ROOT_ABSENT",
+                "severity": "high",
+                "level": "",
+                "detail": (f"nothing to audit ({absent[0]['code']}): "
+                           f"{absent[0]['detail']}"),
+            }],
+            "informational": [],
+        }
+
     threshold = SEV_ORDER[args.fail_on]
     failing = [f for f in findings
                if SEV_ORDER.get(f["severity"], 0) >= threshold]
     info = [f for f in findings if f["code"] in INFO_CODES]
+    below = [f for f in findings
+             if f not in failing and f["code"] not in INFO_CODES]
     return {"root": root,
             "verdict": "fail" if failing else "pass",
             "fail": bool(failing),
+            "integrity": report["integrity"],
             "findings": failing,
+            "below_threshold": [{"code": f["code"], "severity": f["severity"],
+                                 "level": f["level"], "detail": f["detail"]}
+                                for f in below],
             "informational": [{"code": f["code"], "detail": f["detail"]}
-                              for f in info]}
+                              for f in info],
+            "report": report}
 
 
 def emit_text(results: list[dict]) -> None:
     for r in results:
         if r["verdict"] == "pass":
             extra = ""
-            if r.get("informational"):
-                codes = sorted({i["code"] for i in r["informational"]})
+            codes = sorted({i["code"] for i in r.get("below_threshold", [])}
+                           | {i["code"] for i in r.get("informational", [])})
+            if codes:
                 extra = f" [{','.join(codes)}]"
             print(f"PASS  {r['root']}{extra}")
         elif r["verdict"] == "unreadable":
             print(f"ERROR {r['root']}: {r['findings'][0]['detail']}")
+        elif r["verdict"] == "absent":
+            label = "ABSENT" if r["fail"] else "SKIP "
+            print(f"{label} {r['root']}: {r['findings'][0]['detail']}")
         else:
             print(f"FAIL  {r['root']}:")
             for f in r["findings"]:
@@ -143,7 +189,7 @@ def emit_text(results: list[dict]) -> None:
 def emit_github(results: list[dict]) -> None:
     for r in results:
         for f in r["findings"]:
-            kind = "error" if f["severity"] == "high" else "warning"
+            kind = "error" if f["severity"] == "high" and r["fail"] else "warning"
             lvl = f" level={f['level']}" if f["level"] else ""
             # single line; GitHub annotations take %0A for newlines
             detail = f["detail"].replace("\n", "%0A")
@@ -167,6 +213,7 @@ def main(argv=None) -> int:
         if not res.ok:
             results.append({"root": res.item, "verdict": "unreadable",
                             "fail": not args.ignore_unreadable,
+                            "integrity": "UNKNOWN",
                             "findings": [{"code": "GATE_UNREADABLE",
                                           "severity": "high", "level": "",
                                           "detail": res.error}]})
@@ -186,7 +233,8 @@ def main(argv=None) -> int:
 
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
-            json.dump({"base": args.base, "fail_on": args.fail_on,
+            json.dump({"schema_version": SCHEMA_VERSION,
+                       "base": args.base, "fail_on": args.fail_on,
                        "n_roots": len(results), "n_pass": n_pass,
                        "n_fail": n_fail, "results": results},
                       fh, indent=2)
