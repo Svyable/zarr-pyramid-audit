@@ -52,3 +52,15 @@ def test_source_volume_guard_matches_exactly():
     validate_volume_lineage("eligible-volume", "eligible-volume")
     with pytest.raises(ValueError, match="does not match"):
         validate_volume_lineage("other-volume", "eligible-volume")
+
+
+def test_depth_percentiles_use_full_sampled_pixel_set():
+    data = np.arange(16, dtype=np.float32).reshape(1, 4, 4)
+    report = profile_surface_volume(
+        Array(data), grid=2, tile_size=2, expected_depth=1
+    )
+    row = report["per_depth"][0]
+
+    assert row["p01"] == pytest.approx(0.15)
+    assert row["p50"] == pytest.approx(7.5)
+    assert row["p99"] == pytest.approx(14.85)
