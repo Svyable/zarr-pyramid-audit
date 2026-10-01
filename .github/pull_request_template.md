@@ -10,6 +10,7 @@
 
 - [ ] Corpus-wide evidence (not one anecdote) for `high` severity
 - [ ] `data/known-defects.json` updated via `zpa-known-defects` if applicable
+- [ ] Contract change? Migration note + `contract-fingerprint` in `CHANGELOG.md`, fixture added, goldens regenerated and reviewed
 
 ## Docs
 

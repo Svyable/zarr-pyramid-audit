@@ -26,12 +26,21 @@ open-problem diagnostics). ScrolIQ depends on this repo, never the reverse; see
 - `src/zpa/` — the real package (`pip install -e .` → `zpa-*` console scripts)
   - `audit_pyramid.py` — `audit_one(pm)`, check codes, severities
   - `zarrmeta.py` — `read_pyramid(store, root)` (header-only, fast)
-  - `httpstore.py` — `open_store(base)` for https:// and s3://
+  - `httpstore.py` — `open_store(base)` for https://, s3://, file:// and local paths
+  - `report.py` — versioned audit report (`schema_version`, `integrity`
+    PASS/WARN/UNKNOWN/FAIL); schema in `data/audit-report.schema.json`
   - `volcomp.py` — volcomp shard-index parsing + decode via vendored libvolcomp
   - `data/` — vendored `libvolcomp` decoder (Linux x86-64, MIT; see
     `src/zpa/data/VOLCOMP_PROVENANCE.md`); override with `$VOLCOMP_LIB`
 - `bin/` — thin shims, kept for backward compatibility
 - `tests/` — pytest suite; keep it green
+- `fixtures/` — fixture corpus: one property per Zarr tree / replayed HTTP
+  case, golden outputs in `fixtures/expected/` (`python fixtures/corpus.py
+  expected` to regenerate; review the diff)
+- `examples/` — CI gate job, preflight script, Python API example (not active
+  workflows)
+- `CHANGELOG.md` — contract changes need a migration note with the
+  `contract-fingerprint` (enforced by `tests/test_contract.py`)
 - `data/known-defects.json` — machine-readable defect kill list (generator:
   `zpa-known-defects`)
 - `docs/` — GitHub Pages dashboard + September writeup. `docs/index.html` is
@@ -46,7 +55,8 @@ open-problem diagnostics). ScrolIQ depends on this repo, never the reverse; see
   `zpa.zarrmeta.read_pyramid`, `zpa.audit_pyramid.audit_one` and
   `zpa.volcomp`, and pins a tested commit of this repo in its
   `requirements-ci.txt`. Don't change those signatures or the finding fields
-  (`code`, `severity`, `level`, `detail`) without checking it.
+  (`code`, `severity`, `level`, `detail`) without checking it. The supported
+  machine-readable surface is `zpa.report` + its schema (`docs/INTEGRATION.md`).
 
 ## Commands
 
@@ -79,7 +89,8 @@ python -m pytest tests/ -q
 ## Working rules
 
 - Branch from `main`; never force-push to `main`.
-- New check codes need a unit test on a synthetic pyramid.
+- New check codes need a fixture in `fixtures/` with a reviewed golden output,
+  and a CHANGELOG migration note (contract change).
 - Every number in docs/PRs must trace to a command + artifact in this repo.
 - Add new defects to `data/known-defects.json` via the generator, not by hand.
 - Opening PRs/issues, enabling CI, or publishing to PyPI needs the

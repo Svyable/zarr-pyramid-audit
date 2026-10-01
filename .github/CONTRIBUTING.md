@@ -40,8 +40,8 @@ zpa-known-defects --in out/ --out data/known-defects.json
 python -m pytest tests/ -q
 ```
 
-All tests must pass before a PR is merged. New check codes need a unit test
-on a synthetic pyramid (see `tests/` for fixtures).
+All tests must pass before a PR is merged. New check codes need a fixture
+in the corpus (`fixtures/`, see its README) with a reviewed golden output.
 
 ## The accuracy policy (read this)
 
@@ -63,6 +63,12 @@ PR, issue, or doc change must be backed by something a reviewer can re-run:
 2. Keep PRs small. One check code or finding per PR.
 3. Update docs (README / dashboard / September page) if behavior changes.
 4. CI runs the test suite; green is required.
+5. **Contract changes** (a check code added/removed/renamed, a severity, the
+   report schema, the integrity states or the recommended verdicts) need a
+   migration note in `CHANGELOG.md` quoting the new `contract-fingerprint`,
+   a fixture in `fixtures/corpus.py` that exercises the change, and
+   regenerated goldens (`python fixtures/corpus.py expected`) whose diff is
+   reviewed. The tests enforce the first two; see `CHANGELOG.md`.
 
 ## Reporting a data finding
 

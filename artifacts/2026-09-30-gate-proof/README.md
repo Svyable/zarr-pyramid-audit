@@ -20,3 +20,20 @@ zpa-gate --base s3://vesuvius-challenge-open-data \
 ```
 
 This is the check that would have caught villa #1892 before publication.
+
+## Erratum (2026-10-01)
+
+The "clean sibling" above, `1.129um-0.22m-59keV-volume-20260521123630.zarr`,
+**does not exist** in the bucket: an S3 listing of the `surface-volumes/`
+prefix shows only the `-L1` root, `2.399um-0.22m-78keV-volume-20260309142202.zarr`
+and `9.362um-1.2m-113keV-volume-20250804134230.zarr`, and `zpa-audit` classifies
+the path as `ROOT_ABSENT`. The gate passed it because `ROOT_ABSENT` is `low`
+severity, below the `high` threshold, and the text output did not show
+below-threshold findings. `gate-passes-clean.log` therefore shows the gate
+passing a missing path, not a clean volume. The rejection half of this proof
+(`gate-rejects-defective.log`) is unaffected.
+
+Fixed in the gate (absent or empty roots now fail closed as `GATE_ROOT_ABSENT`;
+PASS lines list below-threshold codes) and re-proven with a real clean
+sibling in [`2026-10-01-gate-proof`](../2026-10-01-gate-proof/). The logs in
+this directory are kept unchanged as the historical record.
