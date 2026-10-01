@@ -16,7 +16,8 @@ clean. See [Limitations](#limitations).
 
 **Reviewing a submission?** [`docs/SUBMISSION.md`](docs/SUBMISSION.md) maps each criterion to the command
 or artifact behind it, including how ZPA compares with zarr-python and the OME-NGFF validator on the
-same live defect ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)).
+same live defect ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)). October's goals, each with the evidence that will count as done, are on
+[`docs/october-2026.html`](https://svyable.github.io/zarr-pyramid-audit/october-2026.html).
 
 ## Reproduce in 60 seconds
 

@@ -147,14 +147,14 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
     <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
-    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a>
+    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a><a href="./october-2026.html">October plan</a>
     <a href="https://github.com/Svyable/zarr-pyramid-audit">GitHub</a>
   </div>
   <span class="navstatus">● evidence-backed</span>
 </div></nav>
 
 <header class="hero"><div class="wrap">
-  <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER 2026</div>
+  <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER – OCTOBER 2026</div>
   <h1>zarr-pyramid-audit</h1>
   <p class="tagline">Corruption detection for OME-Zarr pyramids. <em>Don't train on lies.</em></p>
   <p class="lede">An independent integrity audit of the public Vesuvius Challenge
@@ -162,7 +162,8 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   no full downloads — plus sampled chunk-content probes that decode real voxels.
   Every number below is read from committed audit artifacts; nothing is hand-typed.
   <a href="#verify">Verify it in 60 seconds →</a> · <a href="https://github.com/Svyable/zarr-pyramid-audit">Repo (MIT)</a> ·
-  <a href="./september-2026.html">September 2026 writeup →</a></p>
+  <a href="./september-2026.html">September 2026 writeup →</a> ·
+  <a href="./october-2026.html">October 2026 goals →</a></p>
   <p class="suitechip"><a href="#scroliq">The integrity half of the ScrolIQ data-quality suite — how the two fit together →</a></p>
   <div class="stats">
     <div class="stat"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
@@ -372,9 +373,9 @@ scrollq-health --root &lt;volume&gt;</code></div>
   <p>The header-only audit answers "are chunk keys present?" — the probe answers the
   next question: <b>"do the present chunks hold data?"</b> This closes the next
   silent-corruption class: chunks that exist but decode to all fill_value.</p>
-  <table><thead><tr><th>campaign</th><th class="num">roots</th><th class="num">levels</th>
+  <div style="overflow-x:auto"><table><thead><tr><th>campaign</th><th class="num">roots</th><th class="num">levels</th>
   <th class="num">chunks decoded</th><th class="num">populated</th><th class="num">all-empty levels</th></tr></thead>
-  <tbody><tr><td>S3 v2 (zarr-python windows)</td><td class="num">58</td><td class="num">291</td><td class="num">788</td><td class="num" style="color:var(--good)"><b>788</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>S3 v3 sharded (zarr-python windows)</td><td class="num">70</td><td class="num">420</td><td class="num">1260</td><td class="num" style="color:var(--good)"><b>1224</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl volcomp (vendored libvolcomp, HTTP byte ranges)</td><td class="num">64</td><td class="num">384</td><td class="num">2666</td><td class="num" style="color:var(--good)"><b>548</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl v2 raw/Blosc</td><td class="num">128</td><td class="num">748</td><td class="num">1812</td><td class="num" style="color:var(--good)"><b>1795</b></td><td class="num" style="color:var(--bad)"><b>7</b></td></tr></tbody></table>
+  <tbody><tr><td>S3 v2 (zarr-python windows)</td><td class="num">58</td><td class="num">291</td><td class="num">788</td><td class="num" style="color:var(--good)"><b>788</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>S3 v3 sharded (zarr-python windows)</td><td class="num">70</td><td class="num">420</td><td class="num">1260</td><td class="num" style="color:var(--good)"><b>1224</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl volcomp (vendored libvolcomp, HTTP byte ranges)</td><td class="num">64</td><td class="num">384</td><td class="num">2666</td><td class="num" style="color:var(--good)"><b>548</b></td><td class="num" style="color:var(--good)"><b>0</b></td></tr><tr><td>dl v2 raw/Blosc</td><td class="num">128</td><td class="num">748</td><td class="num">1812</td><td class="num" style="color:var(--good)"><b>1795</b></td><td class="num" style="color:var(--bad)"><b>7</b></td></tr></tbody></table></div>
   <div class="gatebox"><b>One real catch:</b> <code>other/dev/meshes/20231022170900-ome.zarr</code> L1–L7 decode to all zeros while L0 holds mesh data — a dev-directory mesh derivative, not a scroll. Flagged <b>medium</b> for human review, with caveats. This is the probe working as designed.</div>
   <p>The present-but-empty class was not observed in the S3 or training-volume samples —
   reported as evidence of absence in the sample, not proof of absence in the corpus.
@@ -383,27 +384,27 @@ scrollq-health --root &lt;volume&gt;</code></div>
 
 <div class="panel" id="surfaces"><h2>tifxyz surfaces<span class="sub">2026-10-01 · <code>zpa-tifxyz --content</code> on every surface patch in the S3 bucket</span></h2>
   <p><b>1539</b> surfaces audited: <b>1539</b> integrity PASS, 0 WARN, 0 UNKNOWN, 0 FAIL. Findings at medium or above: <b>0</b>. Content tier skipped on 148 surfaces (channels over the 32 MiB cap) &mdash; reported as a coverage gap, not a pass.</p>
-  <table><thead><tr><th>code</th><th class="num">surfaces</th><th>meaning</th></tr></thead><tbody><tr><td><code>TIFXYZ_NEGATIVE_COORDINATE</code></td><td class="num">161</td><td style="color:var(--muted)">valid points with a negative coordinate (outside any volume)</td></tr><tr><td><code>TIFXYZ_CONTENT_UNDECODED</code></td><td class="num">148</td><td style="color:var(--muted)">content tier skipped (size cap or layout): coverage gap</td></tr><tr><td><code>TIFXYZ_BBOX_MISMATCH</code></td><td class="num">30</td><td style="color:var(--muted)">declared bbox differs from the stored coordinates</td></tr></tbody></table>
+  <div style="overflow-x:auto"><table><thead><tr><th>code</th><th class="num">surfaces</th><th>meaning</th></tr></thead><tbody><tr><td><code>TIFXYZ_NEGATIVE_COORDINATE</code></td><td class="num">161</td><td style="color:var(--muted)">valid points with a negative coordinate (outside any volume)</td></tr><tr><td><code>TIFXYZ_CONTENT_UNDECODED</code></td><td class="num">148</td><td style="color:var(--muted)">content tier skipped (size cap or layout): coverage gap</td></tr><tr><td><code>TIFXYZ_BBOX_MISMATCH</code></td><td class="num">30</td><td style="color:var(--muted)">declared bbox differs from the stored coordinates</td></tr></tbody></table></div>
   <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-tifxyz">Run artifacts &rarr;</a></p>
 </div>
 <div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
-  <table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
+  <div style="overflow-x:auto"><table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
   <tr><td>Zarr format</td><td>v3</td><td>v2</td></tr>
   <tr><td>chunking</td><td>1024³ shards</td><td>128³ raw</td></tr>
   <tr><td>codec</td><td>sharding_indexed + lossy volcomp (q=1.0)</td><td>none (raw uint8)</td></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p>Byte-level comparison (volcomp decoded from source) shows quantization noise only:
   max absolute difference 30–35, mean below 0.1, ~2–4% of voxels differ.
   <b>Reproducibility work must pin the store, not just the filename.</b></p>
 </div>
 
 <div class="panel"><h2>Known silent-zero volumes<span class="sub">dl.ash2txt.org · header-only levels confirmed by direct read</span></h2>
-  <table><thead><tr><th>volume</th><th>header-only levels</th></tr></thead><tbody>
+  <div style="overflow-x:auto"><table><thead><tr><th>volume</th><th>header-only levels</th></tr></thead><tbody>
   <tr><td><code>community-uploads/bruniss/labels/surfaces/archive/1-voxel-sheet_slices-closed.zarr</code></td><td>1–5 (level 0 populated)</td></tr>
   <tr><td><code>other/dev/inked_zarrs/3336_predictions.zarr</code></td><td>all six</td></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p>Unchanged between the 2026-09-09 and 2026-09-29 audits. Full machine-readable
   kill list: <code>data/known-defects.json</code> (19 entries).</p>
 </div>

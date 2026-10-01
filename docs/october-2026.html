@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>October 2026 goals — zarr-pyramid-audit</title>
+<meta name="description" content="zarr-pyramid-audit: October 2026 work plan. Goals, exit criteria and the evidence each must produce, starting from the September 2026 submission.">
+<link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/october-2026.html">
+<meta property="og:title" content="zarr-pyramid-audit — October 2026 goals">
+<meta property="og:description" content="What October must prove, and the committed evidence each goal has to produce.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/october-2026.html">
+<meta name="twitter:card" content="summary">
+<style>
+:root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;
+--ink:#ece3d2;--muted:#a89880;--dim:#6f6350;
+--ember:#ff7a1a;--gold:#ffd166;--amber:#ffb347;
+--good:#8fd694;--warn:#ff9e5e;--bad:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+-webkit-font-smoothing:antialiased;line-height:1.65}
+a{color:var(--amber)}
+.wrap{max-width:960px;margin:0 auto;padding:0 1.25rem}
+.hero{padding:4rem 0 2.5rem;
+background:radial-gradient(1200px 500px at 70% -10%,rgba(255,122,26,.14),transparent 60%),
+radial-gradient(800px 400px at 15% 110%,rgba(255,209,102,.08),transparent 60%),var(--bg)}
+.eyebrow{letter-spacing:.28em;font-size:.72rem;color:var(--ember);font-weight:700}
+.hero h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(2rem,5vw,3.2rem);
+margin:.4rem 0 .2rem;font-weight:700;letter-spacing:-.02em}
+.tagline{font-size:1.2rem;margin:.2rem 0 1rem}
+.tagline em{color:var(--amber);font-style:normal;font-weight:600}
+.byline{color:var(--muted);font-size:.92rem}
+.statusbox{background:rgba(22,19,16,.85);border:1px solid var(--line);border-radius:12px;
+padding:1rem 1.25rem;margin-top:1.5rem;font-size:.9rem;color:var(--muted)}
+.statusbox b{color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-top:2rem}
+.stat{background:rgba(22,19,16,.85);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem}
+.stat .n{font-size:1.8rem;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+.stat .n.bad{color:var(--bad)} .stat .n.good{color:var(--good)}
+.stat .l{font-size:.78rem;color:var(--muted);margin-top:.25rem;line-height:1.4}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem;margin:0 0 1.5rem}
+.panel h2{margin:.1rem 0 1rem;font-family:Georgia,serif;font-size:1.5rem}
+.panel h2 .q{color:var(--ember)}
+.panel p{color:var(--muted);font-size:.95rem}
+.panel p b,.panel li b{color:var(--ink)}
+.panel ul{color:var(--muted);font-size:.95rem}
+.panel li{margin:.5rem 0}
+table{border-collapse:collapse;width:100%;font-size:.86rem;margin:.8rem 0}
+thead th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
+color:var(--muted);padding:.6rem .5rem;border-bottom:1px solid var(--line)}
+tbody td{padding:.6rem .5rem;border-bottom:1px solid #211c14;vertical-align:top;color:var(--muted)}
+tbody td b{color:var(--ink)}
+tbody tr:hover td{background:#1e1913}
+code{font-size:.8rem;color:var(--amber)}
+.gatebox{border-left:3px solid var(--ember);padding:.6rem 1rem;background:#171208;
+border-radius:0 8px 8px 0;color:var(--muted);font-size:.93rem;margin-top:1rem}
+.meta{color:var(--dim);font-size:.85rem}
+.suite{display:flex;gap:1rem;flex-wrap:wrap}
+.suite .card{flex:1;min-width:260px;background:var(--panel2);border:1px solid var(--line);
+border-radius:12px;padding:1.1rem 1.25rem}
+.suite .card h3{margin:0 0 .4rem;font-size:.8rem;letter-spacing:.14em;color:var(--ember);text-transform:uppercase}
+.suite .card p{margin:.3rem 0;font-size:.9rem}
+footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.4rem 0 3rem;color:var(--dim);font-size:.82rem}
+footer a{color:var(--muted)}
+.judgenav{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.25rem}
+.judgenav a{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.38rem .7rem;color:var(--muted);font-size:.78rem;background:rgba(22,19,16,.72)}
+.judgenav a:hover{color:var(--ink);border-color:#5b4934}
+.pitch{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem;margin-top:.8rem}
+.pitch .point{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:1rem}
+.pitch .point .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ember);font-weight:800}
+.pitch .point p{margin:.4rem 0 0}
+.proof{background:#0b0a08;border:1px solid #3b3022;border-radius:10px;padding:1rem;overflow:auto;color:#dbcaa9;font:500 .78rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+.kicker{color:var(--gold);font-weight:800}
+.callout{border:1px solid #4c3a24;background:linear-gradient(135deg,rgba(255,122,26,.08),rgba(255,209,102,.035));border-radius:12px;padding:1rem 1.1rem;margin:1rem 0}
+.callout p{margin:.2rem 0}
+.rubric td:first-child{width:26%;color:var(--ink);font-weight:700}
+.smalllink{font-size:.8rem}
+.status-ready{color:var(--good);font-weight:800}
+/* October plan additions */
+.goals td:first-child{width:9%;color:var(--gold);font-weight:800;white-space:nowrap}
+.goals td{font-size:.84rem}
+.tag{display:inline-block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:.1rem .5rem;color:var(--muted);margin-left:.3rem}
+.tag.plan{color:var(--amber);border-color:#4c3a24}
+.phase{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-top:.8rem}
+.phase .point{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:1rem}
+.phase .point .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ember);font-weight:800}
+.phase .point p{margin:.4rem 0 0;font-size:.88rem}
+.tablewrap{overflow-x:auto}
+</style></head><body>
+</head><body>
+
+<header class="hero"><div class="wrap">
+<div class="eyebrow">VESUVIUS CHALLENGE · OCTOBER 2026 · WORK PLAN</div>
+<h1>zarr-pyramid-audit</h1>
+<p class="tagline">October goals. <em>Close the gaps we stated, then prove it.</em></p>
+<p class="byline">Plan by <b><a href="https://github.com/Svyable">Sven</a></b> (+ Muse, AI assistant) · set 2026-10-01</p>
+<div class="statusbox"><b>This page is a plan, not a result.</b> Every goal below names the artifact that
+will count as done. Nothing here is claimed until that artifact is committed, and progress is recorded as dated
+status changes on this page.<br>
+September submission: <a href="./september-2026.html">september-2026.html</a> ·
+Live evidence: <a href="./">data-health dashboard</a> ·
+Criteria → evidence map: <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/SUBMISSION.md"><code>docs/SUBMISSION.md</code></a><br>
+Prize criteria and deadlines: <a href="https://scrollprize.org/prizes">scrollprize.org/prizes</a>
+(not restated here; check the page)</div>
+<div class="stats">
+<div class="stat"><div class="n">957</div><div class="l">S3 pyramids audited<br>956 clean · 1 defective</div></div>
+<div class="stat"><div class="n">1,539</div><div class="l">tifxyz surfaces audited<br>148 content-tier gaps</div></div>
+<div class="stat"><div class="n">31 + 15</div><div class="l">pyramid + tifxyz<br>check codes</div></div>
+<div class="stat"><div class="n">1.2.0</div><div class="l">report contract<br>67 golden fixtures</div></div>
+</div>
+<div class="judgenav">
+<a href="#start">starting point</a>
+<a href="#goals">goals</a>
+<a href="#phases">phases</a>
+<a href="#nongoals">non-goals</a>
+<a href="#rules">how claims get made</a>
+<a href="#status">status log</a>
+</div>
+</div></header>
+
+<div class="wrap" style="margin-top:2.5rem">
+
+<div class="panel" id="start"><h2>Where September left off</h2>
+<div class="callout"><p><span class="kicker">Status at 2026-10-01.</span>
+The audit, gate, chunk probe and tifxyz surface audit run on live public data, emit one versioned JSON
+report contract, and ScrolIQ consumes it fail-closed. What remains is what we already wrote down as gaps.</p></div>
+<table><thead><tr><th>done</th><th>evidence</th></tr></thead><tbody>
+<tr><td>957 S3 roots audited; the one defect (PHerc0814 <code>-L1</code>) re-confirmed and rejected by the gate</td>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-29-s3"><code>2026-09-29-s3</code></a> · <a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-gate-proof"><code>2026-10-01-gate-proof</code></a></td></tr>
+<tr><td>OME-NGFF conformance re-audit: 0 conformance findings, results identical row for row</td>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-conformance"><code>2026-10-01-s3-conformance</code></a></td></tr>
+<tr><td>All 1,539 S3 tifxyz surfaces audited: all PASS, 161 negative-coordinate and 30 bbox review findings</td>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-tifxyz"><code>2026-10-01-s3-tifxyz</code></a></td></tr>
+<tr><td>Against zarr-python and the OME-NGFF validator: both accept the live defect; the gate rejects it</td>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-baseline-comparison"><code>2026-10-01-baseline-comparison</code></a></td></tr>
+<tr><td>ScrolIQ verdicts fail closed on missing evidence</td>
+<td><a href="https://github.com/Svyable/scrollq/pull/55">scrollq#55</a> ·
+<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed">live re-run</a></td></tr>
+</tbody></table>
+<p>Open gaps, as stated in <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/SUBMISSION.md#known-gaps-stated-not-hidden"><code>SUBMISSION.md</code></a>:
+<code>dl.ash2txt.org</code> evidence stops at 2026-09-30 and the volcomp CRC32C check has never run on live shards;
+148 surfaces have header-tier evidence only; surfaces that overrun the top of their volume are not detected;
+triangular meshes are not audited; ScrolIQ pins a commit that predates the tifxyz report.</p></div>
+
+<div class="panel" id="goals"><h2>October goals</h2>
+<p>Ordered by how much a reader of our numbers depends on them. Each row's last column is the definition of done.</p>
+<div class="tablewrap"><table class="goals"><thead><tr><th>#</th><th>goal</th><th>why now</th><th>done when (committed evidence)</th></tr></thead><tbody>
+<tr><td>G1</td><td><b>Re-verify live state on both hosts</b><span class="tag plan">planned</span></td>
+<td>Every live claim is dated. The dl campaigns stop at 2026-09-30 because <code>dl.ash2txt.org</code> was unreachable
+from the 2026-10-01 environment.</td>
+<td>A dated <code>artifacts/2026-10-*-dl-regression/</code> re-running the 2026-09-09 root list with a strict diff
+(fixed / new / unchanged), and a dated S3 re-audit. Whatever the result, it is published.</td></tr>
+<tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag plan">planned</span></td>
+<td><code>SHARD_INDEX_CHECKSUM_MISMATCH</code> is <code>low</code> because it has never seen a live shard; a writer that
+skips or computes the checksum differently would look like corruption.</td>
+<td>A volcomp probe over the 64 dl scroll volumes whose summary splits <code>index_crc</code> into verified /
+unchecksummed / mismatch. Any severity change ships with a CHANGELOG migration note and corpus evidence, or the
+code stays <code>low</code>.</td></tr>
+<tr><td>G3</td><td><b>Close the tifxyz coverage gaps</b><span class="tag plan">planned</span></td>
+<td>148 of 1,539 surfaces have header-tier evidence only, and a surface that runs past the top of its target volume
+is not detected (only negative coordinates are).</td>
+<td>(a) Content-tier evidence for the 148, through a higher cap or streamed decode, or a named list of what still cannot
+be decoded and why. (b) An overrun check against the target volume's shape: a fixture, a golden output, a contract note,
+and a re-run of the S3 survey.</td></tr>
+<tr><td>G4</td><td><b>Decide and ship triangular-mesh coverage</b><span class="tag plan">planned</span></td>
+<td>The criteria name meshes alongside OME-Zarr and tifxyz. Today ZPA does not read them, and mesh and winding audits
+live in ScrolIQ.</td>
+<td>A written scope decision. Either a mesh integrity check in this repo (file readable, finite vertices, face indices
+in range, non-empty, bounds against the volume) with fixtures and a survey of public meshes, or a documented handoff
+to ScrolIQ with a shared report contract. Not both.</td></tr>
+<tr><td>G5</td><td><b>ScrolIQ consumes surface reports</b><span class="tag plan">planned</span></td>
+<td>ScrolIQ pins <code>e473afd</code>, which predates the tifxyz report, so surface integrity does not reach its
+verdicts.</td>
+<td>A merged ScrolIQ PR that moves the pin to a tagged release of this repo and reads <code>kind: "tifxyz"</code>
+reports fail-closed (UNKNOWN → DO NOT TRAIN), with live evidence committed in ScrolIQ.</td></tr>
+<tr><td>G6</td><td><b>Tag a release consumers can pin</b><span class="tag plan">planned</span></td>
+<td>Consumers pin commits. Contract 1.2.0 is merged but not released.</td>
+<td>A git tag and release notes taken from <code>CHANGELOG.md</code>, with the <code>contract-fingerprint</code>
+quoted. Publishing to PyPI only with the maintainer's explicit approval.</td></tr>
+<tr><td>G7</td><td><b>Make the publish-time gate easy to adopt upstream</b><span class="tag plan">planned</span></td>
+<td>The 18 dl defects were unrepaired after 20 days; the leverage is at publish time
+(<a href="https://github.com/ScrollPrize/villa/issues/1760">villa #1760</a>).</td>
+<td>A maintainer-approved follow-up on #1760 that points to the gate proof and the copy-paste CI job in
+<code>examples/</code>. Success is measured by whether it is used, and reported either way.</td></tr>
+</tbody></table></div></div>
+
+<div class="panel" id="phases"><h2>Phases</h2>
+<p>Each phase starts only when the previous one's evidence is committed, so later work never rests on unverified numbers.</p>
+<div class="phase">
+<div class="point"><div class="k">Phase 1 · Re-verify</div><p>G1 and G2. Refresh every live claim from an environment that reaches both hosts.</p></div>
+<div class="point"><div class="k">Phase 2 · Close coverage</div><p>G3, then the G4 scope decision. New checks enter at <code>low</code> or <code>medium</code> until the survey says otherwise.</p></div>
+<div class="point"><div class="k">Phase 3 · Integrate</div><p>G6, then G5. Release first, so ScrolIQ pins a tag rather than a commit.</p></div>
+<div class="point"><div class="k">Phase 4 · Package</div><p>G7, then refresh <code>SUBMISSION.md</code>, the dashboard and an October writeup from the committed artifacts.</p></div>
+</div></div>
+
+<div class="panel" id="nongoals"><h2>Non-goals for October</h2>
+<ul>
+<li><b>No quality scoring here.</b> Scan health, readability and ink scores stay in ScrolIQ; this repo measures integrity.</li>
+<li><b>No new <code>high</code> codes without corpus-wide evidence.</b> <code>high</code> means do not train, and it changes ScrolIQ's verdicts.</li>
+<li><b>No full NGFF validation.</b> The OME-NGFF validator already does that; we run alongside it, not instead of it.</li>
+<li><b>No writes to public data.</b> All tools stay read-only and anonymous.</li>
+</ul></div>
+
+<div class="panel" id="rules"><h2>How claims get made this month</h2>
+<ul>
+<li>Every number traces to a command and a committed <code>artifacts/&lt;date&gt;-&lt;name&gt;/</code> with a README stating the command.</li>
+<li>Live-state claims carry a date and are re-verified before they are restated.</li>
+<li>Unreadable evidence stays <code>UNKNOWN</code>. It never counts as clean or as absent.</li>
+<li>Check-code and severity changes are contract changes: fixture, golden output, CHANGELOG note with the new fingerprint.</li>
+<li>A goal that slips is marked as slipped here, with the reason, rather than dropped.</li>
+</ul></div>
+
+<div class="panel" id="status"><h2>Status log</h2>
+<table><thead><tr><th>date</th><th>change</th></tr></thead><tbody>
+<tr><td>2026-10-01</td><td>Plan set. G1–G7 planned; none started.</td></tr>
+</tbody></table></div>
+
+</div>
+
+<footer><div class="wrap">
+<a href="./">← back to the data-health dashboard</a> · <a href="./september-2026.html">September 2026 submission</a><br><br>
+Built by Sven + Muse · October 2026
+</div></footer>
+</body></html>
