@@ -2,7 +2,13 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>September 2026 submission — zarr-pyramid-audit</title>
-<meta name="description" content="zarr-pyramid-audit: corruption detection for OME-Zarr pyramids in the Vesuvius open data. Don't train on lies.">
+<meta name="description" content="zarr-pyramid-audit: reproducible corruption detection and publish-time gating for Vesuvius OME-Zarr pyramids. September 2026 Progress Prize evidence.">
+<link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/september-2026.html">
+<meta property="og:title" content="zarr-pyramid-audit — September 2026 Vesuvius Progress Prize">
+<meta property="og:description" content="957 S3 Zarr roots audited. Silent-zero corruption proved live. A publish-time gate rejects it before training.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/september-2026.html">
+<meta name="twitter:card" content="summary">
 <style>
 :root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;
 --ink:#ece3d2;--muted:#a89880;--dim:#6f6350;
@@ -55,6 +61,20 @@ border-radius:12px;padding:1.1rem 1.25rem}
 .suite .card p{margin:.3rem 0;font-size:.9rem}
 footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.4rem 0 3rem;color:var(--dim);font-size:.82rem}
 footer a{color:var(--muted)}
+.judgenav{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.25rem}
+.judgenav a{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.38rem .7rem;color:var(--muted);font-size:.78rem;background:rgba(22,19,16,.72)}
+.judgenav a:hover{color:var(--ink);border-color:#5b4934}
+.pitch{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem;margin-top:.8rem}
+.pitch .point{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:1rem}
+.pitch .point .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ember);font-weight:800}
+.pitch .point p{margin:.4rem 0 0}
+.proof{background:#0b0a08;border:1px solid #3b3022;border-radius:10px;padding:1rem;overflow:auto;color:#dbcaa9;font:500 .78rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}
+.kicker{color:var(--gold);font-weight:800}
+.callout{border:1px solid #4c3a24;background:linear-gradient(135deg,rgba(255,122,26,.08),rgba(255,209,102,.035));border-radius:12px;padding:1rem 1.1rem;margin:1rem 0}
+.callout p{margin:.2rem 0}
+.rubric td:first-child{width:26%;color:var(--ink);font-weight:700}
+.smalllink{font-size:.8rem}
+.status-ready{color:var(--good);font-weight:800}
 </style></head><body>
 
 <header class="hero"><div class="wrap">
@@ -66,18 +86,40 @@ footer a{color:var(--muted)}
 Repo: <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable/zarr-pyramid-audit</a>
 (MIT fork of <a href="https://github.com/sgsllc-jr/zarr-pyramid-audit">sgsllc-jr/zarr-pyramid-audit</a>;
 all upstream credit retained)<br>
-Live data-health dashboard: <a href="./">svyable.github.io/zarr-pyramid-audit</a></div>
+Live data-health dashboard: <a href="./">svyable.github.io/zarr-pyramid-audit</a><br>
+Official criteria: <a href="https://scrollprize.org/prizes">scrollprize.org/prizes</a> ·
+Latest awarded work: <a href="https://scrollprize.org/winners">scrollprize.org/winners</a></div>
 <div class="stats">
 <div class="stat"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>header-only · ~5 min</div></div>
 <div class="stat"><div class="n good">956</div><div class="l">clean</div></div>
 <div class="stat"><div class="n bad">1</div><div class="l">defective pyramid<br>still live (villa #1892)</div></div>
 <div class="stat"><div class="n bad">0</div><div class="l">of 18 dl defects repaired<br>in 20 days</div></div>
 </div>
+<div class="judgenav">
+<a href="#case">60-second case</a>
+<a href="#data">data</a>
+<a href="#impact">impact</a>
+<a href="#novelty">novelty</a>
+<a href="#rubric">prize rubric</a>
+<a href="#evidence">evidence</a>
+<a href="#reproduce">reproduce</a>
+</div>
 </div></header>
 
 <div class="wrap" style="margin-top:2.5rem">
 
-<div class="panel"><h2><span class="q">(1)</span> Which scroll data did you work on?</h2>
+<div class="panel" id="case"><h2>The 60-second case</h2>
+<div class="callout"><p><span class="kicker">A valid Zarr header can still be a lie.</span>
+The confirmed PHerc0814 pyramid opens normally, but all six levels have no chunks and silently read as zeros.
+That failure can waste training runs or invalidate downstream segmentation and ink work without throwing an error.</p></div>
+<div class="pitch">
+<div class="point"><div class="k">Find</div><p><b>957 S3 roots</b> audited in about five minutes; one live structural corruption case independently re-confirmed on September 30.</p></div>
+<div class="point"><div class="k">Prove</div><p>A direct zarr-python read returned <b>all zeros without error</b>; a populated control returned 64,498 nonzero voxels.</p></div>
+<div class="point"><div class="k">Prevent</div><p><code>zpa-gate</code> turns the finding into a <b>publish-time CI failure</b>: defective root exit 1, clean sibling exit 0.</p></div>
+</div>
+<p class="smalllink">Evidence is committed and reproducible; the page links every headline claim to a repo artifact below.</p></div>
+
+<div class="panel" id="data"><h2><span class="q">(1)</span> Which scroll data did you work on?</h2>
 <p>The entire open-data surface, on both public stores:</p>
 <ul>
 <li><strong>S3 bucket</strong> (<code>s3://vesuvius-challenge-open-data</code>):
@@ -89,12 +131,12 @@ PHerc0814, PHercParis4, PHerc186 and community uploads.</li>
 the known silent-zero volumes, and 64 same-named volumes present in both stores.</li>
 </ul></div>
 
-<div class="panel"><h2><span class="q">(2)</span> How does it increase the probability of reading the scrolls?</h2>
-<p>Ink detection and segmentation read reduced pyramid levels, never the full
-volume. A level whose header is valid but whose chunks are missing returns
-plausible all-zero voxels <em>with no error</em> — silent corruption that burns
-GPU time and misleads every downstream model. No existing Vesuvius tooling
-catches this at publish time. This contribution:</p>
+<div class="panel" id="impact"><h2><span class="q">(2)</span> How does it increase the probability of reading the scrolls?</h2>
+<p>Ink detection, segmentation, registration and interactive viewing commonly consume reduced
+pyramid levels rather than repeatedly reading the full-resolution volume. A level whose header is valid but whose
+chunks are missing can return plausible all-zero voxels <em>with no error</em> — silent corruption that burns
+compute and can mislead downstream analysis. This contribution does not merely report that risk; it turns the
+check into a reproducible pre-publication gate:</p>
 <ul>
 <li><strong>Finds live corruption before anyone trains on it.</strong> The audit
 independently confirms the header-only PHerc0814 surface volume (villa #1892,
@@ -117,11 +159,11 @@ this defect class before publication when used. Proven end-to-end 2026-09-30
 (<code>artifacts/2026-09-30-gate-proof/</code>): rejects the defective
 PHerc0814 root (exit 1), passes its clean sibling (exit 0).</div></div>
 
-<div class="panel"><h2><span class="q">(3)</span> What does it enable that was not possible before?</h2>
+<div class="panel" id="novelty"><h2><span class="q">(3)</span> What does it enable that was not possible before?</h2>
 <ul>
-<li><strong>First audit of the open-data S3 bucket.</strong> The upstream tool
-only covered dl.ash2txt.org; the S3 bucket — the primary open-data surface —
-had never been audited. 957/957 roots now audited header-only in ~5 minutes.</li>
+<li><strong>Full-bucket S3 coverage added to this auditor.</strong> The upstream tool
+only covered dl.ash2txt.org; this fork adds anonymous S3 discovery/auditing and has now run across
+957/957 discovered roots header-only in ~5 minutes. This is the evidence base for the live PHerc0814 finding.</li>
 <li><strong>Zarr v3 support.</strong> v3 bare arrays were misreported as
 NOT_A_ZARR_GROUP; now correctly classified as BARE_ARRAY with
 shape/chunks/dtype. All 70 v3 pyramids audited clean.</li>
@@ -135,14 +177,31 @@ format migrations, not copies (S3: v2/128³/raw; dl: v3/1024³-sharded/volcomp,
 quantization noise only) — reproducibility must pin the store, not just the name.</li>
 <li><strong>A public, living data-health dashboard</strong> generated from audit
 artifacts, so anyone can see bucket health at a glance.</li>
-</ul></div>
+</ul>
+<div class="callout"><p><b>Distinct from the August 2026 awarded <code>scroll-data-audit</code> work.</b>
+The official winners page describes that project as defect-hunting across the open-data catalog and
+volume-cartographer with catalog metadata checks and VC3D fixes. This submission complements it at a different
+layer: Zarr pyramid structure, chunk presence/content, mirror fidelity, and a CI gate that can reject a bad
+published root before downstream use.</p>
+<p class="smalllink"><a href="https://scrollprize.org/winners">Official August 2026 winners →</a></p></div></div>
 
-<div class="panel"><h2><span class="q">(4)</span> What evidence have you provided?</h2>
+<div class="panel" id="rubric"><h2>Progress Prize rubric fit</h2>
+<p>The current Progress Prize asks for a specific problem and demonstrated solution, comprehensive documentation,
+and modular integration using standard community formats. The submission maps directly to those criteria:</p>
+<table class="rubric"><tbody>
+<tr><td>Problem + solution</td><td>Silent structural/content corruption in multiscale Zarrs; demonstrated on live data, with <code>zpa-audit</code>, <code>zpa-scan-chunks</code>, and fail-closed <code>zpa-gate</code>.</td></tr>
+<tr><td>Significant advantage</td><td>Header-only corpus audit is fast enough for continuous use; sampled content probing closes the “chunks exist but are empty” gap; the gate converts diagnosis into prevention.</td></tr>
+<tr><td>Documentation</td><td>README usage, machine-readable artifacts, reproducibility manifests, known-defect records, and a public dashboard generated from committed evidence.</td></tr>
+<tr><td>Technical integration</td><td>Accepts Zarr v2/v3 over HTTP/S3, emits stable JSONL/CSV/summary outputs, and exposes console commands suitable for CI or orchestration with the wider Vesuvius toolchain.</td></tr>
+</tbody></table>
+<p class="smalllink">Criteria source: <a href="https://scrollprize.org/prizes">Vesuvius Challenge open prizes</a> (September 30, 2026 snapshot).</p></div>
+
+<div class="panel" id="evidence"><h2><span class="q">(4)</span> What evidence have you provided?</h2>
 <table><thead><tr><th>claim</th><th>evidence (in repo)</th></tr></thead><tbody>
 <tr><td><b>957</b> S3 roots, 956 clean, 1 defective</td>
-<td><code>artifacts/2026-09-29-s3/</code> — full audit JSONL + summary</td></tr>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-29-s3"><code>artifacts/2026-09-29-s3/</code></a> — full audit JSONL + summary</td></tr>
 <tr><td>Defective pyramid reads <b>silently return zeros</b></td>
-<td><code>artifacts/2026-09-29-s3/SILENT_ZEROS.md</code> — zarr-python proof
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/artifacts/2026-09-29-s3/SILENT_ZEROS.md"><code>artifacts/2026-09-29-s3/SILENT_ZEROS.md</code></a> — zarr-python proof
 vs populated control (64,498 nonzero voxels). <b>Re-confirmed still live
 2026-09-30 ~22:25 UTC</b> (<code>artifacts/2026-09-30-s3-reverify/</code>):
 6 high-severity <code>LEVEL_NO_CHUNKS</code> findings, identical signature —
@@ -150,11 +209,11 @@ unrepaired for the full September window.</td></tr>
 <tr><td>Defect isolated to <b>one</b> pipeline run (1 of 19 copies)</td>
 <td><code>SILENT_ZEROS.md</code> — 18 clean siblings named</td></tr>
 <tr><td><b>Zero</b> defects repaired in 20 days</td>
-<td><code>artifacts/2026-09-29-dl-regression/</code> — strict diff: 0 fixed, 0 new</td></tr>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-29-dl-regression"><code>artifacts/2026-09-29-dl-regression/</code></a> — strict diff: 0 fixed, 0 new</td></tr>
 <tr><td>Mirrors are <b>migrations</b>, not copies</td>
-<td><code>artifacts/2026-09-29-s3/MIRROR_FIDELITY.md</code> — byte-level comparison</td></tr>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/artifacts/2026-09-29-s3/MIRROR_FIDELITY.md"><code>artifacts/2026-09-29-s3/MIRROR_FIDELITY.md</code></a> — byte-level comparison</td></tr>
 <tr><td>Present-but-empty chunks: <b>found live</b></td>
-<td><code>artifacts/2026-09-30-dl-v2-probe/</code> — 128 roots / 748 levels
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-dl-v2-probe"><code>artifacts/2026-09-30-dl-v2-probe/</code></a> — 128 roots / 748 levels
 content-probed (1,795 chunks with real data): 7 levels of
 <code>other/dev/meshes/20231022170900-ome.zarr</code> decode to all zeros
 while L0 holds mesh content (verified: 12/12 L1 chunks empty, downscaled
@@ -162,11 +221,33 @@ counterpart of populated L0 region empty, byte-identical zero-blobs).
 Not observed in S3 (788/788 populated) or the 64 volcomp scroll volumes
 (548 decoded, 0 present-but-empty).</td></tr>
 <tr><td>Gate <b>rejects</b> the defective root, passes clean ones</td>
-<td><code>bin/gate.py</code> — demonstrated in README</td></tr>
+<td><a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/bin/gate.py"><code>bin/gate.py</code></a> — demonstrated in README and in the end-to-end proof below</td></tr>
 </tbody></table>
 <p>Novelty is claimed only for the tooling and the integration; the underlying
 defects (#1892, #1755–#1760) are credited to their reporters and independently
 confirmed here.</p></div>
+
+<div class="panel" id="reproduce"><h2>Reproduce the headline result</h2>
+<p>The end-to-end proof uses the same public S3 bucket and the exact defective/clean sibling pair.
+After installing the repo, these two commands should disagree by design:</p>
+<div class="proof"># defect: expected exit 1
+zpa-gate --base s3://vesuvius-challenge-open-data \
+  --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr" \
+  --fail-on high
+
+# clean sibling: expected exit 0
+zpa-gate --base s3://vesuvius-challenge-open-data \
+  --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630.zarr" \
+  --fail-on high</div>
+<p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-gate-proof">Committed logs and README →</a> ·
+<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-09-30-s3-reverify">same-day re-verification →</a></p></div>
+
+<div class="panel"><h2>Why this matters for the 2027 Grand Prize pipeline</h2>
+<p>This project is <b>infrastructure, not an unrolling claim</b>. The 2027 Grand Prize requires a reproducible
+pipeline that can segment/unroll an entire scroll and then render legible ink. Those stages depend on trustworthy
+volumes, surfaces and multiscale reads. <code>zarr-pyramid-audit</code> supplies a cheap integrity boundary before
+expensive segmentation or ink inference and a machine-readable trail for reproducing exactly which store/root was used.</p>
+<p class="smalllink"><a href="https://scrollprize.org/prizes">2027 Grand Prize requirements →</a></p></div>
 
 <div class="panel"><h2>Team</h2>
 <p>Solo contributor (Sven) + Muse (AI assistant). Upstream tool by sgsllc-jr,
@@ -188,8 +269,9 @@ a healthy dl volume; DO NOT TRAIN on the defective PHerc0814 S3 pyramid).</p>
 </div></div>
 
 <div class="panel"><h2>Submission status</h2>
-<p class="meta">Draft answers prepared. Sven must submit the official Google Form
-before the September 30, 2026, 11:59 PM Pacific deadline.</p></div>
+<p class="meta"><span class="status-ready">Submission-ready public snapshot.</span>
+Evidence and same-day re-verification are frozen on September 30, 2026. The official Progress Prize deadline is
+September 30, 2026 at 11:59 PM Pacific; submission itself is completed through the Challenge's official form.</p></div>
 
 </div>
 
