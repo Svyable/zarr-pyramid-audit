@@ -41,6 +41,10 @@ CHECK CODES
   AXES_MISMATCH      declared axes count != array ndim
   CHUNK_EXCEEDS_SHAPE  chunk larger than the level itself on every axis
   DEGENERATE_LEVEL   a level has a zero/negative extent
+  PHYSICAL_SCALE_UNKNOWN [info] metadata explicitly says absolute physical size
+                     is unknown; level scales are relative only
+  PHYSICAL_SCALE_CONTRADICTION  metadata says physical size is unknown but also
+                     carries spatial units or a non-identity base spatial scale
 
 Outputs (into --out-dir; existing files are backed up, never overwritten):
     audit_pyramid.levels.jsonl    one record per pyramid level
@@ -91,6 +95,7 @@ SEVERITY = {
     "ROOT_ABSENT": "low",
     "EMPTY_ZARR_DIR": "low",
     "METADATA_UNREADABLE": "high",
+    "PHYSICAL_SCALE_CONTRADICTION": "high",
 }
 
 # Codes that describe what a node IS, not that anything is wrong. They are
@@ -101,7 +106,8 @@ SEVERITY = {
 # down the pyramid inevitably exceeds the array. It is the natural consequence
 # of constant chunking, not a defect.
 INFO_CODES = {"NOT_A_ZARR_GROUP", "NOT_MULTISCALE", "BARE_ARRAY",
-              "CHUNK_EXCEEDS_SHAPE", "ACCESS_UNKNOWN"}
+              "CHUNK_EXCEEDS_SHAPE", "ACCESS_UNKNOWN",
+              "PHYSICAL_SCALE_UNKNOWN"}
 for _c in INFO_CODES:
     SEVERITY[_c] = "info"
 
@@ -111,6 +117,81 @@ FINDING_HEADER = ["code", "severity", "root", "level", "detail",
 
 def _ratio(a: float, b: float) -> float | None:
     return (a / b) if b else None
+
+
+def _first_multiscale(attrs: dict) -> dict:
+    """Return the first OME multiscale block from v2/v3 attribute layouts."""
+    ms = attrs.get("multiscales")
+    if ms is None:
+        ome = attrs.get("ome")
+        if isinstance(ome, dict):
+            ms = ome.get("multiscales")
+    if isinstance(ms, list) and ms and isinstance(ms[0], dict):
+        return ms[0]
+    return {}
+
+
+def _physical_scale_contract(pm, base) -> tuple[dict, list[str]]:
+    """Inspect only explicit NGFF physical-scale claims.
+
+    This intentionally avoids plausibility thresholds. It reports an unknown
+    absolute scale when the producer says so, and calls something a
+    contradiction only when the same metadata simultaneously makes an
+    incompatible absolute-scale claim.
+    """
+    ms = _first_multiscale(pm.attrs_raw)
+    metadata = ms.get("metadata") if isinstance(ms.get("metadata"), dict) else {}
+    marker = metadata.get("physical_size")
+
+    axes_raw = ms.get("axes") if isinstance(ms.get("axes"), list) else []
+    spatial_axes: list[dict] = []
+    for i, axis in enumerate(axes_raw):
+        if isinstance(axis, dict):
+            name = str(axis.get("name", "?"))
+            axis_type = axis.get("type")
+            unit = axis.get("unit")
+        else:
+            name = str(axis)
+            axis_type = None
+            unit = None
+        if axis_type == "space" or name.lower() in {"x", "y", "z"}:
+            spatial_axes.append({"index": i, "name": name, "unit": unit})
+
+    scale = list(base.declared_scale) if base.declared_scale else None
+    evidence = {
+        "physical_size_marker": marker,
+        "spatial_axes": spatial_axes,
+        "base_declared_scale": scale,
+        "absolute_scale_known": marker != "unknown",
+    }
+    contradictions: list[str] = []
+    if marker == "unknown":
+        unit_axes = [
+            axis["name"] for axis in spatial_axes
+            if isinstance(axis.get("unit"), str) and axis["unit"].strip()
+        ]
+        if unit_axes:
+            contradictions.append(
+                "physical_size=unknown but spatial axis unit(s) are declared: "
+                + ", ".join(unit_axes)
+            )
+        if scale is not None:
+            nonidentity = []
+            for axis in spatial_axes:
+                i = axis["index"]
+                if i >= len(scale):
+                    continue
+                value = scale[i]
+                if not math.isfinite(value) or not math.isclose(
+                    value, 1.0, rel_tol=1e-9, abs_tol=1e-12
+                ):
+                    nonidentity.append(f"{axis['name']}={value!r}")
+            if nonidentity:
+                contradictions.append(
+                    "physical_size=unknown requires level-0 relative spatial "
+                    "scale 1.0, found " + ", ".join(nonidentity)
+                )
+    return evidence, contradictions
 
 
 def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
@@ -246,6 +327,26 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         add("AXES_MISMATCH", base.path,
             "declared axes count != array ndim", len(pm.axes), len(base.shape))
 
+    # ---- absolute physical-scale contract ---------------------------------
+    physical_scale, physical_scale_contradictions = _physical_scale_contract(pm, base)
+    if physical_scale_contradictions:
+        add(
+            "PHYSICAL_SCALE_CONTRADICTION",
+            base.path,
+            "; ".join(physical_scale_contradictions),
+            json.dumps(physical_scale, sort_keys=True),
+            "unknown physical size => no spatial units and identity level-0 spatial scale",
+        )
+    elif physical_scale["physical_size_marker"] == "unknown":
+        add(
+            "PHYSICAL_SCALE_UNKNOWN",
+            base.path,
+            "metadata explicitly says absolute physical size is unknown; "
+            "declared scales are relative to level 0 and cannot support an absolute scale bar",
+            json.dumps(physical_scale, sort_keys=True),
+            "known physical size for absolute-distance use",
+        )
+
     # ---- attribute drift across levels ------------------------------------
     def drift(attr_fn, code, label):
         vals = {}
@@ -337,6 +438,7 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         "evidence_state": getattr(pm, "evidence_state", None),
         "evidence_reason": getattr(pm, "evidence_reason", None),
         "base_shape": base.shape, "base_dtype": base.dtype,
+        "physical_scale": physical_scale,
         "rounding": sorted(roundings),
         "undeclared_levels": pm.extra_level_dirs,
         "levels_no_chunks": [l.path for l in present if l.has_chunks is False],
