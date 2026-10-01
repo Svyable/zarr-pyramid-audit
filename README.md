@@ -62,7 +62,7 @@ group) and are never counted as defects.
 | tool | what it does | cost |
 |---|---|---|
 | `zpa-discover` | Crawls a store's autoindex and finds every Zarr root. Prunes chunk trees, `.tifxyz` leaves, coordinate and segment directories — but runs a Zarr-header test *before* every prune rule, so a heuristic can never discard a real root. | listings only |
-| `zpa-audit` | 24 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
+| `zpa-audit` | 26 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
 | `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
 | `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
@@ -92,7 +92,19 @@ MIXED_ROUNDING            ceil at some levels, floor at others
 DTYPE_DRIFT / FILL_DRIFT / COMPRESSOR_DRIFT / SEPARATOR_DRIFT / NDIM_DRIFT
 AXES_MISMATCH             declared axes count != array ndim
 DEGENERATE_LEVEL          a level has a zero/negative extent
+PHYSICAL_SCALE_UNKNOWN    [info] metadata explicitly says absolute physical size is unknown
+PHYSICAL_SCALE_CONTRADICTION
+                           physical_size=unknown conflicts with spatial units or
+                           a non-identity level-0 spatial scale
 ```
+
+The physical-scale checks are deliberately conservative. They do not guess whether
+a voxel size is plausible and they do not infer that an absolute scale is known
+merely because the metadata lacks an `unknown` marker. They only expose an
+explicitly unknown scale, or fail on metadata that simultaneously says the
+physical size is unknown while making an incompatible absolute-scale claim.
+This matters for generated scroll renders because an explicitly unknown physical
+scale cannot, by itself, support a trustworthy physical-distance scale bar.
 
 ## Usage
 
