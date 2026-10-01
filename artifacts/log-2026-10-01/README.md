@@ -97,16 +97,28 @@ python -m pytest tests/ -q                            # -> pytest.txt
   `verified` via the run summary's `index_crc` tally, so a clean run is only
   read as clean where it says `verified`.
 
-## Not verified — do before relying on these
+## Verification status
 
-- **Live data.** Run `zpa-scan-chunks` against `dl.ash2txt.org` and read the
-  summary's `index_crc` tally and any `SHARD_INDEX_CHECKSUM_MISMATCH`; run
-  `zpa-audit` and read the pyramid records' `ome_version` and any
-  `OME_VERSION_UNMODELLED`. Which OME versions the corpus declares is unknown.
+**Verified live (by a parallel session, not this one):** the header-only
+conformance checks on `s3://vesuvius-challenge-open-data` — all 957 roots
+re-audited, 0 `TRANSFORM_SCALE_COUNT` / `TRANSFORM_ARITY` / `AXES_INVALID` /
+`OME_VERSION_UNMODELLED`, every root declares OME-NGFF 0.4, findings equal the
+2026-09-29 baseline (evidence: `artifacts/2026-10-01-s3-conformance/`; run on
+`c86652e`, before the arity refinement above, which can only remove findings).
+
+**Still not verified — do before relying on these:**
+
+- **`dl.ash2txt.org`.** Neither the conformance checks nor the volcomp
+  shard-index CRC32C have been run against it. Run `zpa-audit` and read
+  `ome_version` / any `OME_VERSION_UNMODELLED`; run `zpa-scan-chunks` and read
+  the summary's `index_crc` tally and any `SHARD_INDEX_CHECKSUM_MISMATCH`. Until
+  then it is unknown whether that writer's checksums conform, which is why the
+  code is `low`.
 - **Spec wording.** The axis-order rules were encoded from search excerpts of the
-  OME-NGFF 0.4/0.5 spec; the spec host was blocked. Check against
+  OME-NGFF 0.4/0.5 spec; the spec host was blocked here. Check against
   <https://ngff.openmicroscopy.org> before treating a rule as authoritative.
-- `audit.yml` (live smoke audit) was not run.
+  (No S3 root triggers them, so a misreading of the rules would not show up there.)
+- `audit.yml` (live smoke audit) was not run by this session.
 
 ## Open follow-ups
 

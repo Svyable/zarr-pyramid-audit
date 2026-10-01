@@ -49,7 +49,10 @@ or removed, no field changes. Migration notes for consumers:
     (`ome_version_unmodelled`).
   They are `low` deliberately: the known corpus shows none of them, so
   there is no evidence yet that they mean "do not train". Raising any of
-  them is a further contract change.
+  them is a further contract change. Verified live on all 957 S3 roots
+  (`artifacts/2026-10-01-s3-conformance/`): 0 conformance findings, every
+  root declares OME-NGFF 0.4, and the 2026-09-29 findings are reproduced
+  row for row.
 - **No existing golden changed.** `TRANSFORM_ARITY` is not reported where the
   *axes list* is the odd one out: if the axes length differs from the array
   ndim (`AXES_MISMATCH`) while the transform matches the array, that is one
