@@ -8,8 +8,16 @@ the newest date-prefixed folder under `artifacts/`, and this folder holds no
 new evidence. `docs/september-2026.html` stays frozen at the 2026-09-30
 evidence.
 
-Code under test: branch `claude/vibrant-bardeen-x6v1t0` at `a1bb82e`
-(environment recorded in `pytest.txt`).
+Code under test: PR #16 branch `claude/vibrant-bardeen-x6v1t0`, merged with
+`origin/main` at `54cd30e` (which brought the versioned report contract 1.0.0,
+the fixture corpus and the strict suffix read). Environment in `pytest.txt`.
+
+Provenance: while this session was merging `main`, a second Claude session
+pushed its own complete resolution of the same merge (`c86652e`, same contract
+fingerprint `569547603cf1`), which was merged as PR #16; its live S3 re-audit
+followed as PR #17. This log was first committed in #16 and is refreshed here,
+together with the `TRANSFORM_ARITY` single-root-cause refinement described
+below, as a follow-up to those merges.
 
 ## What changed
 
@@ -18,6 +26,8 @@ Code under test: branch `claude/vibrant-bardeen-x6v1t0` at `a1bb82e`
 | Version-gated OME-NGFF spec conformance (header-only) | `d2ff637` | `OME_VERSION_UNMODELLED` (info); `TRANSFORM_SCALE_COUNT`, `TRANSFORM_ARITY`, `AXES_INVALID` (low) |
 | Shard-index CRC32C verification in the volcomp probe | `862fb18` | `SHARD_INDEX_CHECKSUM_MISMATCH` (low — see below) |
 | Merge of `main` (#14 docs-drift guard); severity of the above lowered | `a1bb82e` | — |
+| Merge of `main` (#15 contract 1.0.0); adapt to its contract policy (parallel session's resolution adopted) | `c86652e` | schema `1.0.0 → 1.1.0`, 4 fixtures (`transform_scale_count`, `transform_arity`, `axes_invalid`, `ome_version_unmodelled`), CHANGELOG migration note |
+| `TRANSFORM_ARITY` reports a root cause once; `axes_mismatch` golden restored to its pre-1.1.0 content | follow-up PR | none (fingerprint `569547603cf1` unchanged) |
 
 Why each exists:
 
@@ -48,19 +58,35 @@ python -m pytest tests/ -q                            # -> pytest.txt
    pyramids, 0 with duplicate axis names, 0 with an out-of-range axes length. The
    new spec codes therefore add no noise on known data — and have no corpus
    evidence behind them, which is why none is above `low`.
-2. **Tests** (`pytest.txt`): 162 passed (Python 3.11.15, zarr 3.1.6,
-   google-crc32c 1.9.0). A clean-venv wheel build, `pip check`, and `--help` on
-   all 9 console scripts also passed, mirroring `ci.yml` (not saved as a file;
-   re-run `python -m build` and install the wheel to repeat).
+2. **Tests** (`pytest.txt`): 372 passed (Python 3.11.15, zarr 3.1.6,
+   google-crc32c 1.9.0), including `main`'s contract, fixture-corpus and
+   docs-drift tests. A clean-venv wheel build, `pip check`, and `--help` on
+   every console script mirror `ci.yml` (not saved as a file; re-run
+   `python -m build` and install the wheel to repeat).
 3. **Checksum ground truth** (`tests/test_volcomp.py`): zarr-python writes a real
    sharded array; the tests assert the index sits at the tail, the crc is CRC-32C
    (Castagnoli, check value `0xE3069283` for `"123456789"`), little-endian, and
    covers the index bytes only — payload damage is not reported as an index fault.
-4. **Mutation checks** (`mutation_checks.txt`): each of 5 guards removed in a
-   throwaway copy made tests fail (5, 1, 7, 4, 1 failures; baseline 162 pass).
+4. **Mutation checks** (`mutation_checks.txt`): each of 6 guards removed in a
+   throwaway copy made tests fail (7, 1, 7, 4, 4, 1 failures; baseline 372 pass).
+5. **Contract policy** (`CHANGELOG.md`, "Contract 1.1.0"): the new codes changed
+   the contract fingerprint to `569547603cf1`, so the schema moved to `1.1.0`
+   (minor: added codes), four fixtures were added
+   (`transform_scale_count`, `transform_arity`, `axes_invalid`,
+   `ome_version_unmodelled`) and a migration note records what consumers must
+   do. No existing fixture golden changed (`git diff origin/main --
+   fixtures/expected` shows only additions).
 
 ## Decisions worth keeping
 
+- `TRANSFORM_ARITY` is suppressed where the *axes list* is the odd one out
+  (axes length ≠ array ndim while the transform matches the array): that is one
+  root cause, already reported as `AXES_MISMATCH`, and repeating it per level
+  would also have changed `main`'s `axes_mismatch` golden.
+- `SHARD_INDEX_CHECKSUM_MISMATCH` is exempt from fixture coverage (like
+  `CHUNK_SAMPLE_MISSING`): the on-disk runner cannot probe volcomp-sharded
+  levels; `tests/test_chunkscan_index_checksum.py` drives it through the real
+  strict-suffix-read path instead.
 - `SHARD_INDEX_CHECKSUM_MISMATCH` is **low**, not medium. ScrolIQ maps `medium`
   to CAUTION; if the volcomp writer is not crc-conformant every shard — hence
   every volume — would flag on a false signal. Promote once a live run shows
@@ -71,16 +97,28 @@ python -m pytest tests/ -q                            # -> pytest.txt
   `verified` via the run summary's `index_crc` tally, so a clean run is only
   read as clean where it says `verified`.
 
-## Not verified — do before relying on these
+## Verification status
 
-- **Live data.** Run `zpa-scan-chunks` against `dl.ash2txt.org` and read the
-  summary's `index_crc` tally and any `SHARD_INDEX_CHECKSUM_MISMATCH`; run
-  `zpa-audit` and read the pyramid records' `ome_version` and any
-  `OME_VERSION_UNMODELLED`. Which OME versions the corpus declares is unknown.
+**Verified live (by a parallel session, not this one):** the header-only
+conformance checks on `s3://vesuvius-challenge-open-data` — all 957 roots
+re-audited, 0 `TRANSFORM_SCALE_COUNT` / `TRANSFORM_ARITY` / `AXES_INVALID` /
+`OME_VERSION_UNMODELLED`, every root declares OME-NGFF 0.4, findings equal the
+2026-09-29 baseline (evidence: `artifacts/2026-10-01-s3-conformance/`; run on
+`c86652e`, before the arity refinement above, which can only remove findings).
+
+**Still not verified — do before relying on these:**
+
+- **`dl.ash2txt.org`.** Neither the conformance checks nor the volcomp
+  shard-index CRC32C have been run against it. Run `zpa-audit` and read
+  `ome_version` / any `OME_VERSION_UNMODELLED`; run `zpa-scan-chunks` and read
+  the summary's `index_crc` tally and any `SHARD_INDEX_CHECKSUM_MISMATCH`. Until
+  then it is unknown whether that writer's checksums conform, which is why the
+  code is `low`.
 - **Spec wording.** The axis-order rules were encoded from search excerpts of the
-  OME-NGFF 0.4/0.5 spec; the spec host was blocked. Check against
+  OME-NGFF 0.4/0.5 spec; the spec host was blocked here. Check against
   <https://ngff.openmicroscopy.org> before treating a rule as authoritative.
-- `audit.yml` (live smoke audit) was not run.
+  (No S3 root triggers them, so a misreading of the rules would not show up there.)
+- `audit.yml` (live smoke audit) was not run by this session.
 
 ## Open follow-ups
 

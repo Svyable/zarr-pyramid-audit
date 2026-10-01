@@ -76,7 +76,7 @@ removed or renamed.
 | `compressor_drift` | level 1 is blosc-compressed, levels 0 and 2 are raw | `COMPRESSOR_DRIFT` (low, PRESENT) | PASS | pass | populated |
 | `separator_drift` | level 1 uses '/' dimension_separator, others '.' | `SEPARATOR_DRIFT` (high, PRESENT) | FAIL | fail | populated |
 | `ndim_drift` | level 1 is 2-D inside a 3-D pyramid | `NDIM_DRIFT` (high, PRESENT) | FAIL | fail | populated |
-| `axes_mismatch` | two axes declared for 3-D arrays | `AXES_MISMATCH` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT), `TRANSFORM_ARITY` (low, PRESENT) | PASS | pass | populated |
+| `axes_mismatch` | two axes declared for 3-D arrays | `AXES_MISMATCH` (low, PRESENT) | PASS | pass | populated |
 | `degenerate_level` | level 1 has a zero extent | `DEGENERATE_LEVEL` (high, PRESENT), `LEVEL_NO_CHUNKS` (high, ABSENT), `SCALE_SHAPE_MISMATCH` (high, PRESENT) | FAIL | fail | populated; `CHUNK_LEVEL_NO_CHUNKS` |
 | `chunk_exceeds_shape` | deepest level chunk exceeds its shape on every axis (benign info) | `CHUNK_EXCEEDS_SHAPE` (info, PRESENT) | PASS | pass | populated |
 | `physical_scale_unknown` | physical_size explicitly 'unknown', no contradicting claim (info) | `PHYSICAL_SCALE_UNKNOWN` (info, PRESENT) | PASS | pass | populated |
