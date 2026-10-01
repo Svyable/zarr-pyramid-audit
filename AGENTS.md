@@ -7,8 +7,10 @@ contributing guide lives at `.github/CONTRIBUTING.md`.
 
 Corruption detection for OME-Zarr multiscale pyramids in the Vesuvius open
 data: header-only audits, a publish-time gate, and a sampled chunk-*content*
-probe. "Don't train on lies." Companion: [ScrollQ](https://github.com/Svyable/scrollq)
-("train on the best first" — quality scoring).
+probe. "Don't train on lies." Companion: [ScrolIQ](https://github.com/Svyable/scrollq)
+(capital I; formerly ScrollQ — "find the bottleneck": scan-health triage plus
+open-problem diagnostics). ScrolIQ depends on this repo, never the reverse; see
+"How this fits with ScrolIQ" in the README.
 
 **This is a fork** of [sgsllc-jr/zarr-pyramid-audit](https://github.com/sgsllc-jr/zarr-pyramid-audit)
 (MIT). Upstream credit is retained in the README and LICENSE.
@@ -29,13 +31,22 @@ probe. "Don't train on lies." Companion: [ScrollQ](https://github.com/Svyable/sc
   - `data/` — vendored `libvolcomp` decoder (Linux x86-64, MIT; see
     `src/zpa/data/VOLCOMP_PROVENANCE.md`); override with `$VOLCOMP_LIB`
 - `bin/` — thin shims, kept for backward compatibility
-- `tests/` — pytest suite (20 tests); keep it green
+- `tests/` — pytest suite; keep it green
 - `data/known-defects.json` — machine-readable defect kill list (generator:
   `zpa-known-defects`)
-- `docs/` — GitHub Pages dashboard + September writeup
+- `docs/` — GitHub Pages dashboard + September writeup. `docs/index.html` is
+  **generated** by `src/zpa/build_dashboard.py` (`python bin/build_dashboard.py
+  --out docs/index.html`); edit the generator, never the HTML by hand — the
+  Pages CI diffs them. `september-2026.html` is hand-written and frozen at the
+  2026-09-30 evidence.
 - `artifacts/` — dated campaign outputs; the evidence behind published numbers
-- `workflows/audit.yml` — staged CI workflow (NOT active: enabling needs the
-  maintainer to move it to `.github/workflows/`; do not move it yourself)
+- `.github/workflows/` — `ci.yml`, `audit.yml`, `pages-check.yml` (active).
+  Adding or changing workflows needs the maintainer's approval.
+- **Downstream consumer:** ScrolIQ imports `zpa.httpstore.open_store`,
+  `zpa.zarrmeta.read_pyramid`, `zpa.audit_pyramid.audit_one` and
+  `zpa.volcomp`, and pins a tested commit of this repo in its
+  `requirements-ci.txt`. Don't change those signatures or the finding fields
+  (`code`, `severity`, `level`, `detail`) without checking it.
 
 ## Commands
 
