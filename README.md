@@ -30,9 +30,10 @@ level — a few KB regardless of array size — so a whole corpus can be audited
 
 ## Design notes worth knowing
 
-**It does not depend on `zarr`.** Headers are parsed directly from `.zattrs` / `.zarray` /
-`zarr.json`. This is deliberate: a store that `zarr.open()` refuses to open is exactly the kind of
-defect the tool needs to *report*, not crash on.
+**The header-only audit does not use `zarr`.** `zpa-discover`, `zpa-audit` and `zpa-gate` parse
+`.zattrs` / `.zarray` / `zarr.json` directly. This is deliberate: a store that `zarr.open()` refuses
+to open is exactly the kind of defect the tool needs to *report*, not crash on. Only the
+chunk-content probe and the surface tools import `zarr` (it is a declared dependency for them).
 
 **Absence is only ever inferred from positive evidence.** The chunk-presence check
 (`LEVEL_NO_CHUNKS`) trusts a directory listing to prove a level is empty *only* if that listing
@@ -71,31 +72,35 @@ group) and are never counted as defects.
 
 ### Check codes
 
+Severities below are the single source of truth in `SEVERITY` (`src/zpa/audit_pyramid.py`).
+
 ```
-NOT_A_ZARR_GROUP          [info] no .zgroup/zarr.json and nothing Zarr-like inside
-BARE_ARRAY                [info] valid single-scale Zarr array; not a pyramid
-NOT_MULTISCALE            [info] valid Zarr group, but not an OME pyramid
-CHUNK_EXCEEDS_SHAPE       [info] chunk larger than the level itself on every axis
-HEADERLESS_CHUNK_STORE    chunk keys present but no header -- undecodable
-CONTAINER_NO_GROUP_HEADER children are Zarr nodes but root has no group header
-ROOT_ABSENT              requested Zarr root is confirmed absent
-ACCESS_UNKNOWN           [info] attempted access could not establish presence or absence
-METADATA_UNREADABLE      metadata exists but cannot be decoded
-EMPTY_ZARR_DIR            *.zarr directory with no contents
-MULTISCALE_EMPTY          declares multiscales but yields no usable datasets
-LEVEL_MISSING             declared level has no readable array header
-LEVEL_NO_CHUNKS           valid header, zero chunk keys -- reads return fill_value silently
-LEVEL_UNDECLARED          numeric level directory exists but is not declared
-SCALE_NONMONOTONIC        declared scales do not strictly increase with depth
-SCALE_SHAPE_MISMATCH      shape matches neither ceil nor floor of base/factor
-MIXED_ROUNDING            ceil at some levels, floor at others
-DTYPE_DRIFT / FILL_DRIFT / COMPRESSOR_DRIFT / SEPARATOR_DRIFT / NDIM_DRIFT
-AXES_MISMATCH             declared axes count != array ndim
-DEGENERATE_LEVEL          a level has a zero/negative extent
-PHYSICAL_SCALE_UNKNOWN    [info] metadata explicitly says absolute physical size is unknown
-PHYSICAL_SCALE_CONTRADICTION
-                           physical_size=unknown conflicts with spatial units or
-                           a non-identity level-0 spatial scale
+NOT_A_ZARR_GROUP              [info]   no .zgroup/zarr.json and nothing Zarr-like inside
+BARE_ARRAY                    [info]   valid single-scale Zarr array; not a pyramid
+NOT_MULTISCALE                [info]   valid Zarr group, but not an OME pyramid
+CHUNK_EXCEEDS_SHAPE           [info]   chunk larger than the level itself on every axis
+ACCESS_UNKNOWN                [info]   attempted access could not establish presence or absence
+PHYSICAL_SCALE_UNKNOWN        [info]   metadata explicitly says absolute physical size is unknown
+HEADERLESS_CHUNK_STORE        [high]   chunk keys present but no header -- undecodable
+METADATA_UNREADABLE           [high]   metadata exists but cannot be decoded
+MULTISCALE_EMPTY              [high]   declares multiscales but yields no usable datasets
+LEVEL_MISSING                 [high]   declared level has no readable array header
+LEVEL_NO_CHUNKS               [high]   valid header, zero chunk keys -- reads return fill_value silently
+SCALE_SHAPE_MISMATCH          [high]   shape matches neither ceil nor floor of base/factor
+DEGENERATE_LEVEL              [high]   a level has a zero/negative extent
+DTYPE_DRIFT                   [high]   dtype changes between levels
+SEPARATOR_DRIFT               [high]   dimension_separator changes between levels
+NDIM_DRIFT                    [high]   levels disagree on dimensionality
+PHYSICAL_SCALE_CONTRADICTION  [high]   physical_size=unknown conflicts with spatial units or a non-identity level-0 spatial scale
+LEVEL_UNDECLARED              [medium] numeric level directory exists but is not declared
+SCALE_NONMONOTONIC            [medium] declared scales do not strictly increase with depth
+MIXED_ROUNDING                [medium] ceil at some levels, floor at others
+FILL_DRIFT                    [medium] fill_value changes between levels
+COMPRESSOR_DRIFT              [low]    codec changes between levels
+AXES_MISMATCH                 [low]    declared axes count != array ndim
+CONTAINER_NO_GROUP_HEADER     [low]    children are Zarr nodes but root has no group header
+ROOT_ABSENT                   [low]    requested Zarr root is confirmed absent
+EMPTY_ZARR_DIR                [low]    *.zarr directory with no contents
 ```
 
 The physical-scale checks are deliberately conservative. They do not guess whether
@@ -108,7 +113,7 @@ scale cannot, by itself, support a trustworthy physical-distance scale bar.
 
 ## Usage
 
-Install (also installs the `zpa-*` commands):
+Requires Python 3.11+. Install (also installs the `zpa-*` commands):
 
 ```bash
 pip install git+https://github.com/Svyable/zarr-pyramid-audit.git
@@ -135,7 +140,8 @@ zpa-audit --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl -
 ```
 
 ```bash
-zpa-count-chunks --base https://dl.ash2txt.org/ --roots-csv shortlist.csv --out-dir tmp
+zpa-count-chunks --base https://dl.ash2txt.org/ --from-findings tmp/audit_pyramid.findings.csv \
+  --code COMPRESSOR_DRIFT --out-dir tmp
 ```
 
 Sampled chunk-*content* probe (do present chunks hold data?):
@@ -147,10 +153,10 @@ zpa-scan-chunks --base s3://vesuvius-challenge-open-data/ --levels-jsonl tmp/aud
 Audit a surface prediction against the exact masked CT volume that produced it:
 
 ```bash
-zpa-surface-support \\
-  --predictions s3://vesuvius-challenge-open-data/PHercXXXX/representations/predictions/surfaces/<surface>.zarr \\
-  --ct s3://vesuvius-challenge-open-data/PHercXXXX/volumes/<exact-prize-volume>.zarr \\
-  --expected-volume-id <exact-prize-volume-id> \\
+zpa-surface-support \
+  --predictions s3://vesuvius-challenge-open-data/PHercXXXX/representations/predictions/surfaces/<surface>.zarr \
+  --ct s3://vesuvius-challenge-open-data/PHercXXXX/volumes/<exact-prize-volume>.zarr \
+  --expected-volume-id <exact-prize-volume-id> \
   --anon --slab-stride 12 --out-dir tmp/surface-support
 ```
 
@@ -159,11 +165,11 @@ The arrays must share the same voxel grid. The report records exact input paths,
 Profile the rendered surface-volume stack before ink inference:
 
 ```bash
-zpa-surface-depth-profile \\
-  --surface-volume /data/segment/surface-volume.zarr \\
-  --expected-depth 21 \\
-  --source-volume-id <exact-prize-volume-id> \\
-  --expected-volume-id <exact-prize-volume-id> \\
+zpa-surface-depth-profile \
+  --surface-volume /data/segment/surface-volume.zarr \
+  --expected-depth 21 \
+  --source-volume-id <exact-prize-volume-id> \
+  --expected-volume-id <exact-prize-volume-id> \
   --grid 3 --tile-size 128 --out-dir tmp/surface-depth
 ```
 
@@ -224,16 +230,6 @@ one confirmed header-only pyramid) are in
 
 ## Results on dl.ash2txt.org (run of 2026-09-09)
 
-## Companion project
-
-[ScrollQ](https://github.com/Svyable/scrollq) scores every scroll volume
-0–100 on data quality — signal presence, texture energy, dynamic range,
-dead-slice scan — and joins the ranking against published ink labels to flag
-"🎯 label next" targets ([live leaderboard](https://svyable.github.io/scrollq/)).
-This repo is "don't train on lies" (corruption); ScrollQ is "train on the
-best first" (triage). `scrollq-health` (in the ScrollQ package) runs both
-halves and issues one verdict per volume: **TRAIN / CAUTION / DO NOT TRAIN**.
-
 Full artifacts in [`artifacts/2026-09-09/`](artifacts/2026-09-09/).
 
 Discovery crawled 19,995 directory listings with 0 errors and found **241 Zarr roots**. All 241 were
@@ -286,6 +282,21 @@ tool, before being reported. Storage figures from `count_chunks.py` distinguish 
 **modelled**: each level records whether its stored-bytes figure is `exact` (every sampled chunk was
 full size) or extrapolated, and compression ratios derived from small samples are reported as
 order-of-magnitude with their sample size, not to spurious precision.
+
+## Contributing
+
+See [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md). Dev setup is `pip install -e '.[dev]'`
+then `python -m pytest tests/ -q`. AI coding agents: [`AGENTS.md`](AGENTS.md).
+
+## Companion project
+
+[ScrollQ](https://github.com/Svyable/scrollq) scores every scroll volume
+0–100 on data quality — signal presence, texture energy, dynamic range,
+dead-slice scan — and joins the ranking against published ink labels to flag
+"🎯 label next" targets ([live leaderboard](https://svyable.github.io/scrollq/)).
+This repo is "don't train on lies" (corruption); ScrollQ is "train on the
+best first" (triage). `scrollq-health` (in the ScrollQ package) runs both
+halves and issues one verdict per volume: **TRAIN / CAUTION / DO NOT TRAIN**.
 
 ## Data attribution and license
 
