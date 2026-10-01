@@ -51,6 +51,8 @@ CODE_BLURB = {
     "ROOT_ABSENT": "requested Zarr root is confirmed absent",
     "ACCESS_UNKNOWN": "access could not establish presence or absence — informational",
     "METADATA_UNREADABLE": "metadata exists but could not be decoded",
+    "PHYSICAL_SCALE_UNKNOWN": "metadata says absolute physical size is unknown — informational",
+    "PHYSICAL_SCALE_CONTRADICTION": "physical size marked unknown but metadata also claims an absolute scale",
     "EMPTY_ZARR_DIR": "*.zarr directory with no contents",
     "NOT_A_ZARR_GROUP": "no .zgroup / zarr.json and nothing Zarr-like inside",
     "NOT_MULTISCALE": "valid Zarr group, never claimed to be a pyramid",
@@ -61,7 +63,7 @@ PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>zarr-pyramid-audit — Don't train on lies</title>
-<meta name="description" content="Independent integrity audit of the Vesuvius open-data Zarr stores. 957 S3 roots audited, one defective pyramid found.">
+<meta name="description" content="Independent integrity audit of the Vesuvius open-data Zarr stores. 957 S3 roots audited, one defective pyramid found. The integrity half of the ScrolIQ data-quality suite.">
 <meta name="theme-color" content="#0d0b08">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -170,6 +172,26 @@ code{{font-size:.8rem;color:var(--amber)}}
 .method{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}}
 .suite{{display:flex;gap:1rem;flex-wrap:wrap;align-items:stretch}}
 .suite .card{{flex:1;min-width:260px}}
+.suite .card .role{{color:var(--ink);font-weight:700;margin-top:.1rem}}
+.suitechip{{margin:1.1rem 0 0}}
+.suitechip a{{display:inline-block;border:1px solid #6f3b18;border-radius:999px;padding:.38rem .85rem;
+  font-size:.82rem;text-decoration:none;color:var(--amber);background:rgba(255,122,26,.07)}}
+.suitechip a:hover{{border-color:var(--ember);color:var(--gold)}}
+.flow{{display:flex;align-items:stretch;gap:.5rem;flex-wrap:wrap;margin:1.1rem 0}}
+.flow .step{{flex:1;min-width:170px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:10px;padding:.8rem .95rem;font-size:.85rem;color:var(--muted);line-height:1.5}}
+.flow .step b{{display:block;color:var(--ink);font-size:.88rem;margin-bottom:.2rem}}
+.flow .step code{{font-size:.76rem}}
+.flow .step.stop{{border-color:rgba(255,107,107,.35)}}
+.flow .arrow{{align-self:center;color:var(--ember);font-weight:800}}
+.ties{{margin:.4rem 0 0;padding-left:1.2rem;color:var(--muted);line-height:1.65;font-size:.93rem}}
+.ties li{{margin:.45rem 0}}
+.ties b{{color:var(--ink)}}
+.verdict{{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;border-radius:6px;
+  padding:.16rem .5rem;white-space:nowrap}}
+.verdict.train{{background:rgba(143,214,148,.10);color:var(--good);border:1px solid rgba(143,214,148,.35)}}
+.verdict.caution{{background:rgba(255,158,94,.12);color:var(--warn);border:1px solid rgba(255,158,94,.35)}}
+.verdict.stopv{{background:rgba(255,107,107,.12);color:var(--bad);border:1px solid rgba(255,107,107,.4)}}
 .actiongrid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}}
 .actiongrid h3{{margin:.1rem 0 .5rem;font-size:.95rem}}
 .cmd{{background:#0c0a08;border:1px solid var(--line);border-radius:10px;padding:.8rem 1rem;overflow:auto}}
@@ -177,7 +199,7 @@ code{{font-size:.8rem;color:var(--amber)}}
 footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   color:var(--dim);font-size:.82rem;line-height:1.7}}
 .hidden{{display:none!important}}
-@media(max-width:700px){{.cbar{{min-width:70px}}.navstatus{{display:none}}.navlinks a{{padding:.34rem .42rem}}
+@media(max-width:700px){{.flow .arrow{{display:none}}.cbar{{min-width:70px}}.navstatus{{display:none}}.navlinks a{{padding:.34rem .42rem}}
   .search{{order:2;margin-left:0;flex:1 1 100%}}.resultcount{{margin-left:auto}}}}
 </style></head><body>
 
@@ -186,7 +208,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
     <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
-    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="./september-2026.html">Writeup</a>
+    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a>
     <a href="{repo}">GitHub</a>
   </div>
   <span class="navstatus">● evidence-backed</span>
@@ -202,6 +224,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   Every number below is read from committed audit artifacts; nothing is hand-typed.
   <a href="#verify">Verify it in 60 seconds →</a> · <a href="{repo}">Repo (MIT)</a> ·
   <a href="./september-2026.html">September 2026 writeup →</a></p>
+  <p class="suitechip"><a href="#scroliq">The integrity half of the ScrolIQ data-quality suite — how the two fit together →</a></p>
   <div class="stats">
     <div class="stat"><div class="n">{s3_audited}</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
     <div class="stat"><div class="n good">{s3_clean}</div><div class="l">clean</div></div>
@@ -262,6 +285,85 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
       <p><a href="{repo}/tree/main/data">Known-defect registry →</a> ·
       <a href="{repo}/tree/main/artifacts">Run artifacts →</a></p></div>
   </div>
+</div>
+
+<div class="panel" id="scroliq"><h2>How this fits with ScrolIQ<span class="sub">Two repos, one question: should anyone spend GPU or expert time on this volume?</span></h2>
+  <div class="suite">
+    <div class="card"><h3>zarr-pyramid-audit · this repo</h3>
+      <p class="role">Don't train on lies.</p>
+      <p><b>Integrity.</b> Is the data what its metadata claims? Header-only pyramid
+      audit, sampled chunk-content probes, a fail-closed publish gate, and
+      surface-input evidence tools. Read-only, ~KB per pyramid. A <b>high</b>
+      finding means do not train, do not publish. Says nothing about scan quality.</p></div>
+    <div class="card"><h3>ScrolIQ · companion repo</h3>
+      <p class="role">Find the bottleneck.</p>
+      <p><b>Diagnostics.</b> A diagnostic layer for the Challenge's 2026 open problems:
+      a 0–100 scan-health triage score and the “🎯 label next” coverage join, plus
+      the diagnostic passport, spatial scan map, mesh / winding / ink audits, and the
+      2027 Grand Prize recto-coverage and provenance gates. Its score is
+      <b>not</b> readability or prize readiness; unmeasured stages stay <code>unknown</code>.</p>
+      <p><a href="https://github.com/Svyable/scrollq">repo</a> ·
+      <a href="https://svyable.github.io/scrollq/">live survey</a> ·
+      <a href="https://svyable.github.io/scrollq/september-2026.html">September writeup</a></p></div>
+  </div>
+
+  <div class="flow" role="list" aria-label="How a volume moves through the suite">
+    <div class="step" role="listitem"><b>1 · Integrity</b>
+      <code>zpa-gate</code> / <code>zpa-audit</code> — are levels, headers and chunks real?</div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="step stop" role="listitem"><b>2 · Stop or continue</b>
+      A high-severity finding ends it: <span class="verdict stopv">DO NOT TRAIN</span></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="step" role="listitem"><b>3 · Scan health</b>
+      ScrolIQ scores sampled real voxels, decoded through the libvolcomp vendored here</div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="step" role="listitem"><b>4 · Diagnose</b>
+      Passport, scan map, mesh / winding / ink audits, Grand Prize provenance gate</div>
+  </div>
+
+  <h3 style="margin:1.4rem 0 .4rem;font-size:.95rem">One verdict per volume: <code>scrollq-health</code></h3>
+  <div style="overflow-x:auto"><table><thead><tr><th>integrity (this repo)</th><th>quality (ScrolIQ)</th><th>verdict</th></tr></thead><tbody>
+  <tr><td>any <b>high</b> finding</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
+  <tr><td>medium finding(s), no high</td><td>not consulted</td><td><span class="verdict caution">CAUTION</span></td></tr>
+  <tr><td>pass (no high or medium finding)</td><td>unscorable, or score below 40</td><td><span class="verdict caution">CAUTION</span></td></tr>
+  <tr><td>pass (no high or medium finding)</td><td>score 40 or above</td><td><span class="verdict train">TRAIN</span></td></tr>
+  </tbody></table></div>
+  <p style="font-size:.85rem">Rules as implemented in ScrolIQ's
+  <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>
+  (checked 2026-09-30). All three outcomes were run on live data
+  (<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts">ScrolIQ evidence</a>):
+  <b>DO NOT TRAIN</b> on the defective PHerc0814 pyramid — its quality is unscorable, so the
+  verdict comes from this audit alone — <b>TRAIN</b> on a healthy PHerc0813 dl volume, and
+  <b>CAUTION</b> on the v2 dev mesh.</p>
+
+  <h3 style="margin:1.4rem 0 .2rem;font-size:.95rem">Where ScrolIQ builds on this repo</h3>
+  <ul class="ties">
+    <li><b>Shared foundation.</b> ScrolIQ imports this package's HTTP/S3 store, header parser,
+    audit and vendored <code>libvolcomp</code> decoder (<code>zpa.httpstore</code>,
+    <code>zpa.zarrmeta</code>, <code>zpa.audit_pyramid</code>, <code>zpa.volcomp</code>).
+    It declares <code>zarr-pyramid-audit</code> as a dependency, so installing ScrolIQ installs this.
+    The dependency runs one way: this repo never imports ScrolIQ.</li>
+    <li><b>Integrity before quality.</b> A scan-health score is only worth trusting on a pyramid that
+    passes integrity, so <code>scrollq-health</code> runs this audit alongside the score and lets a
+    high finding override it.</li>
+    <li><b>Grand Prize evidence chain.</b> ScrolIQ's <code>scroliq-provenance</code> gate requires a
+    <code>zarr_audit</code> record for the CT volume — tool name, audit-manifest SHA-256, and a root
+    naming the exact eligible volume — and its probe protocol makes this repo's audit Stage A.</li>
+    <li><b>Shared discovery data.</b> ScrolIQ's label-coverage join reads the
+    <code>discover_zarr.roots.jsonl</code> that <code>zpa-discover</code> produces for the S3 bucket.</li>
+  </ul>
+
+  <div class="gatebox"><b>Naming.</b> ScrolIQ is spelled with a capital <b>I</b> (as in Mesh IQ and
+  Ink IQ) and was previously ScrollQ. Its Python package and the
+  <code>scrollq-*</code> commands keep the old name for compatibility; the newer diagnostics ship as
+  <code>scroliq-*</code>. Repo and site URLs are unchanged.</div>
+
+  <div class="cmd" style="margin-top:1rem"><code># integrity only (this repo)
+zpa-gate --base &lt;store&gt; --root &lt;volume.zarr&gt;
+
+# integrity + scan quality → one verdict (installs both packages)
+pip install git+https://github.com/Svyable/scrollq.git
+scrollq-health --root &lt;volume&gt;</code></div>
 </div>
 
 <div class="panel"><h2>🚨 The defective pyramid<span class="sub">s3://vesuvius-challenge-open-data</span></h2>
@@ -341,29 +443,16 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   kill list: <code>data/known-defects.json</code> ({kd_n} entries).</p>
 </div>
 
-<div class="panel"><h2>One suite, two halves</h2>
-<div class="suite">
-  <div class="card"><h3>ScrollQ</h3>
-    <p><b>Train on the best first.</b> Quality scoring 0–100 for every scroll volume,
-    resampling-stability proof, and the label-coverage join that flags
-    "🎯 label next" targets.</p>
-    <p><a href="https://github.com/Svyable/scrollq">repo</a> ·
-    <a href="https://svyable.github.io/scrollq/">leaderboard</a></p></div>
-  <div class="card"><h3>scrollq-health</h3>
-    <p>Runs the integrity audit <b>and</b> the quality score on any volume and
-    issues one verdict: <b>TRAIN / CAUTION / DO NOT TRAIN</b>.</p>
-    <p><code>scrollq-health --root &lt;volume&gt;</code></p></div>
-</div></div>
-
 </main>
 
 <footer><div class="wrap">
-  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 24 check codes over
+  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): {n_codes} check codes over
   <code>.zattrs</code> + one <code>.zarray</code> per level — a few KB per pyramid
   regardless of array size. Chunk-presence via one listing per level. Chunk-content via
   sampled decode (vendored libvolcomp for the sharded volcomp levels). Full evidence,
   manifests, and runbooks in <code>artifacts/</code> in the
-  <a href="{repo}">repo</a> (MIT fork of sgsllc-jr/zarr-pyramid-audit; upstream credit retained).<br>
+  <a href="{repo}">repo</a> (MIT fork of sgsllc-jr/zarr-pyramid-audit; upstream credit retained).
+  Companion: <a href="https://github.com/Svyable/scrollq">ScrolIQ</a> (<a href="#scroliq">how they fit</a>).<br>
   Built by Sven + Muse · updated {stamp}.
 </div></footer>
 
@@ -427,7 +516,11 @@ SEVERITY = {
     "METADATA_UNREADABLE": "high", "ACCESS_UNKNOWN": "info",
     "NOT_A_ZARR_GROUP": "info", "NOT_MULTISCALE": "info",
     "BARE_ARRAY": "info", "CHUNK_EXCEEDS_SHAPE": "info",
+    "PHYSICAL_SCALE_CONTRADICTION": "high", "PHYSICAL_SCALE_UNKNOWN": "info",
 }
+# Kept in lockstep with zpa.audit_pyramid.SEVERITY by tests/test_dashboard.py.
+# It is duplicated (not imported) so the Pages CI can regenerate the dashboard
+# on a bare Python install with no audit dependencies.
 
 
 def load_json(p):
@@ -541,6 +634,7 @@ def main() -> int:
         dl_actionable=dl["findings_actionable"], dl_info=dl["findings_informational"],
         probe_rows=probe_rows, v2_note=v2_note,
         vc_pop=vc_pop, v2_pop=v2_pop, kd_n=kd_n, stamp=stamp,
+        n_codes=len(SEVERITY),
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:

@@ -6,9 +6,16 @@ Read-only integrity auditing for OME-Zarr multiscale pyramids served over HTTP o
 visual summary generated from the committed audit artifacts. The deployable source lives in
 [`docs/`](docs/); pull requests verify that the generated dashboard is current before merge.
 
-Built to audit [`dl.ash2txt.org`](https://dl.ash2txt.org/) (the Vesuvius Challenge / Scroll Prize
-data host), but nothing in it is Vesuvius-specific: point `--base` at any store that exposes a
-directory autoindex and it works.
+Built to audit [`dl.ash2txt.org`](https://dl.ash2txt.org/) and the
+`s3://vesuvius-challenge-open-data` bucket (the Vesuvius Challenge / Scroll Prize data hosts), but
+nothing in it is Vesuvius-specific: point `--base` at any store that exposes a directory autoindex
+(or an `s3://` bucket) and it works.
+
+**Part of a two-repo data-quality suite.** This repo answers *is the data what its metadata says it
+is?* ("don't train on lies"). Its companion, [ScrolIQ](https://github.com/Svyable/scrollq), answers
+*where is the bottleneck, and what is worth doing next?* ("find the bottleneck"). They are
+independent tools that compose into one verdict per volume — see
+[How this fits with ScrolIQ](#how-this-fits-with-scroliq).
 
 ## The failure class this exists to find
 
@@ -68,6 +75,8 @@ group) and are never counted as defects.
 | `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
 | `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
+| `zpa-dashboard` | Regenerates the [public dashboard](https://svyable.github.io/zarr-pyramid-audit/) (`docs/index.html`) from the committed artifacts; every number on it is read from `artifacts/`, none are hand-typed. | local files only |
+| `zpa-known-defects` | Regenerates `data/known-defects.json`, the machine-readable kill list of confirmed defective pyramids. | local files only |
 
 ### Check codes
 
@@ -105,6 +114,55 @@ explicitly unknown scale, or fail on metadata that simultaneously says the
 physical size is unknown while making an incompatible absolute-scale claim.
 This matters for generated scroll renders because an explicitly unknown physical
 scale cannot, by itself, support a trustworthy physical-distance scale bar.
+
+## How this fits with ScrolIQ
+
+[ScrolIQ](https://github.com/Svyable/scrollq) is the companion project. (It is spelled with a capital
+**I**, as in Mesh IQ and Ink IQ, and was previously called *ScrollQ*; its Python package and the
+`scrollq-*` commands keep the old name for compatibility, while its newer diagnostics ship as
+`scroliq-*`. Repo and site URLs are unchanged.) The two repos ask one question — *should anyone
+spend GPU or expert time on this volume?* — from opposite ends:
+
+| | zarr-pyramid-audit (this repo) | [ScrolIQ](https://github.com/Svyable/scrollq) |
+|---|---|---|
+| Motto | Don't train on lies | Find the bottleneck |
+| Question | Is the data what its metadata says it is? | Which stage of the unwrapping pipeline limits progress, and what is worth doing next? |
+| Measures | Pyramid structure, chunk presence and content, publish-time gating, surface-input evidence | Sampled real-voxel scan health (0–100 triage), label/segment coverage (“🎯 label next”), a diagnostic passport, spatial scan maps, mesh / winding / ink audits, 2027 Grand Prize recto-coverage and provenance gates |
+| What a result means | **High** severity = do not train, do not publish | Its score is scan-health *triage*, not readability or Grand Prize readiness; unmeasured stages stay `unknown` |
+| See | [Dashboard](https://svyable.github.io/zarr-pyramid-audit/) | [Live survey](https://svyable.github.io/scrollq/) · [September writeup](https://svyable.github.io/scrollq/september-2026.html) |
+
+### How they connect
+
+- **One verdict per volume.** ScrolIQ's `scrollq-health` runs this repo's audit alongside its
+  quality score. Integrity wins: any **high** finding is **DO NOT TRAIN** regardless of score; a
+  **medium** finding is **CAUTION**; with neither, quality that is unscorable or below 40 is
+  **CAUTION**, and anything else is **TRAIN**. Run on live data: DO NOT TRAIN on the defective
+  PHerc0814 pyramid (its quality is unscorable, so the verdict comes from this audit alone), TRAIN
+  on a healthy PHerc0813 volume, CAUTION on the v2 dev mesh
+  ([ScrolIQ's evidence](https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts)).
+  The rules are those of ScrolIQ's
+  [`health.py`](https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py) as checked on
+  2026-09-30; they live there, not here.
+- **Shared foundation.** ScrolIQ imports this package's HTTP/S3 store, header parser, audit and the
+  vendored `libvolcomp` decoder (`zpa.httpstore`, `zpa.zarrmeta`, `zpa.audit_pyramid`,
+  `zpa.volcomp`), and declares `zarr-pyramid-audit` as a dependency. The dependency runs one way:
+  this repo never imports ScrolIQ. Treat those four modules' public functions as a contract.
+- **Grand Prize evidence chain.** ScrolIQ's `scroliq-provenance` gate requires a `zarr_audit`
+  record for the exact eligible CT volume — tool name, the audit manifest's SHA-256, and a
+  root that names the volume — and its probe protocol makes running this
+  audit on the CT, surface prediction and lasagna inputs Stage A, before any geometry or ink work.
+- **Shared discovery data.** ScrolIQ's label-coverage join (`scrollq-coverage`) reads the
+  `discover_zarr.roots.jsonl` that `zpa-discover` writes for the S3 bucket.
+
+Integrity only, from this repo; or integrity plus scan quality (installing ScrolIQ installs this
+package too):
+
+```bash
+zpa-gate --base <store> --root <volume.zarr>
+
+pip install git+https://github.com/Svyable/scrollq.git
+scrollq-health --root <volume>
+```
 
 ## Usage
 
@@ -222,17 +280,50 @@ Full artifacts of the 2026-09-29 S3 run (957 roots discovered, 957 audited,
 one confirmed header-only pyramid) are in
 [`artifacts/2026-09-29-s3/`](artifacts/2026-09-29-s3/).
 
-## Results on dl.ash2txt.org (run of 2026-09-09)
+## Latest results (2026-09-29 – 2026-09-30)
 
-## Companion project
+Every figure below is read from a committed artifact; the
+[dashboard](https://svyable.github.io/zarr-pyramid-audit/) is generated from the same files.
 
-[ScrollQ](https://github.com/Svyable/scrollq) scores every scroll volume
-0–100 on data quality — signal presence, texture energy, dynamic range,
-dead-slice scan — and joins the ranking against published ink labels to flag
-"🎯 label next" targets ([live leaderboard](https://svyable.github.io/scrollq/)).
-This repo is "don't train on lies" (corruption); ScrollQ is "train on the
-best first" (triage). `scrollq-health` (in the ScrollQ package) runs both
-halves and issues one verdict per volume: **TRAIN / CAUTION / DO NOT TRAIN**.
+**S3 open-data bucket** (`s3://vesuvius-challenge-open-data`, run of 2026-09-29,
+[`artifacts/2026-09-29-s3/`](artifacts/2026-09-29-s3/)). 957 roots discovered and audited
+header-only: **956 clean, 1 defective** — a PHerc0814 surface volume whose six pyramid levels all
+have valid headers and **zero chunks** (6 `LEVEL_NO_CHUNKS`, high). A zarr-python read returns zeros
+without error, against a populated control that returned 64,498 nonzero voxels
+([`SILENT_ZEROS.md`](artifacts/2026-09-29-s3/SILENT_ZEROS.md)). Re-audited on 2026-09-30 with an
+identical result ([`artifacts/2026-09-30-s3-reverify/`](artifacts/2026-09-30-s3-reverify/)); it
+independently confirms [villa #1892](https://github.com/scrollprize/villa/issues/1892).
+
+**dl.ash2txt.org 20-day regression**
+([`artifacts/2026-09-29-dl-regression/`](artifacts/2026-09-29-dl-regression/)). The 2026-09-09
+audit's identical 241-root list, re-run: 18 defective pyramids and 50 actionable findings, and a
+strict diff on every finding field is empty — **0 fixed, 0 new**. Published defects do not get
+repaired afterwards, which is why the publish-time gate is the point of leverage.
+
+**Chunk-content probes** (2026-09-30; sampled decode — "do the chunks that are present hold
+data?"):
+
+| campaign | roots | levels | populated samples | all-empty levels | artifacts |
+|---|---|---|---|---|---|
+| S3 v2, raw/Blosc | 58 | 291 | 788 | 0 | [`2026-09-30-s3-chunkscan`](artifacts/2026-09-30-s3-chunkscan/) |
+| S3 v3, sharded (zarr-python windows) | 70 | 420 | 1,224 | 0 | [`2026-09-30-s3-chunkscan-v3`](artifacts/2026-09-30-s3-chunkscan-v3/) |
+| dl volcomp (vendored `libvolcomp`, HTTP byte ranges) | 64 | 384 | 548 | 0 | [`2026-09-30-dl-volcomp-probe`](artifacts/2026-09-30-dl-volcomp-probe/) |
+| dl v2, raw/Blosc | 128 | 748 | 1,795 | **7** | [`2026-09-30-dl-v2-probe`](artifacts/2026-09-30-dl-v2-probe/) |
+
+The 7 all-empty levels are `other/dev/meshes/20231022170900-ome.zarr` L1–L7: a dev mesh derivative
+(L0 holds data), not a scroll, so it stays **medium** severity for human review. In the volcomp row,
+2,118 further samples were *missing* — absent from the shard index, i.e. masked background — and
+are deliberately not counted as empty or as defects. "Not observed" in a sample is not proof of
+absence in the corpus.
+
+**Publish gate, end to end** ([`artifacts/2026-09-30-gate-proof/`](artifacts/2026-09-30-gate-proof/)).
+`zpa-gate --fail-on high` exits 1 on the defective PHerc0814 root and 0 on its clean sibling, live
+against S3.
+
+**Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
+defective pyramids across both stores, with finding codes, severity and evidence pointers.
+
+## Original baseline: dl.ash2txt.org (run of 2026-09-09)
 
 Full artifacts in [`artifacts/2026-09-09/`](artifacts/2026-09-09/).
 

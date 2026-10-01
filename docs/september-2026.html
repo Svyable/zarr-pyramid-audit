@@ -87,6 +87,8 @@ Repo: <a href="https://github.com/Svyable/zarr-pyramid-audit">github.com/Svyable
 (MIT fork of <a href="https://github.com/sgsllc-jr/zarr-pyramid-audit">sgsllc-jr/zarr-pyramid-audit</a>;
 all upstream credit retained)<br>
 Live data-health dashboard: <a href="./">svyable.github.io/zarr-pyramid-audit</a><br>
+Companion project: <a href="https://github.com/Svyable/scrollq">ScrolIQ</a> — the diagnostics half of the suite
+(<a href="#scroliq">how they fit</a>)<br>
 Official criteria: <a href="https://scrollprize.org/prizes">scrollprize.org/prizes</a> ·
 Latest awarded work: <a href="https://scrollprize.org/winners">scrollprize.org/winners</a></div>
 <div class="stats">
@@ -103,6 +105,7 @@ Latest awarded work: <a href="https://scrollprize.org/winners">scrollprize.org/w
 <a href="#rubric">prize rubric</a>
 <a href="#evidence">evidence</a>
 <a href="#reproduce">reproduce</a>
+<a href="#scroliq">ScrolIQ</a>
 </div>
 </div></header>
 
@@ -247,31 +250,55 @@ zpa-gate --base s3://vesuvius-challenge-open-data \
 pipeline that can segment/unroll an entire scroll and then render legible ink. Those stages depend on trustworthy
 volumes, surfaces and multiscale reads. <code>zarr-pyramid-audit</code> supplies a cheap integrity boundary before
 expensive segmentation or ink inference and a machine-readable trail for reproducing exactly which store/root was used.</p>
-<p class="smalllink"><a href="https://scrollprize.org/prizes">2027 Grand Prize requirements →</a></p></div>
+<p>That trail is consumed downstream: ScrolIQ's <code>scroliq-provenance</code> gate requires a
+<code>zarr_audit</code> record for the exact eligible CT volume (tool name, audit-manifest SHA-256, and a root
+naming that volume), and its Grand Prize probe protocol makes this audit Stage A.</p>
+<p class="smalllink"><a href="https://scrollprize.org/prizes">2027 Grand Prize requirements →</a> ·
+<a href="#scroliq">how this fits with ScrolIQ →</a></p></div>
 
 <div class="panel"><h2>Team</h2>
 <p>Solo contributor (Sven) + Muse (AI assistant). Upstream tool by sgsllc-jr,
 MIT-licensed; all upstream credit retained in the fork.</p></div>
 
-<div class="panel"><h2>One suite, two halves</h2>
+<div class="panel" id="scroliq"><h2>How this fits with ScrolIQ</h2>
+<p>Two repos, one question: <b>should anyone spend GPU or expert time on this volume?</b>
+This submission answers whether the data is what it claims to be; ScrolIQ answers what is worth doing with it.</p>
 <div class="suite">
-<div class="card"><h3>ScrolIQ</h3>
-<p><b>Find the bottleneck.</b> The companion project scores every scroll
-volume 0–100 on scan health and is evolving into an open diagnostic layer
-for the Challenge's 2026 open problems.</p>
+<div class="card"><h3>zarr-pyramid-audit · this submission</h3>
+<p><b>Don't train on lies.</b> Integrity: header-only pyramid audit, sampled chunk-content probes, and a
+fail-closed publish gate. A high-severity finding means do not train, do not publish. Says nothing about scan quality.</p></div>
+<div class="card"><h3>ScrolIQ · companion</h3>
+<p><b>Find the bottleneck.</b> A diagnostic layer for the Challenge's 2026 open problems: a 0–100
+scan-health triage score and “label next” coverage join, plus a diagnostic passport, spatial scan map,
+mesh / winding / ink audits, and 2027 Grand Prize recto-coverage and provenance gates. Its score is
+<b>not</b> readability or prize readiness.</p>
 <p><a href="https://github.com/Svyable/scrollq">repo</a> ·
-<a href="https://svyable.github.io/scrollq/">live site</a></p></div>
-<div class="card"><h3>scrollq-health</h3>
-<p>Runs the integrity audit <b>and</b> the quality score on any volume and
-issues one verdict: <b>TRAIN / CAUTION / DO NOT TRAIN</b> (verified: TRAIN on
-a healthy dl volume; DO NOT TRAIN on the defective PHerc0814 S3 pyramid).</p>
-<p><code>scrollq-health --root &lt;volume&gt;</code></p></div>
-</div></div>
+<a href="https://svyable.github.io/scrollq/">live survey</a> ·
+<a href="https://svyable.github.io/scrollq/september-2026.html">its September writeup</a></p></div>
+</div>
+<ul>
+<li><b>One verdict per volume.</b> <code>scrollq-health</code> runs this audit alongside ScrolIQ's score:
+a high-severity integrity finding is <b>DO NOT TRAIN</b>; a medium finding, or a pass with quality
+unscorable or below 40, is <b>CAUTION</b>; otherwise <b>TRAIN</b>. Verified on live data: DO NOT TRAIN on the
+defective PHerc0814 pyramid (its quality is unscorable, so the verdict comes from this audit alone), TRAIN on a
+healthy PHerc0813 dl volume, CAUTION on the v2 dev mesh
+(<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-09-30-health-verdicts">ScrolIQ evidence</a>;
+rules from its <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>, checked 2026-09-30).</li>
+<li><b>Shared foundation.</b> ScrolIQ imports this package's HTTP/S3 store, header parser, audit, and vendored
+<code>libvolcomp</code> decoder, and declares <code>zarr-pyramid-audit</code> as a dependency. The dependency runs
+one way: this repo never imports ScrolIQ.</li>
+<li><b>Shared discovery data.</b> ScrolIQ's label-coverage join reads the
+<code>discover_zarr.roots.jsonl</code> that <code>zpa-discover</code> produces for the S3 bucket.</li>
+</ul>
+<p class="smalllink">ScrolIQ is spelled with a capital I (as in Mesh IQ) and was previously ScrollQ; its package and
+<code>scrollq-*</code> commands keep the old name for compatibility. ·
+<a href="./#scroliq">Full breakdown with the verdict table →</a></p></div>
 
 <div class="panel"><h2>Submission status</h2>
-<p class="meta"><span class="status-ready">Submission-ready public snapshot.</span>
-Evidence and same-day re-verification are frozen on September 30, 2026. The official Progress Prize deadline is
-September 30, 2026 at 11:59 PM Pacific; submission itself is completed through the Challenge's official form.</p></div>
+<p class="meta"><span class="status-ready">Frozen public snapshot.</span>
+Evidence and same-day re-verification are frozen on September 30, 2026, the day of the official Progress Prize
+deadline (11:59 PM Pacific); submission itself is completed through the Challenge's official form. The evidence on
+this page stays frozen at that date — <a href="./">the live dashboard</a> carries the current evidence.</p></div>
 
 </div>
 
