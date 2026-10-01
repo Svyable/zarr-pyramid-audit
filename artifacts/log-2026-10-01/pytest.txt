@@ -1,0 +1,82 @@
+# python -m pytest tests/ -q
+........................................................................ [ 88%]
+..................                                                       [100%]
+162 passed in 0.53s
+
+# new test files, verbose
+tests/test_spec_conformance.py::test_new_codes_are_registered_with_conservative_severities PASSED
+tests/test_spec_conformance.py::test_clean_v04_pyramid_has_no_new_findings PASSED
+tests/test_spec_conformance.py::test_clean_v05_pyramid_with_ome_wrapper_has_no_new_findings PASSED
+tests/test_spec_conformance.py::test_translation_after_scale_is_accepted PASSED
+tests/test_spec_conformance.py::test_conforming_axes_are_never_flagged[axes0] PASSED
+tests/test_spec_conformance.py::test_conforming_axes_are_never_flagged[axes1] PASSED
+tests/test_spec_conformance.py::test_conforming_axes_are_never_flagged[axes2] PASSED
+tests/test_spec_conformance.py::test_conforming_axes_are_never_flagged[axes3] PASSED
+tests/test_spec_conformance.py::test_conforming_axes_are_never_flagged[axes4] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[0.6] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[0.10] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[1.0] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[banana] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[5] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_flagged_info[] PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_suppresses_conformance_checks PASSED
+tests/test_spec_conformance.py::test_coordinate_systems_without_version_is_unmodelled PASSED
+tests/test_spec_conformance.py::test_undeclared_version_is_not_flagged PASSED
+tests/test_spec_conformance.py::test_pre_04_pyramid_without_transforms_is_silent PASSED
+tests/test_spec_conformance.py::test_undeclared_version_and_no_transforms_anywhere_is_silent PASSED
+tests/test_spec_conformance.py::test_dataset_without_scale_is_flagged_on_that_level PASSED
+tests/test_spec_conformance.py::test_dataset_with_missing_transform_key_is_flagged_when_siblings_have_it PASSED
+tests/test_spec_conformance.py::test_dataset_with_two_scales_is_flagged PASSED
+tests/test_spec_conformance.py::test_non_list_coordinate_transformations_counts_as_no_scale PASSED
+tests/test_spec_conformance.py::test_scale_shorter_than_axes_is_flagged PASSED
+tests/test_spec_conformance.py::test_wrong_length_scale_names_its_root_cause_alongside_shape_mismatch PASSED
+tests/test_spec_conformance.py::test_translation_of_wrong_length_is_flagged PASSED
+tests/test_spec_conformance.py::test_scale_payload_that_is_not_a_list_is_flagged PASSED
+tests/test_spec_conformance.py::test_arity_falls_back_to_array_ndim_when_no_axes_declared PASSED
+tests/test_spec_conformance.py::test_duplicate_axis_names_are_flagged PASSED
+tests/test_spec_conformance.py::test_space_axis_after_channel_axis_violates_ordering PASSED
+tests/test_spec_conformance.py::test_time_axis_after_space_axes_violates_ordering PASSED
+tests/test_spec_conformance.py::test_four_space_axes_is_flagged PASSED
+tests/test_spec_conformance.py::test_two_time_axes_is_flagged PASSED
+tests/test_spec_conformance.py::test_single_axis_is_outside_the_two_to_five_range PASSED
+tests/test_spec_conformance.py::test_axes_findings_are_emitted_once_per_pyramid PASSED
+tests/test_spec_conformance.py::test_existing_axes_mismatch_still_fires_independently PASSED
+tests/test_spec_conformance.py::test_new_codes_never_reach_high_severity_in_audit_output PASSED
+tests/test_spec_conformance.py::test_conformance_findings_do_not_block_the_default_gate PASSED
+tests/test_spec_conformance.py::test_unmodelled_version_is_informational_at_every_gate_threshold_but_info PASSED
+tests/test_volcomp.py::test_parse_zarr_json_ok PASSED
+tests/test_volcomp.py::test_parse_zarr_json_not_sharded PASSED
+tests/test_volcomp.py::test_index_roundtrip PASSED
+tests/test_volcomp.py::test_index_bad_length PASSED
+tests/test_volcomp.py::test_index_encoded_size PASSED
+tests/test_volcomp.py::test_inner_chunks_per_shard_edge PASSED
+tests/test_volcomp.py::test_shard_key PASSED
+tests/test_volcomp.py::test_decode_real_chunk PASSED
+tests/test_volcomp.py::test_crc32c_known_vector_and_empty PASSED
+tests/test_volcomp.py::test_pure_python_crc32c_agrees_with_the_fast_path PASSED
+tests/test_volcomp.py::test_verify_accepts_an_index_written_by_zarr_python PASSED
+tests/test_volcomp.py::test_verify_rejects_a_flipped_index_byte PASSED
+tests/test_volcomp.py::test_verify_rejects_a_corrupted_stored_checksum PASSED
+tests/test_volcomp.py::test_verify_ignores_corruption_outside_the_index PASSED
+tests/test_volcomp.py::test_verify_is_not_applicable_without_a_crc32c_codec PASSED
+tests/test_volcomp.py::test_verify_too_short_to_hold_a_checksum_is_a_mismatch PASSED
+tests/test_volcomp.py::test_parse_zarr_json_reads_index_location PASSED
+tests/test_chunkscan_index_checksum.py::test_valid_index_is_verified_and_sampling_proceeds PASSED
+tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[0] PASSED
+tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[40] PASSED
+tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[127] PASSED
+tests/test_chunkscan_index_checksum.py::test_corrupt_index_or_checksum_is_a_distinct_status[129] PASSED
+tests/test_chunkscan_index_checksum.py::test_a_corrupt_shard_does_not_abort_the_rest_of_the_level PASSED
+tests/test_chunkscan_index_checksum.py::test_index_without_crc32c_codec_is_reported_unchecksummed_not_verified PASSED
+tests/test_chunkscan_index_checksum.py::test_start_located_index_is_refused_not_misread_as_corruption PASSED
+tests/test_chunkscan_index_checksum.py::test_status_table_preserves_historical_codes_and_adds_the_new_one PASSED
+tests/test_chunkscan_index_checksum.py::test_cli_emits_the_finding_and_reports_checksum_coverage PASSED
+============================== 67 passed in 0.35s ==============================
+
+# environment
+Python 3.11.15
+google-crc32c             1.9.0
+numcodecs                 0.16.5
+pytest                    9.1.1
+zarr                      3.1.6
+a1bb82e

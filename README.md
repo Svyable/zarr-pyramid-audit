@@ -121,7 +121,10 @@ EMPTY_ZARR_DIR                [low]    *.zarr directory with no contents
 purpose: the 2026-09-29 S3 audit
 (`artifacts/2026-09-29-s3/audit_pyramid.{levels,pyramids}.jsonl`) contains no
 level without a declared scale, no scale/array length mismatch and no duplicate
-axis names, so there is no corpus evidence yet that they mean "do not train".
+axis names, so there is no corpus evidence yet that they mean "do not train". Reproduce with
+`python artifacts/log-2026-10-01/corpus_check.py`; the session log
+([`artifacts/log-2026-10-01/`](artifacts/log-2026-10-01/)) records the tests,
+mutation checks and what is still unverified on live data.
 They never fire on untyped axes, an undeclared version, or pre-0.4 metadata,
 and an unmodelled version (e.g. OME-Zarr 0.6 / RFC-5 coordinate systems) is
 reported rather than judged by 0.4/0.5 rules.

@@ -1,0 +1,6 @@
+baseline (unmutated): 162 passed in 0.52s
+caught   version gate never fires (max version 9.9): 5 failed, 157 passed in 0.70s
+caught   transform checks judged for every version: 1 failed, 161 passed in 0.60s
+caught   scanner never verifies the index crc32c: 7 failed, 155 passed in 0.63s
+caught   stored checksum read big-endian: 4 failed, 158 passed in 0.62s
+caught   start-located index not refused: 1 failed, 161 passed in 0.64s
