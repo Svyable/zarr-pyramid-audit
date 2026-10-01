@@ -215,14 +215,14 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
     <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
-    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a>
+    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a><a href="./october-2026.html">October plan</a>
     <a href="{repo}">GitHub</a>
   </div>
   <span class="navstatus">● evidence-backed</span>
 </div></nav>
 
 <header class="hero"><div class="wrap">
-  <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER 2026</div>
+  <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER – OCTOBER 2026</div>
   <h1>zarr-pyramid-audit</h1>
   <p class="tagline">Corruption detection for OME-Zarr pyramids. <em>Don't train on lies.</em></p>
   <p class="lede">An independent integrity audit of the public Vesuvius Challenge
@@ -230,7 +230,8 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   no full downloads — plus sampled chunk-content probes that decode real voxels.
   Every number below is read from committed audit artifacts; nothing is hand-typed.
   <a href="#verify">Verify it in 60 seconds →</a> · <a href="{repo}">Repo (MIT)</a> ·
-  <a href="./september-2026.html">September 2026 writeup →</a></p>
+  <a href="./september-2026.html">September 2026 writeup →</a> ·
+  <a href="./october-2026.html">October 2026 goals →</a></p>
   <p class="suitechip"><a href="#scroliq">The integrity half of the ScrolIQ data-quality suite — how the two fit together →</a></p>
   <div class="stats">
     <div class="stat"><div class="n">{s3_audited}</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
@@ -424,9 +425,9 @@ scrollq-health --root &lt;volume&gt;</code></div>
   <p>The header-only audit answers "are chunk keys present?" — the probe answers the
   next question: <b>"do the present chunks hold data?"</b> This closes the next
   silent-corruption class: chunks that exist but decode to all fill_value.</p>
-  <table><thead><tr><th>campaign</th><th class="num">roots</th><th class="num">levels</th>
+  <div style="overflow-x:auto"><table><thead><tr><th>campaign</th><th class="num">roots</th><th class="num">levels</th>
   <th class="num">chunks decoded</th><th class="num">populated</th><th class="num">all-empty levels</th></tr></thead>
-  <tbody>{probe_rows}</tbody></table>
+  <tbody>{probe_rows}</tbody></table></div>
   {v2_note}
   <p>The present-but-empty class was not observed in the S3 or training-volume samples —
   reported as evidence of absence in the sample, not proof of absence in the corpus.
@@ -436,21 +437,21 @@ scrollq-health --root &lt;volume&gt;</code></div>
 {tifxyz_panel}<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
-  <table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
+  <div style="overflow-x:auto"><table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
   <tr><td>Zarr format</td><td>v3</td><td>v2</td></tr>
   <tr><td>chunking</td><td>1024³ shards</td><td>128³ raw</td></tr>
   <tr><td>codec</td><td>sharding_indexed + lossy volcomp (q=1.0)</td><td>none (raw uint8)</td></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p>Byte-level comparison (volcomp decoded from source) shows quantization noise only:
   max absolute difference 30–35, mean below 0.1, ~2–4% of voxels differ.
   <b>Reproducibility work must pin the store, not just the filename.</b></p>
 </div>
 
 <div class="panel"><h2>Known silent-zero volumes<span class="sub">dl.ash2txt.org · header-only levels confirmed by direct read</span></h2>
-  <table><thead><tr><th>volume</th><th>header-only levels</th></tr></thead><tbody>
+  <div style="overflow-x:auto"><table><thead><tr><th>volume</th><th>header-only levels</th></tr></thead><tbody>
   <tr><td><code>community-uploads/bruniss/labels/surfaces/archive/1-voxel-sheet_slices-closed.zarr</code></td><td>1–5 (level 0 populated)</td></tr>
   <tr><td><code>other/dev/inked_zarrs/3336_predictions.zarr</code></td><td>all six</td></tr>
-  </tbody></table>
+  </tbody></table></div>
   <p>Unchanged between the 2026-09-09 and 2026-09-29 audits. Full machine-readable
   kill list: <code>data/known-defects.json</code> ({kd_n} entries).</p>
 </div>
@@ -574,8 +575,9 @@ def render_tifxyz_panel(summary_path: str) -> str:
         f'<b>{blocking}</b>. Content tier skipped on {undecoded} surfaces '
         '(channels over the 32 MiB cap) &mdash; reported as a coverage gap, '
         'not a pass.</p>\n'
-        '  <table><thead><tr><th>code</th><th class="num">surfaces</th>'
-        f'<th>meaning</th></tr></thead><tbody>{rows}</tbody></table>\n'
+        '  <div style="overflow-x:auto"><table><thead><tr><th>code</th>'
+        '<th class="num">surfaces</th>'
+        f'<th>meaning</th></tr></thead><tbody>{rows}</tbody></table></div>\n'
         '  <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/'
         'tree/main/artifacts/2026-10-01-s3-tifxyz">Run artifacts &rarr;</a></p>\n'
         '</div>\n')

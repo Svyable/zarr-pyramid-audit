@@ -97,6 +97,10 @@ endpoint is unreachable from some networks, including some sandboxes).
   marked corrections of claims later found false (e.g. the 2026-10-01 gate
   proof correction) and dated notes pointing to its "post-deadline update"
   panel (`#update`), which is where later evidence goes
+  - `october-2026.html` — hand-written October plan: goals G1–G7, each with
+    the committed evidence that counts as done. Change a goal's status tag
+    and add a dated row to its status log only when that evidence is
+    committed; a slipped goal is marked slipped, not deleted
 - `artifacts/<date>-<name>/` — campaign outputs; the evidence behind
   published numbers. Each has a README/MD stating the command that made it.
 - `issues/` — drafts of issues filed against ScrollPrize/villa (index in

@@ -95,6 +95,11 @@ Migration notes for consumers:
   dashboard panel generated from `comparison.json`), and the tifxyz survey.
   `docs/september-2026.html` keeps its 2026-09-30 claims and gains a dated
   "post-deadline update" panel.
+- `docs/october-2026.html`: the October plan. It turns the gaps listed in
+  `docs/SUBMISSION.md` into seven goals, each naming the committed evidence
+  that counts as done, and the dashboard, README and SUBMISSION.md link to it.
+  Dashboard tables now scroll inside their panels, so the page no longer
+  scrolls sideways at phone width.
 
 ### Contract 1.1.0 — OME-NGFF conformance codes
 

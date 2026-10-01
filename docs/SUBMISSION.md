@@ -161,3 +161,6 @@ Other advantages, each backed by an artifact or a test:
   It pins this repo at `e473afd`, which predates the tifxyz report, so
   ScrolIQ does not consume surface reports yet
   ([INTEGRATION.md](INTEGRATION.md#scroliq-integration-surface)).
+
+The October 2026 plan turns these gaps into goals, each with its exit
+evidence: [`october-2026.html`](https://svyable.github.io/zarr-pyramid-audit/october-2026.html).

@@ -84,3 +84,10 @@ def test_dashboard_states_the_fail_closed_verdict_rules(page):
     assert "<b>UNKNOWN</b>" in page
     assert "https://github.com/Svyable/scrollq/pull/55" in page
     assert "2026-10-01-health-verdicts-fail-closed" in page
+
+
+def test_dashboard_links_the_october_plan(page):
+    assert 'href="./october-2026.html"' in page
+    plan = (REPO / "docs" / "october-2026.html").read_text(encoding="utf-8")
+    # A plan page: every goal names its exit evidence and starts as planned.
+    assert plan.count('<span class="tag plan">planned</span>') == plan.count("<tr><td>G")
