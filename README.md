@@ -37,9 +37,10 @@ level — a few KB regardless of array size — so a whole corpus can be audited
 
 ## Design notes worth knowing
 
-**It does not depend on `zarr`.** Headers are parsed directly from `.zattrs` / `.zarray` /
-`zarr.json`. This is deliberate: a store that `zarr.open()` refuses to open is exactly the kind of
-defect the tool needs to *report*, not crash on.
+**The header-only audit does not use `zarr`.** `zpa-discover`, `zpa-audit` and `zpa-gate` parse
+`.zattrs` / `.zarray` / `zarr.json` directly. This is deliberate: a store that `zarr.open()` refuses
+to open is exactly the kind of defect the tool needs to *report*, not crash on. Only the
+chunk-content probe and the surface tools import `zarr` (it is a declared dependency for them).
 
 **Absence is only ever inferred from positive evidence.** The chunk-presence check
 (`LEVEL_NO_CHUNKS`) trusts a directory listing to prove a level is empty *only* if that listing
@@ -72,7 +73,7 @@ group) and are never counted as defects.
 | `zpa-audit` | 26 check codes across the roots found above. Header-only unless `--no-chunk-presence` is off (it is on by default, adding one listing per present level). | ~KB per pyramid |
 | `zpa-count-chunks` | For a shortlist of roots: counts chunks actually present per level, `HEAD`s a sample to get stored bytes, and re-encodes a sample locally to measure a real compression ratio. Reports whether stored size is `exact` (all samples full-size) or extrapolated. | HEADs + small GETs |
 | `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
-| `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Each shard index's CRC32C is verified before its offsets are trusted: a failing index yields `SHARD_INDEX_CHECKSUM_MISMATCH` (medium, review flag — that shard is not sampled, and a non-conforming writer would look the same as corruption); the run summary's `index_crc` tally separates `verified` from `unchecksummed` (index declares no `crc32c`) so a clean run is only read as clean where it says `verified`. Shards with a start-located index are reported `undecodable` rather than misread. Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
+| `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Each shard index's CRC32C is verified before its offsets are trusted: a failing index yields `SHARD_INDEX_CHECKSUM_MISMATCH` (low until validated on a live run — that shard is not sampled, and a non-conforming writer would look the same as corruption); the run summary's `index_crc` tally separates `verified` from `unchecksummed` (index declares no `crc32c`) so a clean run is only read as clean where it says `verified`. Shards with a start-located index are reported `undecodable` rather than misread. Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
 | `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
 | `zpa-dashboard` | Regenerates the [public dashboard](https://svyable.github.io/zarr-pyramid-audit/) (`docs/index.html`) from the committed artifacts; every number on it is read from `artifacts/`, none are hand-typed. | local files only |
@@ -80,47 +81,50 @@ group) and are never counted as defects.
 
 ### Check codes
 
+Severities below are the single source of truth in `SEVERITY` (`src/zpa/audit_pyramid.py`).
+
 ```
-NOT_A_ZARR_GROUP          [info] no .zgroup/zarr.json and nothing Zarr-like inside
-BARE_ARRAY                [info] valid single-scale Zarr array; not a pyramid
-NOT_MULTISCALE            [info] valid Zarr group, but not an OME pyramid
-CHUNK_EXCEEDS_SHAPE       [info] chunk larger than the level itself on every axis
-HEADERLESS_CHUNK_STORE    chunk keys present but no header -- undecodable
-CONTAINER_NO_GROUP_HEADER children are Zarr nodes but root has no group header
-ROOT_ABSENT              requested Zarr root is confirmed absent
-ACCESS_UNKNOWN           [info] attempted access could not establish presence or absence
-METADATA_UNREADABLE      metadata exists but cannot be decoded
-EMPTY_ZARR_DIR            *.zarr directory with no contents
-MULTISCALE_EMPTY          declares multiscales but yields no usable datasets
-LEVEL_MISSING             declared level has no readable array header
-LEVEL_NO_CHUNKS           valid header, zero chunk keys -- reads return fill_value silently
-LEVEL_UNDECLARED          numeric level directory exists but is not declared
-SCALE_NONMONOTONIC        declared scales do not strictly increase with depth
-SCALE_SHAPE_MISMATCH      shape matches neither ceil nor floor of base/factor
-MIXED_ROUNDING            ceil at some levels, floor at others
-DTYPE_DRIFT / FILL_DRIFT / COMPRESSOR_DRIFT / SEPARATOR_DRIFT / NDIM_DRIFT
-AXES_MISMATCH             declared axes count != array ndim
-DEGENERATE_LEVEL          a level has a zero/negative extent
-PHYSICAL_SCALE_UNKNOWN    [info] metadata explicitly says absolute physical size is unknown
-PHYSICAL_SCALE_CONTRADICTION
-                           physical_size=unknown conflicts with spatial units or
-                           a non-identity level-0 spatial scale
-OME_VERSION_UNMODELLED    [info] declared OME-NGFF version is newer than 0.5 (or
-                           unparseable); the three checks below are skipped
-TRANSFORM_SCALE_COUNT     [low] dataset has zero or several scale transforms
-TRANSFORM_ARITY           [low] scale/translation length != axes count (or ndim)
-AXES_INVALID              [low] duplicate axis names, or typed axes out of NGFF
-                           count/order (2-5 axes, 2-3 space, time<channel<space)
+NOT_A_ZARR_GROUP              [info]   no .zgroup/zarr.json and nothing Zarr-like inside
+BARE_ARRAY                    [info]   valid single-scale Zarr array; not a pyramid
+NOT_MULTISCALE                [info]   valid Zarr group, but not an OME pyramid
+CHUNK_EXCEEDS_SHAPE           [info]   chunk larger than the level itself on every axis
+ACCESS_UNKNOWN                [info]   attempted access could not establish presence or absence
+PHYSICAL_SCALE_UNKNOWN        [info]   metadata explicitly says absolute physical size is unknown
+OME_VERSION_UNMODELLED        [info]   declared OME-NGFF version is newer than 0.5 (or unparseable); the TRANSFORM_*/AXES_INVALID checks are skipped
+HEADERLESS_CHUNK_STORE        [high]   chunk keys present but no header -- undecodable
+METADATA_UNREADABLE           [high]   metadata exists but cannot be decoded
+MULTISCALE_EMPTY              [high]   declares multiscales but yields no usable datasets
+LEVEL_MISSING                 [high]   declared level has no readable array header
+LEVEL_NO_CHUNKS               [high]   valid header, zero chunk keys -- reads return fill_value silently
+SCALE_SHAPE_MISMATCH          [high]   shape matches neither ceil nor floor of base/factor
+DEGENERATE_LEVEL              [high]   a level has a zero/negative extent
+DTYPE_DRIFT                   [high]   dtype changes between levels
+SEPARATOR_DRIFT               [high]   dimension_separator changes between levels
+NDIM_DRIFT                    [high]   levels disagree on dimensionality
+PHYSICAL_SCALE_CONTRADICTION  [high]   physical_size=unknown conflicts with spatial units or a non-identity level-0 spatial scale
+LEVEL_UNDECLARED              [medium] numeric level directory exists but is not declared
+SCALE_NONMONOTONIC            [medium] declared scales do not strictly increase with depth
+MIXED_ROUNDING                [medium] ceil at some levels, floor at others
+FILL_DRIFT                    [medium] fill_value changes between levels
+COMPRESSOR_DRIFT              [low]    codec changes between levels
+AXES_MISMATCH                 [low]    declared axes count != array ndim
+TRANSFORM_SCALE_COUNT         [low]    dataset has zero or several scale transforms
+TRANSFORM_ARITY               [low]    scale/translation length != axes count (or array ndim)
+AXES_INVALID                  [low]    duplicate axis names, or typed axes out of NGFF count/order (2-5 axes, 2-3 space, time<channel<space)
+CONTAINER_NO_GROUP_HEADER     [low]    children are Zarr nodes but root has no group header
+ROOT_ABSENT                   [low]    requested Zarr root is confirmed absent
+EMPTY_ZARR_DIR                [low]    *.zarr directory with no contents
 ```
 
-The last four are OME-NGFF spec-conformance checks. They are `low`/`info` on
+`OME_VERSION_UNMODELLED`, `TRANSFORM_SCALE_COUNT`, `TRANSFORM_ARITY` and
+`AXES_INVALID` are OME-NGFF spec-conformance checks. They are `low`/`info` on
 purpose: the 2026-09-29 S3 audit
 (`artifacts/2026-09-29-s3/audit_pyramid.{levels,pyramids}.jsonl`) contains no
 level without a declared scale, no scale/array length mismatch and no duplicate
-axis names, so there is no corpus evidence yet that they mean "do not train". They never fire on untyped
-axes, an undeclared version, or pre-0.4 metadata, and an unmodelled version
-(e.g. OME-Zarr 0.6 / RFC-5 coordinate systems) is reported rather than judged by
-0.4/0.5 rules.
+axis names, so there is no corpus evidence yet that they mean "do not train".
+They never fire on untyped axes, an undeclared version, or pre-0.4 metadata,
+and an unmodelled version (e.g. OME-Zarr 0.6 / RFC-5 coordinate systems) is
+reported rather than judged by 0.4/0.5 rules.
 
 The physical-scale checks are deliberately conservative. They do not guess whether
 a voxel size is plausible and they do not infer that an absolute scale is known
@@ -181,7 +185,7 @@ scrollq-health --root <volume>
 
 ## Usage
 
-Install (also installs the `zpa-*` commands):
+Requires Python 3.11+. Install (also installs the `zpa-*` commands):
 
 ```bash
 pip install git+https://github.com/Svyable/zarr-pyramid-audit.git
@@ -208,7 +212,8 @@ zpa-audit --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl -
 ```
 
 ```bash
-zpa-count-chunks --base https://dl.ash2txt.org/ --roots-csv shortlist.csv --out-dir tmp
+zpa-count-chunks --base https://dl.ash2txt.org/ --from-findings tmp/audit_pyramid.findings.csv \
+  --code COMPRESSOR_DRIFT --out-dir tmp
 ```
 
 Sampled chunk-*content* probe (do present chunks hold data?):
@@ -220,10 +225,10 @@ zpa-scan-chunks --base s3://vesuvius-challenge-open-data/ --levels-jsonl tmp/aud
 Audit a surface prediction against the exact masked CT volume that produced it:
 
 ```bash
-zpa-surface-support \\
-  --predictions s3://vesuvius-challenge-open-data/PHercXXXX/representations/predictions/surfaces/<surface>.zarr \\
-  --ct s3://vesuvius-challenge-open-data/PHercXXXX/volumes/<exact-prize-volume>.zarr \\
-  --expected-volume-id <exact-prize-volume-id> \\
+zpa-surface-support \
+  --predictions s3://vesuvius-challenge-open-data/PHercXXXX/representations/predictions/surfaces/<surface>.zarr \
+  --ct s3://vesuvius-challenge-open-data/PHercXXXX/volumes/<exact-prize-volume>.zarr \
+  --expected-volume-id <exact-prize-volume-id> \
   --anon --slab-stride 12 --out-dir tmp/surface-support
 ```
 
@@ -232,11 +237,11 @@ The arrays must share the same voxel grid. The report records exact input paths,
 Profile the rendered surface-volume stack before ink inference:
 
 ```bash
-zpa-surface-depth-profile \\
-  --surface-volume /data/segment/surface-volume.zarr \\
-  --expected-depth 21 \\
-  --source-volume-id <exact-prize-volume-id> \\
-  --expected-volume-id <exact-prize-volume-id> \\
+zpa-surface-depth-profile \
+  --surface-volume /data/segment/surface-volume.zarr \
+  --expected-depth 21 \
+  --source-volume-id <exact-prize-volume-id> \
+  --expected-volume-id <exact-prize-volume-id> \
   --grid 3 --tile-size 128 --out-dir tmp/surface-depth
 ```
 
@@ -392,6 +397,11 @@ tool, before being reported. Storage figures from `count_chunks.py` distinguish 
 **modelled**: each level records whether its stored-bytes figure is `exact` (every sampled chunk was
 full size) or extrapolated, and compression ratios derived from small samples are reported as
 order-of-magnitude with their sample size, not to spurious precision.
+
+## Contributing
+
+See [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md). Dev setup is `pip install -e '.[dev]'`
+then `python -m pytest tests/ -q`. AI coding agents: [`AGENTS.md`](AGENTS.md).
 
 ## Data attribution and license
 

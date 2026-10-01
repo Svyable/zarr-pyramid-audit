@@ -18,18 +18,31 @@ behind it — are welcome.
 git clone https://github.com/Svyable/zarr-pyramid-audit.git
 cd zarr-pyramid-audit
 python -m venv .venv && . .venv/bin/activate
-pip install -e .
+pip install -e '.[dev]'     # the package plus pytest and build
 ```
+
+Python 3.11 or newer. (AI coding agents: also read [`AGENTS.md`](../AGENTS.md).)
 
 ## Running the tools
 
 ```bash
-zpa-discover --base https://dl.ash2txt.org/ --out-dir out/
-zpa-audit --base https://dl.ash2txt.org/ --roots out/discover_zarr.roots.jsonl
+zpa-discover --base https://dl.ash2txt.org/ --max-depth 10 --out-dir tmp
+zpa-audit --base https://dl.ash2txt.org/ --roots tmp/discover_zarr.roots.jsonl --out-dir tmp
 zpa-gate --base https://dl.ash2txt.org/ --roots my-new-roots.jsonl   # publish-time gate
-zpa-scan-chunks --base https://dl.ash2txt.org/ --roots shortlist.jsonl
-zpa-dashboard --in out/ --out docs/index.html
-zpa-known-defects --in out/ --out data/known-defects.json
+zpa-scan-chunks --base https://dl.ash2txt.org/ --levels-jsonl tmp/audit_pyramid.levels.jsonl --out-dir tmp
+zpa-count-chunks --base https://dl.ash2txt.org/ --from-findings tmp/audit_pyramid.findings.csv --code COMPRESSOR_DRIFT
+```
+
+`zpa-surface-support` and `zpa-surface-depth-profile` have worked examples in
+the [README](../README.md). Every command accepts `--help`. Run from the repo
+root; scratch output goes in `tmp/` (git-ignored). For `s3://` bases, set
+`AWS_ENDPOINT_URL_S3=https://s3.us-east-1.amazonaws.com`.
+
+Two generators write committed files — never hand-edit their output:
+
+```bash
+zpa-known-defects     # → data/known-defects.json (reads artifacts/ under the cwd)
+zpa-dashboard         # → docs/index.html         (reads artifacts/ + known-defects)
 ```
 
 (`bin/` holds thin shims over the real package in `src/zpa/`.)
@@ -40,8 +53,9 @@ zpa-known-defects --in out/ --out data/known-defects.json
 python -m pytest tests/ -q
 ```
 
-All tests must pass before a PR is merged. New check codes need a unit test
-on a synthetic pyramid (see `tests/` for fixtures).
+All tests must pass before a PR is merged. They are network-free. New check
+codes need a unit test on a synthetic pyramid (see
+`tests/test_evidence_semantics.py` for fixtures).
 
 ## The accuracy policy (read this)
 
@@ -56,13 +70,36 @@ PR, issue, or doc change must be backed by something a reviewer can re-run:
   A new `high` check code needs corpus-wide evidence, not one anecdote.
 - Known defects live in `data/known-defects.json` (machine-readable, with
   severity + provenance). Add yours there with the generator, not by hand.
+- A failed or ambiguous read (timeout, 403, 429, 5xx, unsupported listing) is
+  *unknown*, not *absent*. Only a confirmed 404 supports an absence finding.
 
 ## Pull requests
 
 1. Branch from `main`: `git checkout -b <what>-<why>`.
 2. Keep PRs small. One check code or finding per PR.
-3. Update docs (README / dashboard / September page) if behavior changes.
-4. CI runs the test suite; green is required.
+3. Update docs (README / dashboard / September page) if behavior changes. If
+   you touch `artifacts/`, `data/known-defects.json` or the dashboard builder,
+   regenerate `docs/index.html` with `zpa-dashboard` and commit it.
+4. CI must be green. It runs: the test suite and a wheel-install smoke test of
+   every `zpa-*` command (`ci.yml`); a dashboard-freshness and link check
+   (`pages-check.yml`); and a live smoke audit against the public S3 bucket
+   (`audit.yml`).
+
+## Commits and merging
+
+- **Commit messages:** a short imperative subject, with a conventional prefix
+  where one fits (`feat:`, `fix:`, `docs:`, `test:`, `ci:`, `build:`). Use the
+  body for *why*, and cite the command/artifact behind any number it states.
+- **One logical change per commit.** Don't mix a new check code with
+  unrelated cleanups.
+- **Merge method:** prefer **squash merge**, so the PR title becomes the commit
+  subject on `main` (`Title (#N)`). Write the PR title as a good commit
+  subject, and keep the description self-contained — it is the permanent
+  record.
+- **Merge only when CI is green** on the PR's latest commit (`ci.yml`,
+  `audit.yml`, and `pages-check.yml` when it applies). Never force-push to
+  `main`; delete the branch after merging.
+- A change to `.github/workflows/` needs the maintainer's explicit approval.
 
 ## Reporting a data finding
 

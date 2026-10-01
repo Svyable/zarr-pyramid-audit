@@ -1,14 +1,17 @@
 # Runtime dependencies for the zarr-pyramid-audit toolkit.
+# pyproject.toml is authoritative; this file mirrors it for `pip install -r`.
 #
-# Deliberately minimal. The toolkit does NOT depend on `zarr` itself: it reads
-# .zattrs / .zarray / zarr.json directly over HTTP, so it can audit stores that
-# the zarr library refuses to open -- which is precisely the failure class it
-# exists to find.
+# The header-only audit (zpa-discover / zpa-audit / zpa-gate) deliberately does
+# NOT use `zarr`: it reads .zattrs / .zarray / zarr.json directly over HTTP, so
+# it can audit stores that the zarr library refuses to open -- which is
+# precisely the failure class it exists to find. `zarr` is needed only by the
+# chunk-content probe (v3 sharded fallback) and the surface tools.
 
 requests>=2.31          # HTTP store transport
 numpy>=1.24             # chunk sample analysis (count_chunks.py)
 numcodecs>=0.12         # Blosc round-trip for measured compression ratios
-zarr>=3.0               # v3 sharded chunk-content probe (scan_empty_chunks --only-sharded)
+zarr>=3.0               # v3 sharded chunk probe (scan_empty_chunks --only-sharded), surface tools
+fsspec>=2024.1          # remote array access in the surface tools
 
 # Needed for s3:// bases (the S3 open-data bucket audit). HTTP(S) bases work
 # without it.

@@ -18,7 +18,7 @@ Findings:
   CHUNK_SAMPLE_MISSING     [info]   inner chunk absent from a v3 shard index
                                     (masked background legitimately unstored)
   CHUNK_SAMPLE_ABSENT      [info]   v2 chunk key not present (sparse level)
-  SHARD_INDEX_CHECKSUM_MISMATCH [medium] a v3 shard's index fails its crc32c;
+  SHARD_INDEX_CHECKSUM_MISMATCH [low]    a v3 shard's index fails its crc32c;
                                     its offsets are untrusted so that shard is
                                     not sampled. Human review -- not proof the
                                     data is bad (a non-conforming writer looks
@@ -63,7 +63,10 @@ SAMPLE_FINDINGS = {
     "missing": ("CHUNK_SAMPLE_MISSING", "info"),
     "absent": ("CHUNK_SAMPLE_ABSENT", "info"),
     "undecodable": ("CHUNK_UNDECODEABLE", "low"),
-    "index_checksum_mismatch": ("SHARD_INDEX_CHECKSUM_MISMATCH", "medium"),
+    # low until a live run shows mismatches are rare: if the writer were
+    # non-conforming every shard would flag, and medium maps to CAUTION in
+    # ScrolIQ's per-volume verdict.
+    "index_checksum_mismatch": ("SHARD_INDEX_CHECKSUM_MISMATCH", "low"),
 }
 FALLBACK_FINDING = ("CHUNK_FETCH_ERROR", "low")
 

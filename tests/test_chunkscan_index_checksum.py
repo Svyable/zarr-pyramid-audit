@@ -155,9 +155,10 @@ def test_status_table_preserves_historical_codes_and_adds_the_new_one():
     assert SAMPLE_FINDINGS["absent"] == ("CHUNK_SAMPLE_ABSENT", "info")
     assert SAMPLE_FINDINGS["undecodable"] == ("CHUNK_UNDECODEABLE", "low")
     assert FALLBACK_FINDING == ("CHUNK_FETCH_ERROR", "low")
-    # medium, like CHUNK_SAMPLE_ALL_EMPTY: a review flag, never "high"
+    # low until validated on live data: medium maps to CAUTION downstream, and
+    # a non-conforming writer would flag every shard
     assert SAMPLE_FINDINGS["index_checksum_mismatch"] == (
-        "SHARD_INDEX_CHECKSUM_MISMATCH", "medium")
+        "SHARD_INDEX_CHECKSUM_MISMATCH", "low")
 
 
 def test_cli_emits_the_finding_and_reports_checksum_coverage(
@@ -185,7 +186,7 @@ def test_cli_emits_the_finding_and_reports_checksum_coverage(
 
     rows = list(csv.DictReader(open(out / "scan_empty_chunks.findings.csv")))
     assert [(r["code"], r["severity"]) for r in rows] == [
-        ("SHARD_INDEX_CHECKSUM_MISMATCH", "medium")]
+        ("SHARD_INDEX_CHECKSUM_MISMATCH", "low")]
     summary = json.load(open(out / "scan_empty_chunks.summary.json"))
     assert summary["index_crc"] == {"mismatch": 1}
     assert summary["by_code"] == {"SHARD_INDEX_CHECKSUM_MISMATCH": 1}
