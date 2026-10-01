@@ -201,6 +201,86 @@ def test_malformed_metadata_is_unreadable_not_missing():
     assert record["evidence_reason"] == "METADATA_UNREADABLE"
 
 
+def _physical_attrs(*, marker=None, units=False, scale=(1.0, 1.0)):
+    axes = [
+        {"name": "y", "type": "space"},
+        {"name": "x", "type": "space"},
+    ]
+    if units:
+        for axis in axes:
+            axis["unit"] = "micrometer"
+    ms = {
+        "axes": axes,
+        "datasets": [{
+            "path": "0",
+            "coordinateTransformations": [
+                {"type": "scale", "scale": list(scale)}
+            ],
+        }],
+    }
+    if marker is not None:
+        ms["metadata"] = {"physical_size": marker}
+    return {"multiscales": [ms]}
+
+
+def test_explicit_unknown_physical_scale_is_visible_but_not_a_defect():
+    _, findings, _, record, _ = audit_routes({
+        "root/.zgroup": (200, encoded(GROUP)),
+        "root/.zattrs": (200, encoded(_physical_attrs(marker="unknown"))),
+        "root/0/.zarray": (200, encoded(ARRAY)),
+    }, check_chunks=False)
+
+    assert codes(findings) == ["PHYSICAL_SCALE_UNKNOWN"]
+    assert findings[0]["severity"] == "info"
+    assert record["physical_scale"]["absolute_scale_state"] == "explicitly_unknown"
+    assert record["physical_scale"]["base_declared_scale"] == [1.0, 1.0]
+
+
+def test_unknown_physical_size_with_spatial_units_is_a_contradiction():
+    _, findings, _, record, _ = audit_routes({
+        "root/.zgroup": (200, encoded(GROUP)),
+        "root/.zattrs": (
+            200,
+            encoded(_physical_attrs(marker="unknown", units=True)),
+        ),
+        "root/0/.zarray": (200, encoded(ARRAY)),
+    }, check_chunks=False)
+
+    assert codes(findings) == ["PHYSICAL_SCALE_CONTRADICTION"]
+    assert findings[0]["severity"] == "high"
+    assert "spatial axis unit" in findings[0]["detail"]
+    assert record["physical_scale"]["physical_size_marker"] == "unknown"
+
+
+def test_unknown_physical_size_with_nonidentity_base_scale_is_a_contradiction():
+    _, findings, _, _, _ = audit_routes({
+        "root/.zgroup": (200, encoded(GROUP)),
+        "root/.zattrs": (
+            200,
+            encoded(_physical_attrs(marker="unknown", scale=(1.0, 2.0))),
+        ),
+        "root/0/.zarray": (200, encoded(ARRAY)),
+    }, check_chunks=False)
+
+    assert codes(findings) == ["PHYSICAL_SCALE_CONTRADICTION"]
+    assert "level-0 relative spatial scale 1.0" in findings[0]["detail"]
+
+
+def test_physical_scale_check_does_not_guess_when_marker_is_absent():
+    _, findings, _, record, _ = audit_routes({
+        "root/.zgroup": (200, encoded(GROUP)),
+        "root/.zattrs": (
+            200,
+            encoded(_physical_attrs(units=True, scale=(7.91, 7.91))),
+        ),
+        "root/0/.zarray": (200, encoded(ARRAY)),
+    }, check_chunks=False)
+
+    assert findings == []
+    assert record["physical_scale"]["absolute_scale_state"] == "unspecified"
+    assert record["physical_scale"]["base_declared_scale"] == [7.91, 7.91]
+
+
 def test_header_audit_does_not_fetch_chunks():
     _, findings, _, _, calls = audit_routes({
         "root/.zgroup": (200, encoded(GROUP)),
