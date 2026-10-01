@@ -67,6 +67,7 @@ group) and are never counted as defects.
 | `zpa-gate` | Publish-time metadata gate: audits roots you are about to publish and fails closed (exit 1) on any finding at or above `--fail-on` severity (default `high`). `--format github` emits `::error`/`::warning` workflow annotations for CI. Tested: fails on the header-only PHerc0814 surface volume, passes on clean volumes. | ~KB per pyramid |
 | `zpa-scan-chunks` | Sampled chunk-*content* probe: the audit answers "are chunk keys present?", this answers "do the chunks that are present hold data?". Downloads K sampled chunks per level (first/middle/last of the chunk grid), decodes them, and reports `populated` / `empty` (all fill_value) / `missing` (absent from a shard index) / `undecodable`. Flags levels where every *present* sampled chunk is empty (`CHUNK_SAMPLE_ALL_EMPTY`, medium — genuinely empty background is possible, so this is a review flag, not a verdict). Two-phase fetch for uncompressed chunks: a nonzero byte in the first 4 KiB proves population without downloading the rest. v3 sharded levels (`sharding_indexed`) whose inner codec is **volcomp** — the `dl.ash2txt.org` scroll volumes — are probed by parsing shard indexes over HTTP byte ranges and decoding sampled 128³ inner chunks with a vendored `libvolcomp` (MIT, Linux x86-64; `src/zpa/data/VOLCOMP_PROVENANCE.md`; override with `$VOLCOMP_LIB`). Other sharded levels on `s3://` fall back to zarr-python window reads. | KB–MB per pyramid (sampled) |
 | `zpa-surface-support` | Measures how much surface-prediction foreground is physically supported by nonzero masked CT on the same voxel grid. Deterministic chunk-aligned slab sampling with an optional exact-volume-ID guard; reports evidence only and does not classify a scroll. | sampled Zarr reads |
+| `zpa-surface-depth-profile` | Profiles rendered `[depth,y,x]` surface volumes with deterministic XY tiles. Records per-depth signal/texture, all-zero sampled layers, duplicate sampled-layer digests, peak texture depth, an optional expected-slice-count gate, and an exact source-volume-ID guard. It reports input-window evidence rather than classifying ink. | sampled Zarr reads |
 
 ### Check codes
 
@@ -142,6 +143,19 @@ zpa-surface-support \\
 ```
 
 The arrays must share the same voxel grid. The report records exact input paths, threshold, stride, plane coverage, positive/phantom counts, support fraction, and run provenance. For prize work, `--expected-volume-id` fails closed unless that identifier appears in both input paths, reducing the risk of validating a prediction against the wrong same-scroll scan.
+
+Profile the rendered surface-volume stack before ink inference:
+
+```bash
+zpa-surface-depth-profile \\
+  --surface-volume /data/segment/surface-volume.zarr \\
+  --expected-depth 21 \\
+  --source-volume-id <exact-prize-volume-id> \\
+  --expected-volume-id <exact-prize-volume-id> \\
+  --grid 3 --tile-size 128 --out-dir tmp/surface-depth
+```
+
+This catches silent input-window mistakes that ordinary Zarr integrity checks cannot see: an unexpected slice count, sampled all-zero depth planes, or duplicated sampled layers. It also records where gradient energy and dynamic range peak relative to the stack center, which is useful because ink models can be depth-offset sensitive. See [`docs/surface-depth-profile.md`](docs/surface-depth-profile.md).
 
 Gate a publish (fails closed on high-severity findings; exit 0 = clean):
 
