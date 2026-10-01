@@ -240,7 +240,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
       <p><a href="{repo}/tree/main/artifacts">Run artifacts →</a> ·
       <a href="{repo}/blob/main/data/known-defects.json">Known-defect registry →</a></p></div>
     <div><h3>2 · Reproduce a verdict</h3>
-      <p>Install the exact public tool and run the same fail-closed gate used for publication checks.</p>
+      <p>Install the public tool and run the same fail-closed gate used for publication checks.</p>
       <div class="cmd"><code>pip install git+https://github.com/Svyable/zarr-pyramid-audit.git<br>zpa-gate --base &lt;store&gt; --root &lt;volume.zarr&gt;</code></div></div>
     <div><h3>3 · Watch real-data CI</h3>
       <p>The scheduled workflow exercises anonymous public data: a clean gate pass, a known-defect rejection, and a sampled chunk-content decode.</p>
