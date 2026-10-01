@@ -102,23 +102,27 @@ may rely on:
 
 `tests/test_contract.py` pins the signatures and finding fields above.
 
-**Verdict mapping, ZPA side vs. ScrolIQ today.** ScrolIQ's `scrollq-health`
-([`health.py`](https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py),
-read at `6ea1a33`) maps `high` → DO NOT TRAIN and `medium` → CAUTION, then
-falls through to its quality score. It counts severities only, so:
+**Verdict mapping, ZPA side vs. ScrolIQ.** Until 2026-10-01, ScrolIQ's
+`scrollq-health` ([`health.py`](https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py),
+read at `6ea1a33`) counted severities only: `high` → DO NOT TRAIN, `medium` →
+CAUTION, otherwise it fell through to its quality score. That failed open on
+missing evidence. [Svyable/scrollq#55](https://github.com/Svyable/scrollq/pull/55)
+switches it to `zpa.report.audit_root` and this contract's
+`RECOMMENDED_CONSUMER_VERDICT`, and pins this repo at `e473afd`:
 
-| situation | ZPA `integrity` / recommended | ScrolIQ `health.py` at `6ea1a33` |
-|---|---|---|
-| `high` finding | FAIL / DO NOT TRAIN | DO NOT TRAIN ✓ |
-| `medium` finding | WARN / CAUTION | CAUTION ✓ |
-| a level returns 503/403/timeout (`ACCESS_UNKNOWN`, info) | UNKNOWN / DO NOT TRAIN | integrity `PASS`, verdict follows quality, so it **can be TRAIN** if the sampled level is readable |
-| root does not exist (`ROOT_ABSENT`, low) | UNKNOWN / DO NOT TRAIN | integrity `PASS`; quality is unscorable, so CAUTION |
-| the audit raises | (never: `audit_root` returns `AUDIT_ERROR`, FAIL) | `integrity_error` recorded, findings empty, integrity `PASS` |
+| situation | ZPA `integrity` / recommended | ScrolIQ at `6ea1a33` | ScrolIQ after #55 |
+|---|---|---|---|
+| `high` finding | FAIL / DO NOT TRAIN | DO NOT TRAIN ✓ | DO NOT TRAIN ✓ |
+| `medium` finding | WARN / CAUTION | CAUTION ✓ | CAUTION ✓ |
+| a level returns 503/403/timeout (`ACCESS_UNKNOWN`, info) | UNKNOWN / DO NOT TRAIN | integrity `PASS`; **can be TRAIN** if the sampled level is readable | DO NOT TRAIN ✓ |
+| root does not exist (`ROOT_ABSENT`, low) | UNKNOWN / DO NOT TRAIN | integrity `PASS`; quality unscorable, so CAUTION | DO NOT TRAIN ✓ (live negative control) |
+| the audit raises | (never: `audit_root` returns `AUDIT_ERROR`, FAIL) | `integrity_error` recorded, findings empty, integrity `PASS` | FAIL → DO NOT TRAIN ✓ |
 
-The fix belongs in ScrolIQ: call `zpa.report.audit_root` and branch on
-`report["integrity"]`, treating `UNKNOWN` like `FAIL`, or at least never as
-PASS. Then bump the pinned commit. ScrolIQ owns that policy. This repo pins its
-recommendation in `RECOMMENDED_CONSUMER_VERDICT` and tests it.
+The live evidence for the right-hand column, including the absent-root
+negative control and the three unchanged published verdicts, is in ScrolIQ's
+[`artifacts/2026-10-01-health-verdicts-fail-closed/`](https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed).
+ScrolIQ owns that policy. This repo pins its recommendation in
+`RECOMMENDED_CONSUMER_VERDICT` and tests it.
 
 ## Versioning and change control
 

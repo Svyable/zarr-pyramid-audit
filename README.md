@@ -244,8 +244,9 @@ spend GPU or expert time on this volume?* — from opposite ends:
   validated by [`src/zpa/data/audit-report.schema.json`](src/zpa/data/audit-report.schema.json)
   (`schema_version` 1.2.0). `tests/test_contract.py` pins the signatures, fields, severities and the
   recommended verdict mapping (`FAIL`/`UNKNOWN` → DO NOT TRAIN, `WARN` → CAUTION). Contract changes
-  need a migration note in [`CHANGELOG.md`](CHANGELOG.md). Full guide, including where ScrolIQ's
-  current rules differ (it reads `ACCESS_UNKNOWN` and `ROOT_ABSENT` as integrity PASS):
+  need a migration note in [`CHANGELOG.md`](CHANGELOG.md). Full guide, including how ScrolIQ's
+  `scrollq-health` used to read `ACCESS_UNKNOWN` and `ROOT_ABSENT` as integrity PASS and now
+  follows this contract (fail closed, [Svyable/scrollq#55](https://github.com/Svyable/scrollq/pull/55)):
   [`docs/INTEGRATION.md`](docs/INTEGRATION.md#scroliq-integration-surface).
 
 Integrity only, from this repo; or integrity plus scan quality (installing ScrolIQ installs this
