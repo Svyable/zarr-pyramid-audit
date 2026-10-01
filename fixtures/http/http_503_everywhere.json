@@ -1,0 +1,18 @@
+{
+  "property": "every request answers 503: nothing can be concluded (UNKNOWN, gate fails closed)",
+  "root": "root",
+  "routes": {
+    "root/": {
+      "status": 503
+    },
+    "root/.zarray": {
+      "status": 503
+    },
+    "root/.zgroup": {
+      "status": 503
+    },
+    "root/zarr.json": {
+      "status": 503
+    }
+  }
+}

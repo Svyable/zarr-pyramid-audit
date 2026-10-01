@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0.0",
+  "base": "s3://vesuvius-challenge-open-data",
+  "fail_on": "high",
+  "n_roots": 1,
+  "n_pass": 1,
+  "n_fail": 0,
+  "results": [
+    {
+      "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr",
+      "verdict": "pass",
+      "fail": false,
+      "integrity": "PASS",
+      "findings": [],
+      "below_threshold": [],
+      "informational": [],
+      "report": {
+        "schema_version": "1.0.0",
+        "tool": "zarr-pyramid-audit",
+        "tool_version": "0.3.0",
+        "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/2.399um-0.22m-78keV-volume-20260309142202.zarr",
+        "kind": "pyramid",
+        "zarr_format": 2,
+        "evidence": {
+          "state": "PRESENT",
+          "reason": null
+        },
+        "integrity": "PASS",
+        "max_severity": "none",
+        "coverage": {
+          "levels_declared": 6,
+          "levels_present": 6,
+          "levels_unknown": 0,
+          "chunk_presence": {
+            "PRESENT": 6,
+            "ABSENT": 0,
+            "UNKNOWN": 0
+          }
+        },
+        "levels": [
+          {
+            "path": "0",
+            "index": 0,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              1820,
+              4340
+            ],
+            "chunks": [
+              109,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              2.399,
+              2.399
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          },
+          {
+            "path": "1",
+            "index": 1,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              910,
+              2170
+            ],
+            "chunks": [
+              109,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              4.798,
+              4.798
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          },
+          {
+            "path": "2",
+            "index": 2,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              455,
+              1085
+            ],
+            "chunks": [
+              109,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              9.596,
+              9.596
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          },
+          {
+            "path": "3",
+            "index": 3,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              228,
+              543
+            ],
+            "chunks": [
+              109,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              19.192,
+              19.192
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          },
+          {
+            "path": "4",
+            "index": 4,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              114,
+              272
+            ],
+            "chunks": [
+              109,
+              114,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              38.384,
+              38.384
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          },
+          {
+            "path": "5",
+            "index": 5,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              109,
+              57,
+              136
+            ],
+            "chunks": [
+              109,
+              57,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.399,
+              76.768,
+              76.768
+            ],
+            "zarr_format": 2,
+            "has_chunks": true,
+            "chunk_evidence_state": "PRESENT",
+            "chunk_evidence_reason": null
+          }
+        ],
+        "findings": []
+      }
+    }
+  ]
+}

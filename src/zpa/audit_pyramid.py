@@ -424,6 +424,7 @@ def audit_one(pm) -> tuple[list[dict], list[dict], dict]:
         "dtype": l.dtype, "fill_value": l.fill_value,
         "compressor": l.compressor_id(),
         "dimension_separator": l.dimension_separator,
+        "zarr_format": l.zarr_format,
         "n_chunks": l.n_chunks, "n_voxels": l.n_voxels, "error": l.error,
         "evidence_state": getattr(l, "evidence_state", None),
         "evidence_reason": getattr(l, "evidence_reason", None),

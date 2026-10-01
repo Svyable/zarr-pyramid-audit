@@ -1,0 +1,42 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": "NOT_FOUND",
+    "state": "ABSENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "ROOT_ABSENT",
+      "evidence_state": "ABSENT",
+      "level": "",
+      "severity": "low"
+    }
+  ],
+  "fixture": "root_absent",
+  "gate": {
+    "codes": [
+      "GATE_ROOT_ABSENT"
+    ],
+    "fail": true,
+    "verdict": "absent"
+  },
+  "integrity": "UNKNOWN",
+  "kind": "absent",
+  "levels": [],
+  "max_severity": "low",
+  "property": "requested root does not exist (confirmed absence)",
+  "source": "zarr/root_absent.zarr"
+}

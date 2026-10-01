@@ -1,0 +1,11 @@
+$ zpa-gate --base s3://vesuvius-challenge-open-data --root "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr" --fail-on high --out gate-rejects-defective.json
+FAIL  PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr:
+      [high] LEVEL_NO_CHUNKS level=0: array header present but level directory holds no chunk keys; reads return fill_value with no error
+      [high] LEVEL_NO_CHUNKS level=1: array header present but level directory holds no chunk keys; reads return fill_value with no error
+      [high] LEVEL_NO_CHUNKS level=2: array header present but level directory holds no chunk keys; reads return fill_value with no error
+      [high] LEVEL_NO_CHUNKS level=3: array header present but level directory holds no chunk keys; reads return fill_value with no error
+      [high] LEVEL_NO_CHUNKS level=4: array header present but level directory holds no chunk keys; reads return fill_value with no error
+      [high] LEVEL_NO_CHUNKS level=5: array header present but level directory holds no chunk keys; reads return fill_value with no error
+
+gate: 0 pass, 1 fail out of 1 roots (threshold: high+)
+exit=1

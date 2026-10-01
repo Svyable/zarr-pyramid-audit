@@ -1,0 +1,324 @@
+{
+  "schema_version": "1.0.0",
+  "base": "s3://vesuvius-challenge-open-data",
+  "fail_on": "high",
+  "n_roots": 1,
+  "n_pass": 0,
+  "n_fail": 1,
+  "results": [
+    {
+      "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+      "verdict": "fail",
+      "fail": true,
+      "integrity": "FAIL",
+      "findings": [
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "0",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (592 chunks if dense)"
+        },
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "1",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (152 chunks if dense)"
+        },
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "2",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (40 chunks if dense)"
+        },
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "3",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (10 chunks if dense)"
+        },
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "4",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (3 chunks if dense)"
+        },
+        {
+          "code": "LEVEL_NO_CHUNKS",
+          "severity": "high",
+          "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+          "level": "5",
+          "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+          "observed": "top_entries=0 fill_value=0",
+          "expected": "<=1 top-level keys (2 chunks if dense)"
+        }
+      ],
+      "below_threshold": [],
+      "informational": [],
+      "report": {
+        "schema_version": "1.0.0",
+        "tool": "zarr-pyramid-audit",
+        "tool_version": "0.3.0",
+        "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/1.129um-0.22m-59keV-volume-20260521123630-L1.zarr",
+        "kind": "pyramid",
+        "zarr_format": 2,
+        "evidence": {
+          "state": "PRESENT",
+          "reason": null
+        },
+        "integrity": "FAIL",
+        "max_severity": "high",
+        "coverage": {
+          "levels_declared": 6,
+          "levels_present": 6,
+          "levels_unknown": 0,
+          "chunk_presence": {
+            "PRESENT": 0,
+            "ABSENT": 6,
+            "UNKNOWN": 0
+          }
+        },
+        "levels": [
+          {
+            "path": "0",
+            "index": 0,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              1940,
+              4620
+            ],
+            "chunks": [
+              116,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              2.258,
+              2.258
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          },
+          {
+            "path": "1",
+            "index": 1,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              970,
+              2310
+            ],
+            "chunks": [
+              116,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              4.516,
+              4.516
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          },
+          {
+            "path": "2",
+            "index": 2,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              485,
+              1155
+            ],
+            "chunks": [
+              116,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              9.032,
+              9.032
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          },
+          {
+            "path": "3",
+            "index": 3,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              243,
+              578
+            ],
+            "chunks": [
+              116,
+              128,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              18.064,
+              18.064
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          },
+          {
+            "path": "4",
+            "index": 4,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              122,
+              289
+            ],
+            "chunks": [
+              116,
+              122,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              36.128,
+              36.128
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          },
+          {
+            "path": "5",
+            "index": 5,
+            "present": true,
+            "evidence_state": "PRESENT",
+            "evidence_reason": null,
+            "shape": [
+              116,
+              61,
+              145
+            ],
+            "chunks": [
+              116,
+              61,
+              128
+            ],
+            "dtype": "|u1",
+            "declared_scale": [
+              2.258,
+              72.256,
+              72.256
+            ],
+            "zarr_format": 2,
+            "has_chunks": false,
+            "chunk_evidence_state": "ABSENT",
+            "chunk_evidence_reason": "NO_CHUNK_KEYS"
+          }
+        ],
+        "findings": [
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "0",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (592 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          },
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "1",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (152 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          },
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "2",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (40 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          },
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "3",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (10 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          },
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "4",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (3 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          },
+          {
+            "code": "LEVEL_NO_CHUNKS",
+            "severity": "high",
+            "level": "5",
+            "detail": "array header present but level directory holds no chunk keys; reads return fill_value with no error",
+            "observed": "top_entries=0 fill_value=0",
+            "expected": "<=1 top-level keys (2 chunks if dense)",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          }
+        ]
+      }
+    }
+  ]
+}

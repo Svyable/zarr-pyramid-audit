@@ -1,0 +1,40 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": false,
+      "code": "NOT_MULTISCALE",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "info"
+    }
+  ],
+  "fixture": "not_multiscale",
+  "gate": {
+    "codes": [],
+    "fail": false,
+    "verdict": "pass"
+  },
+  "integrity": "PASS",
+  "kind": "not_multiscale",
+  "levels": [],
+  "max_severity": "info",
+  "property": "valid Zarr group that never claims to be a pyramid (info)",
+  "source": "zarr/not_multiscale.zarr"
+}

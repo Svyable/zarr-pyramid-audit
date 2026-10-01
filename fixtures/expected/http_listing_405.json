@@ -1,0 +1,60 @@
+{
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 2
+    },
+    "levels_declared": 2,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [],
+  "fixture": "http_listing_405",
+  "gate": {
+    "codes": [],
+    "fail": false,
+    "verdict": "pass"
+  },
+  "integrity": "PASS",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": "LISTING_UNSUPPORTED",
+      "chunk_evidence_state": "UNKNOWN",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": null,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        8
+      ]
+    },
+    {
+      "chunk_evidence_reason": "LISTING_UNSUPPORTED",
+      "chunk_evidence_state": "UNKNOWN",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": null,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        4
+      ]
+    }
+  ],
+  "max_severity": "none",
+  "property": "no directory listings (405): chunk presence is a coverage gap, not LEVEL_NO_CHUNKS",
+  "source": "http/http_listing_405.json"
+}

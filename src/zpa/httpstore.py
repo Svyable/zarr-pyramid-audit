@@ -7,6 +7,8 @@ Designed for cheap, polite, *evidence-grade* auditing of public data:
   - a per-thread requests.Session (connection pooling; safe under a pool)
   - nginx/Apache autoindex directory listing
   - optional s3:// backend via s3fs (anonymous), same API
+  - a local-directory backend (file:// or a plain path) for staging trees
+    and the committed fixture corpus, same API
 
 Deliberately read-only: there is no write path here, so an audit tool built
 on it cannot mutate the corpus it is auditing.
@@ -29,7 +31,7 @@ import requests
 from requests.adapters import HTTPAdapter
 
 __all__ = ["StoreError", "ObjectInfo", "EvidenceResult", "ListingResult",
-           "HttpStore", "S3Store", "open_store"]
+           "HttpStore", "S3Store", "LocalStore", "open_store"]
 
 DEFAULT_UA = "vesuvius-audit/1.0 (public-data integrity survey; contact via GitHub issue)"
 
@@ -545,8 +547,131 @@ class S3Store:
         return ListingResult(dirs=dirs, files=files, state="PRESENT")
 
 
+class LocalStore:
+    """
+    Read-only local-directory backend with the same evidence API.
+
+    Used for pre-publish staging trees (gate a pyramid *before* upload) and
+    for the committed fixture corpus. A missing path is ``ABSENT``; an
+    unreadable one (permissions, I/O error) stays ``UNKNOWN``, exactly like
+    a 403 or 5xx on the remote backends.
+    """
+
+    def __init__(self, base_url: str = "", **_ignored):
+        import os
+        base = base_url[len("file://"):] if base_url.startswith("file://") else base_url
+        self.root = os.path.abspath(base or ".")
+        self.base_url = "file://" + self.root.rstrip("/") + "/"
+
+    def _p(self, path: str) -> str:
+        import os
+        if path.startswith("file://"):
+            return path[len("file://"):]
+        rel = path.lstrip("/")
+        full = os.path.normpath(os.path.join(self.root, rel))
+        if full != self.root and not full.startswith(self.root + os.sep):
+            raise StoreError(f"path escapes store root: {path}")
+        return full
+
+    def url(self, path: str) -> str:
+        return "file://" + self._p(path)
+
+    def head(self, path: str) -> ObjectInfo:
+        import os
+        try:
+            p = self._p(path)
+            st = os.stat(p)
+        except FileNotFoundError:
+            return ObjectInfo(path=path, exists=False, status=404)
+        except Exception as e:
+            return ObjectInfo(path=path, exists=False, error=f"{type(e).__name__}: {e}")
+        if not os.path.isfile(p):
+            return ObjectInfo(path=path, exists=False, status=404)
+        return ObjectInfo(path=path, exists=True, size=st.st_size)
+
+    def get(self, path: str) -> bytes:
+        try:
+            with open(self._p(path), "rb") as fh:
+                return fh.read()
+        except StoreError:
+            raise
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError) as e:
+            raise StoreError(f"404 Not Found: FileNotFoundError: {e}") from e
+        except Exception as e:
+            raise StoreError(f"{type(e).__name__}: {e}") from e
+
+    def get_range(self, path: str, start: int, length: int) -> bytes:
+        if start < 0 or length < 0:
+            raise ValueError("start and length must be non-negative")
+        if length == 0:
+            return b""
+        data = self.get(path)[start:start + length]
+        if len(data) != length:
+            raise StoreError(
+                f"short ranged read: expected {length} bytes, got {len(data)}: {path}")
+        return data
+
+    def get_suffix(self, path: str, length: int) -> bytes:
+        if length < 0:
+            raise ValueError("length must be non-negative")
+        if length == 0:
+            return b""
+        data = self.get(path)
+        if len(data) < length:
+            raise StoreError(
+                f"short suffix read: expected {length} bytes, object has "
+                f"{len(data)}: {path}")
+        return data[-length:]
+
+    def get_json(self, path: str) -> Any:
+        import json
+        return json.loads(self.get(path).decode("utf-8"))
+
+    def try_json(self, path: str) -> tuple[Any | None, str | None]:
+        result = self.json_evidence(path)
+        return result.value, result.error
+
+    def json_evidence(self, path: str) -> EvidenceResult:
+        try:
+            return EvidenceResult(self.get_json(path), "PRESENT")
+        except StoreError as e:
+            error = str(e)
+            state, reason = _error_evidence(error)
+            return EvidenceResult(None, state, reason, error)
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+            return EvidenceResult(None, "PRESENT", "METADATA_UNREADABLE", error)
+
+    def list_dir(self, path: str) -> tuple[list[str], list[str]]:
+        result = self.list_dir_evidence(path)
+        return result.dirs, result.files
+
+    def list_dir_evidence(self, path: str) -> ListingResult:
+        import os
+        try:
+            p = self._p(path)
+            names = sorted(os.listdir(p))
+        except (FileNotFoundError, NotADirectoryError) as e:
+            error = f"FileNotFoundError: {e}"
+            return ListingResult(state="ABSENT", reason="NOT_FOUND", error=error)
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+            state, reason = _error_evidence(error, listing=True)
+            return ListingResult(state=state, reason=reason, error=error)
+        dirs = [n for n in names if os.path.isdir(os.path.join(p, n))]
+        files = [n for n in names if not os.path.isdir(os.path.join(p, n))]
+        return ListingResult(dirs=dirs, files=files, state="PRESENT")
+
+
 def open_store(base_url: str, **kw):
-    """Pick a backend from the URL scheme. s3:// -> S3Store, else HttpStore."""
-    if urlparse(base_url).scheme == "s3":
+    """Pick a backend from the URL scheme.
+
+    ``s3://`` -> S3Store; ``http(s)://`` -> HttpStore; ``file://`` or a
+    plain filesystem path -> LocalStore (read-only, same evidence API).
+    """
+    scheme = urlparse(base_url).scheme
+    if scheme == "s3":
         return S3Store(base_url, **kw)
+    if scheme == "file" or (scheme == "" and base_url):
+        return LocalStore(base_url, **kw)
     return HttpStore(base_url, **kw)

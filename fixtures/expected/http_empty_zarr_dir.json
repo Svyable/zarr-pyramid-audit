@@ -1,0 +1,41 @@
+{
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": "EMPTY_STRUCTURE",
+    "state": "ABSENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "EMPTY_ZARR_DIR",
+      "evidence_state": "ABSENT",
+      "level": "",
+      "severity": "low"
+    }
+  ],
+  "fixture": "http_empty_zarr_dir",
+  "gate": {
+    "codes": [
+      "GATE_ROOT_ABSENT"
+    ],
+    "fail": true,
+    "verdict": "absent"
+  },
+  "integrity": "UNKNOWN",
+  "kind": "empty",
+  "levels": [],
+  "max_severity": "low",
+  "property": "listing succeeds and is empty, all header probes 404: EMPTY_ZARR_DIR",
+  "source": "http/http_empty_zarr_dir.json"
+}

@@ -1,0 +1,103 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "1",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    }
+  ],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 2,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 3,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "LEVEL_MISSING",
+      "evidence_state": "ABSENT",
+      "level": "2",
+      "severity": "high"
+    }
+  ],
+  "fixture": "missing_level",
+  "gate": {
+    "codes": [
+      "LEVEL_MISSING"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        8,
+        8
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "UNKNOWN",
+      "dtype": null,
+      "evidence_reason": "NOT_FOUND",
+      "evidence_state": "ABSENT",
+      "has_chunks": null,
+      "path": "2",
+      "present": false,
+      "shape": null
+    }
+  ],
+  "max_severity": "high",
+  "property": "level 2 declared in multiscales, no header on disk",
+  "source": "zarr/missing_level.zarr"
+}
