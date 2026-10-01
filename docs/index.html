@@ -126,8 +126,8 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 <nav class="topbar" aria-label="Primary"><div class="navinner">
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
-    <a href="#overview">Overview</a><a href="#findings">Findings</a><a href="#probe">Chunk probe</a>
-    <a href="#method">Method</a><a href="./september-2026.html">Writeup</a>
+    <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
+    <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="./september-2026.html">Writeup</a>
     <a href="https://github.com/Svyable/zarr-pyramid-audit">GitHub</a>
   </div>
   <span class="navstatus">● evidence-backed</span>
@@ -141,7 +141,8 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   data stores. Every pyramid is judged from its headers — a few KB per pyramid,
   no full downloads — plus sampled chunk-content probes that decode real voxels.
   Every number below is read from committed audit artifacts; nothing is hand-typed.
-  <a href="https://github.com/Svyable/zarr-pyramid-audit">Repo (MIT)</a> · <a href="./september-2026.html">September 2026 writeup →</a></p>
+  <a href="#verify">Verify it in 60 seconds →</a> · <a href="https://github.com/Svyable/zarr-pyramid-audit">Repo (MIT)</a> ·
+  <a href="./september-2026.html">September 2026 writeup →</a></p>
   <div class="stats">
     <div class="stat"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
     <div class="stat"><div class="n good">956</div><div class="l">clean</div></div>
@@ -172,6 +173,22 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     <b>0 all-empty levels</b> in the training data. One present-but-empty mesh
     derivative caught in <code>other/dev/</code> (medium, human review).</p></div>
 </section>
+
+<div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
+  <div class="actiongrid">
+    <div><h3>1 · Inspect frozen evidence</h3>
+      <p>Every headline number on this page is generated from committed run artifacts. Pages CI regenerates the dashboard and rejects drift from the evidence.</p>
+      <p><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts">Run artifacts →</a> ·
+      <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/data/known-defects.json">Known-defect registry →</a></p></div>
+    <div><h3>2 · Reproduce a verdict</h3>
+      <p>Install the public tool and run the same fail-closed gate used for publication checks.</p>
+      <div class="cmd"><code>pip install git+https://github.com/Svyable/zarr-pyramid-audit.git<br>zpa-gate --base &lt;store&gt; --root &lt;volume.zarr&gt;</code></div></div>
+    <div><h3>3 · Watch real-data CI</h3>
+      <p>The scheduled workflow exercises anonymous public data: a clean gate pass, a known-defect rejection, and a sampled chunk-content decode.</p>
+      <p><a href="https://github.com/Svyable/zarr-pyramid-audit/actions/workflows/audit.yml">Real-data verification workflow →</a></p></div>
+  </div>
+  <div class="gatebox"><b>Grand Prize preflight:</b> use the same gate on the exact prize-eligible CT, surface, and derived Zarr inputs before expensive geometry or ink work. A silent storage defect should fail before it can contaminate an unrolling campaign.</div>
+</div>
 
 <div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>
   <div class="actiongrid">
@@ -289,7 +306,7 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 </main>
 
 <footer><div class="wrap">
-  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 21 check codes over
+  <b>Method.</b> Header-only pyramid audit (<code>zpa-audit</code>): 24 check codes over
   <code>.zattrs</code> + one <code>.zarray</code> per level — a few KB per pyramid
   regardless of array size. Chunk-presence via one listing per level. Chunk-content via
   sampled decode (vendored libvolcomp for the sharded volcomp levels). Full evidence,
