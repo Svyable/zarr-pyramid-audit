@@ -31,6 +31,7 @@ Design notes:
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 
 import numpy as np
@@ -328,14 +329,57 @@ def probe_level_v3_sharded(bucket: str, root: str, level_rec: dict,
     return out
 
 
+class _ShardAbsent(Exception):
+    """The shard object is confirmed absent (404): masked background."""
+
+
+class _ShardTooSmall(Exception):
+    """The server says the shard is smaller than its own index (416)."""
+
+
+def _read_shard_index(store, skey: str, idx_size: int) -> bytes:
+    """Fetch the trailing ``idx_size`` bytes of a shard, strictly.
+
+    Uses the store's fail-closed ``get_suffix``. Servers that reject suffix
+    ranges outright (e.g. 400/501) get one fallback: the object size from
+    ``head`` and an explicit, equally strict ``get_range``.
+    """
+    from .httpstore import StoreError
+
+    try:
+        return store.get_suffix(skey, idx_size)
+    except StoreError as exc:
+        msg = str(exc)
+        if msg.startswith("404 Not Found") or "FileNotFoundError" in msg:
+            raise _ShardAbsent(msg) from exc
+        if "HTTP 416" in msg:
+            raise _ShardTooSmall(
+                f"shard smaller than its index (suffix {idx_size}B "
+                f"unsatisfiable)") from exc
+        if not re.search(r"HTTP (400|405|501)\b", msg):
+            raise
+    info = store.head(skey)
+    if not getattr(info, "exists", False):
+        if getattr(info, "status", None) == 404:
+            raise _ShardAbsent(f"404 Not Found: {skey}")
+        raise StoreError(f"shard size probe failed: {info.error or info.status}")
+    total = info.size
+    if not isinstance(total, int):
+        raise StoreError(f"shard size unknown after suffix range was rejected: {skey}")
+    if total < idx_size:
+        raise _ShardTooSmall(f"shard smaller than its index ({total} < {idx_size})")
+    return store.get_range(skey, total - idx_size, idx_size)
+
+
 def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
                                samples_per_level: int = 3,
                                inner_per_shard: int = 3) -> list[ChunkSample]:
     """Probe a v3 sharded level whose inner codec is volcomp.
 
-    Parses the sharding_indexed shard indexes over HTTP byte ranges and
-    decodes sampled 128^3 inner chunks with the vendored libvolcomp --
-    no zarr-python, no event loop, proxy-friendly.  Statuses:
+    Parses the sharding_indexed shard indexes with strict suffix/byte-range
+    reads (any store: HTTP, S3, local) and decodes sampled 128^3 inner
+    chunks with the vendored libvolcomp -- no zarr-python, no event loop,
+    proxy-friendly.  Statuses:
     populated | empty (present, decodes to fill) | missing (absent from
     the shard index; reads as fill legitimately) | undecodable |
     fetch_error.
@@ -370,13 +414,10 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
         return fail("undecodable",
                     f"inner codec is {info.inner_codec!r}, not volcomp")
 
-    base = store.url("").rstrip("/")
-    sess = store._session()
     shard_grid = [max(1, (s + o - 1) // o)
                   for s, o in zip(info.shape, info.outer_chunks)]
     for sc in sample_indices(shard_grid, samples_per_level):
         skey = vc.shard_key(root, level, sc)
-        shard_url = f"{base}/{skey}"
         cps = vc.inner_chunks_per_shard(info, sc)
         n_inner = 1
         for c in cps:
@@ -385,55 +426,24 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
             idx_size = vc.index_encoded_size(n_inner, info.index_codecs)
         except ValueError as exc:
             return fail("undecodable", str(exc), sc)
-        # The shard index sits at the very end of the shard object, so one
-        # suffix byte-range fetches it with no size probe. Falls back to a
-        # 1-byte size probe on servers that reject suffix ranges.
+        # The shard index sits at the very end of the shard object: one
+        # strict suffix read fetches it. A response that cannot prove it is
+        # the tail (bad/missing Content-Range, short body) fails closed
+        # instead of being parsed as an index.
         try:
-            r = sess.get(shard_url, headers={"Range": f"bytes=-{idx_size}"},
-                         timeout=60)
-            if r.status_code == 404:
-                out.append(ChunkSample(
-                    root=root, level=level, chunk_index=sc,
-                    key=f"{level}/c/" + "/".join(map(str, sc)),
-                    status="missing",
-                    detail="shard object absent (reads as fill)"))
-                continue
-            if r.status_code == 416:
-                return fail("undecodable",
-                            f"shard smaller than its index "
-                            f"(suffix {idx_size}B unsatisfiable)", sc)
-            if r.status_code not in (200, 206):
-                r.raise_for_status()
-            # A 200 means the server ignored the Range header: the index is
-            # still the last idx_size bytes of what came back.
-            raw_index = (r.content[-idx_size:] if r.status_code == 200
-                         else r.content)
-        except Exception:
-            try:
-                r = sess.get(shard_url, headers={"Range": "bytes=0-0"},
-                             timeout=60)
-                if r.status_code == 404:
-                    out.append(ChunkSample(
-                        root=root, level=level, chunk_index=sc,
-                        key=f"{level}/c/" + "/".join(map(str, sc)),
-                        status="missing",
-                        detail="shard object absent (reads as fill)"))
-                    continue
-                r.raise_for_status()
-                total = int(r.headers.get("Content-Range", "")
-                            .rsplit("/", 1)[1])
-            except Exception as exc:
-                return fail("fetch_error",
-                            f"shard size probe failed: {exc}", sc)
-            if total < idx_size:
-                return fail("fetch_error",
-                            f"shard smaller than its index "
-                            f"({total} < {idx_size})", sc)
-            try:
-                raw_index = store.get_range(skey, total - idx_size, idx_size)
-            except Exception as exc:
-                return fail("fetch_error", f"index fetch failed: {exc}", sc)
-        fetched = len(raw_index)  # index (+1B size probe on fallback path)
+            raw_index = _read_shard_index(store, skey, idx_size)
+        except _ShardAbsent:
+            out.append(ChunkSample(
+                root=root, level=level, chunk_index=sc,
+                key=f"{level}/c/" + "/".join(map(str, sc)),
+                status="missing",
+                detail="shard object absent (reads as fill)"))
+            continue
+        except _ShardTooSmall as exc:
+            return fail("undecodable", str(exc), sc)
+        except Exception as exc:
+            return fail("fetch_error", f"shard index fetch failed: {exc}", sc)
+        fetched = len(raw_index)  # index bytes
         entries = vc.parse_index(raw_index, n_inner, info.index_codecs)
         if entries is None:
             return fail("fetch_error", "shard index failed to parse", sc)

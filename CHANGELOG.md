@@ -67,6 +67,15 @@ Migration notes for consumers:
   clamped to the object size.
 - Chunk probe: unsharded v3 levels were addressed with v2 chunk keys (level
   records lacked `zarr_format`) and v3 `bytes`-only chunks were undecodable.
+- Volcomp shard probe: shard indexes were fetched with a raw suffix request
+  and any 206 body was parsed, even one whose `Content-Range` was missing
+  or covered the wrong window. They now go through the store's strict
+  `get_suffix` (fail closed → `fetch_error`; 404 → `missing`; 416 →
+  `undecodable`), with a strict size-probe fallback for servers that reject
+  suffix ranges. The probe no longer uses the HTTP store's private session,
+  so it also runs on S3 and local stores. Not re-run live: `dl.ash2txt.org`
+  was unreachable from the environment that made this change; behaviour
+  against servers that send valid `Content-Range` headers is unchanged.
 - The committed campaign numbers are unaffected by the probe fixes: every
   uncompressed level in `artifacts/` is an integer dtype with fill `0`.
 
