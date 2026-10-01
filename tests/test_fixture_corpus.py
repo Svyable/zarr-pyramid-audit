@@ -30,6 +30,7 @@ from zpa.httpstore import HttpStore, StoreError  # noqa: E402
 from zpa.report import validate_report  # noqa: E402
 
 ZARR_NAMES = [n for n, *_ in corpus.ZARR_CASES]
+TIFXYZ_NAMES = [n for n, *_ in corpus.TIFXYZ_CASES]
 ALL_NAMES = corpus.all_case_names()
 
 
@@ -46,9 +47,7 @@ def test_every_case_has_exactly_one_golden_file():
     assert len(ALL_NAMES) == len(set(ALL_NAMES))
 
 
-def test_committed_zarr_trees_match_the_builder(tmp_path):
-    corpus.build(str(tmp_path))
-
+def _walk_equal(built_root, committed_root):
     def walk(root):
         out = {}
         for dirpath, _dirs, files in os.walk(root):
@@ -57,7 +56,7 @@ def test_committed_zarr_trees_match_the_builder(tmp_path):
                 out[os.path.relpath(full, root)] = full
         return out
 
-    built, committed = walk(tmp_path), walk(corpus.ZARR_DIR)
+    built, committed = walk(built_root), walk(committed_root)
     assert sorted(built) == sorted(committed)
     for rel, path in built.items():
         if filecmp.cmp(path, committed[rel], shallow=False):
@@ -66,6 +65,16 @@ def test_committed_zarr_trees_match_the_builder(tmp_path):
         from numcodecs import Blosc
         with open(path, "rb") as a, open(committed[rel], "rb") as b:
             assert Blosc().decode(a.read()) == Blosc().decode(b.read()), rel
+
+
+def test_committed_zarr_trees_match_the_builder(tmp_path):
+    corpus.build(str(tmp_path))
+    _walk_equal(tmp_path, corpus.ZARR_DIR)
+
+
+def test_committed_surfaces_match_the_builder(tmp_path):
+    corpus.build_surfaces(str(tmp_path))
+    _walk_equal(tmp_path, corpus.SURF_DIR)
 
 
 @pytest.mark.parametrize("name", ALL_NAMES)
@@ -77,6 +86,8 @@ def test_case_matches_golden(name):
 def test_case_report_validates_against_schema(name):
     if name in corpus.HTTP_CASES:
         _, report = corpus.run_http_case(name)
+    elif name in TIFXYZ_NAMES:
+        _, report = corpus.run_tifxyz_case(name)
     else:
         _, report = corpus.run_zarr_case(name)
     assert validate_report(report) == []
@@ -84,8 +95,8 @@ def test_case_report_validates_against_schema(name):
         import jsonschema
     except ImportError:
         return
-    from zpa.report import load_schema
-    jsonschema.validate(report, load_schema())
+    from zpa.report import load_schema, schema_kind
+    jsonschema.validate(report, load_schema(schema_kind(report)))
 
 
 # ---- transport invariance: the same trees over real HTTP -------------------
@@ -97,7 +108,7 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
 
 @pytest.fixture(scope="module")
 def corpus_server():
-    handler = functools.partial(_QuietHandler, directory=corpus.ZARR_DIR)
+    handler = functools.partial(_QuietHandler, directory=corpus.HERE)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -117,8 +128,22 @@ def test_zarr_case_is_transport_invariant_over_http(name, corpus_server,
                 "ALL_PROXY", "all_proxy"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
-    store = HttpStore(corpus_server, tries=1, timeout=10)
+    store = HttpStore(corpus_server + "zarr/", tries=1, timeout=10)
     projection, _ = corpus.run_zarr_case(name, store=store)
+    assert corpus.golden(name, projection) == expected(name)
+
+
+@pytest.mark.parametrize("name", TIFXYZ_NAMES)
+def test_tifxyz_case_is_transport_invariant_over_http(name, corpus_server,
+                                                      monkeypatch):
+    """Same surfaces over HTTP: HEAD sizes, TIFF headers read by strict
+    range requests (answered with 200 + full body here), same golden."""
+    for var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
+                "ALL_PROXY", "all_proxy"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    store = HttpStore(corpus_server + "surfaces/", tries=1, timeout=10)
+    projection, _ = corpus.run_tifxyz_case(name, store=store)
     assert corpus.golden(name, projection) == expected(name)
 
 
@@ -166,6 +191,8 @@ COVERAGE_EXEMPT = {
     "CHUNK_FETCH_ERROR": "transport failure; range-cases.json pins the reads",
     "SHARD_INDEX_CHECKSUM_MISMATCH":
         "volcomp shard-index path only (tests/test_chunkscan_index_checksum.py)",
+    "TIFXYZ_CONTENT_UNDECODED":
+        "needs a layout no decoder handles (tests/test_tifxyz.py)",
 }
 
 _STATUS_CODE = {"populated": "CHUNK_SAMPLE_POPULATED",
@@ -178,11 +205,13 @@ def test_every_check_code_is_exercised_by_a_fixture():
     for name in ALL_NAMES:
         g = expected(name)
         seen.update(f["code"] for f in g["findings"])
-        seen.update(g["gate"]["codes"])
+        seen.update(g.get("gate", {}).get("codes", []))
         for lvl in g.get("chunk_scan", []):
             seen.update(lvl["level_codes"])
             seen.update(_STATUS_CODE[s] for s in lvl["samples"])
-    wanted = set(SEVERITY) | set(SCAN_SEVERITY) | {"GATE_UNREADABLE"}
+    from zpa.tifxyz import TIFXYZ_SEVERITY
+    wanted = (set(SEVERITY) | set(SCAN_SEVERITY) | set(TIFXYZ_SEVERITY)
+              | {"GATE_UNREADABLE"})
     missing = wanted - seen - set(COVERAGE_EXEMPT)
     assert not missing, f"add a fixture for: {sorted(missing)}"
 
@@ -200,7 +229,8 @@ def test_unknown_evidence_is_never_a_clean_result():
         if any(f["evidence_state"] == "UNKNOWN" for f in g["findings"]):
             assert g["integrity"] in ("UNKNOWN", "FAIL"), name
             assert g["consumer_verdict"] != "DEFER_TO_QUALITY", name
-            assert g["gate"]["fail"] is True, name
+            if "gate" in g:
+                assert g["gate"]["fail"] is True, name
 
 
 def test_missing_empty_and_zero_filled_stay_distinct():
@@ -229,4 +259,5 @@ def test_fixture_readme_matches_the_goldens():
         "fixtures/README.md is stale: run python fixtures/corpus.py readme")
     assert (f"{len(corpus.ZARR_CASES)} on-disk cases, "
             f"{len(corpus.HTTP_CASES)} replayed-HTTP cases") in text
+    assert f"{len(corpus.TIFXYZ_CASES)} tifxyz surface cases" in text
     assert f"{len(RANGE_CASES)} byte-range cases" in " ".join(text.split())

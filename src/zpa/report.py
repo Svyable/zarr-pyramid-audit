@@ -53,14 +53,14 @@ __all__ = [
     "load_schema", "validate_report", "contract", "contract_fingerprint",
 ]
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.2.0"
 TOOL = "zarr-pyramid-audit"
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}
 INTEGRITY_STATES = ("PASS", "WARN", "UNKNOWN", "FAIL")
 
 # A root with nothing to audit can never be PASS, whatever its severity.
-NOTHING_TO_AUDIT = frozenset({"ROOT_ABSENT", "EMPTY_ZARR_DIR"})
+NOTHING_TO_AUDIT = frozenset({"ROOT_ABSENT", "EMPTY_ZARR_DIR", "TIFXYZ_ABSENT"})
 
 # Codes that only the gate / CLI wrappers emit (not audit_one).
 GATE_SEVERITY = {"GATE_UNREADABLE": "high", "GATE_ROOT_ABSENT": "high",
@@ -236,21 +236,33 @@ def audit_root(store, root: str, **read_kw) -> dict:
 
 # ---- schema + contract ----------------------------------------------------
 
-def load_schema() -> dict:
-    """The JSON Schema (draft 2020-12) every report validates against."""
-    text = files("zpa").joinpath("data", "audit-report.schema.json").read_text(
+SCHEMA_FILES = {"pyramid": "audit-report.schema.json",
+                "tifxyz": "tifxyz-report.schema.json"}
+
+
+def load_schema(kind: str = "pyramid") -> dict:
+    """The JSON Schema (draft 2020-12) for one report kind.
+
+    ``"pyramid"`` covers every Zarr root report (``build_report`` /
+    ``audit_root``); ``"tifxyz"`` covers ``zpa.tifxyz.audit_surface``.
+    """
+    text = files("zpa").joinpath("data", SCHEMA_FILES[kind]).read_text(
         encoding="utf-8")
     return json.loads(text)
 
 
-def validate_report(report: dict) -> list[str]:
+def schema_kind(report: dict) -> str:
+    return "tifxyz" if report.get("kind") == "tifxyz" else "pyramid"
+
+
+def validate_report(report: dict, kind: str | None = None) -> list[str]:
     """Dependency-free structural validation against the bundled schema.
 
     Covers what the schema uses: type, required, enum, const, properties,
     additionalProperties=false, items, $ref into $defs. Returns a list of
     error strings (empty = valid). Use ``jsonschema`` for full validation.
     """
-    schema = load_schema()
+    schema = load_schema(kind or schema_kind(report))
     errors: list[str] = []
     types = {"object": dict, "array": list, "string": str, "boolean": bool,
              "null": type(None)}
@@ -300,6 +312,11 @@ def validate_report(report: dict) -> list[str]:
     return errors
 
 
+def _tifxyz_severity() -> dict:
+    from .tifxyz import TIFXYZ_SEVERITY  # lazy: zpa.tifxyz imports this module
+    return TIFXYZ_SEVERITY
+
+
 def contract() -> dict:
     """Everything a downstream consumer may branch on, as one document."""
     return {
@@ -307,6 +324,7 @@ def contract() -> dict:
         "audit_codes": dict(sorted(SEVERITY.items())),
         "gate_codes": dict(sorted(GATE_SEVERITY.items())),
         "chunk_scan_codes": dict(sorted(SCAN_SEVERITY.items())),
+        "tifxyz_codes": dict(sorted(_tifxyz_severity().items())),
         "info_codes": sorted(INFO_CODES),
         "nothing_to_audit_codes": sorted(NOTHING_TO_AUDIT),
         "integrity_states": list(INTEGRITY_STATES),

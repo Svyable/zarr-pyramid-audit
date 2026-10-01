@@ -37,6 +37,7 @@ from types import SimpleNamespace
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ZARR_DIR = os.path.join(HERE, "zarr")
+SURF_DIR = os.path.join(HERE, "surfaces")
 HTTP_DIR = os.path.join(HERE, "http")
 EXPECTED_DIR = os.path.join(HERE, "expected")
 
@@ -165,7 +166,7 @@ BLOSC = {"id": "blosc", "cname": "lz4", "clevel": 5, "shuffle": 1,
          "blocksize": 0}
 
 
-def build_v3_clean(path):
+def build_v3_clean(path, dimension_names=True):
     _dump(os.path.join(path, "zarr.json"), {
         "zarr_format": 3, "node_type": "group",
         "attributes": {"ome": {"version": "0.5", "multiscales": [{
@@ -184,7 +185,7 @@ def build_v3_clean(path):
             "chunk_key_encoding": {"name": "default",
                                    "configuration": {"separator": "/"}},
             "fill_value": 0, "codecs": [{"name": "bytes"}],
-            "dimension_names": ["z", "y", "x"],
+            **({"dimension_names": ["z", "y", "x"]} if dimension_names else {}),
             "attributes": {}})
         for n, idx in enumerate(_indices(_grid(shape, C))):
             _raw(os.path.join(path, p, "c", *map(str, idx)),
@@ -297,6 +298,9 @@ ZARR_CASES = [
      lambda p: _with_datasets(p, _two_scales_on_level_1)),
     ("transform_arity", "level 1 translation has 2 entries for 3 axes",
      lambda p: _with_datasets(p, _short_translation_on_level_1)),
+    ("dimension_names_missing",
+     "OME-Zarr 0.5 v3 pyramid whose arrays have no dimension_names",
+     lambda p: build_v3_clean(p, dimension_names=False)),
     ("axes_invalid", "two axes share the name 'y'",
      lambda p: _with_datasets(p, _duplicate_axis_name)),
     ("multiscale_empty", "multiscales key present with an empty datasets list",
@@ -366,6 +370,172 @@ ZARR_CASES = [
                 _raw(os.path.join(p, "0", "1.1.1"), _pattern(256, 42)))),
 ]
 
+# ---------------------------------------------------------------------------
+# tifxyz surfaces
+# ---------------------------------------------------------------------------
+
+def write_tiff(path: str, arr, *, bigtiff: bool = False) -> None:
+    """Minimal uncompressed single-strip TIFF, IFD at the end of the file
+    (the layout of the tifxyz files in the public bucket). Deterministic."""
+    import struct
+
+    import numpy as np
+    arr = np.ascontiguousarray(arr)
+    kind = {"f": 3, "u": 1, "i": 2}[arr.dtype.kind]
+    data = arr.astype(arr.dtype.newbyteorder("<")).tobytes()
+    h, w = arr.shape
+    entries = [(256, w), (257, h), (258, arr.dtype.itemsize * 8), (259, 1),
+               (262, 1), (273, None), (277, 1), (278, h), (279, len(data)),
+               (284, 1), (339, kind)]
+    if bigtiff:
+        head = struct.pack("<2sHHHQ", b"II", 43, 8, 0, 0)
+        data_off = len(head)
+        ifd_off = data_off + len(data)
+        ifd = struct.pack("<Q", len(entries))
+        for tag, val in entries:
+            val = data_off if val is None else val
+            ifd += struct.pack("<HHQQ", tag, 16 if tag in (273, 279) else 3, 1, val)
+        ifd += struct.pack("<Q", 0)
+        head = struct.pack("<2sHHHQ", b"II", 43, 8, 0, ifd_off)
+    else:
+        head = struct.pack("<2sHI", b"II", 42, 0)
+        data_off = len(head)
+        ifd_off = data_off + len(data)
+        ifd = struct.pack("<H", len(entries))
+        for tag, val in entries:
+            val = data_off if val is None else val
+            ifd += struct.pack("<HHII", tag, 4 if tag in (273, 279) else 3, 1, val)
+        ifd += struct.pack("<I", 0)
+        head = struct.pack("<2sHI", b"II", 42, ifd_off)
+    _raw(path, head + data + ifd)
+
+
+def _surface_xyz(h=6, w=8):
+    import numpy as np
+    r, c = np.mgrid[0:h, 0:w].astype(np.float32)
+    x, y, z = 100 + 2 * c, 200 + 2 * r, 300 + c + r
+    for a in (x, y, z):      # invalid corners, marked in every channel
+        a[0, 0] = a[-1, -1] = -1.0
+    return x, y, z
+
+
+def _surface_meta(x, y, z, **over):
+    import numpy as np
+    v = ~((x == -1) | (y == -1) | (z == -1))
+    meta = {"format": "tifxyz", "type": "seg", "uuid": "fixture",
+            "scale": [0.05, 0.05],
+            "bbox": [[float(a[v].min()) for a in (x, y, z)],
+                     [float(a[v].max()) for a in (x, y, z)]]}
+    meta.update(over)
+    return {k: v for k, v in meta.items() if v is not None}
+
+
+def surface(path, *, meta="auto", channels="xyz", bigtiff=False,
+            mutate=None, meta_over=None, **dtype):
+    """Write a tifxyz directory; ``mutate(x, y, z)`` edits the grids first."""
+    x, y, z = _surface_xyz()
+    if mutate:
+        x, y, z = mutate(x, y, z)
+    os.makedirs(path, exist_ok=True)
+    if meta == "auto":
+        base_x, base_y, base_z = _surface_xyz()
+        _dump(os.path.join(path, "meta.json"),
+              _surface_meta(base_x, base_y, base_z, **(meta_over or {})))
+    elif meta is not None:
+        _text(os.path.join(path, "meta.json"), meta)
+    for name, arr in zip("xyz", (x, y, z)):
+        if name in channels:
+            write_tiff(os.path.join(path, f"{name}.tif"), arr, bigtiff=bigtiff)
+
+
+def _cells(fn):
+    def mutate(x, y, z):
+        fn(x, y, z)
+        return x, y, z
+    return mutate
+
+
+def _shape_mismatch(x, y, z):
+    import numpy as np
+    return x, y, np.ascontiguousarray(z[:, :-1])
+
+
+def _as_uint16(x, y, z):
+    import numpy as np
+    return tuple(np.clip(a, 0, None).astype(np.uint16) for a in (x, y, z))
+
+
+TIFXYZ_CASES = [
+    ("tifxyz_clean", "clean surface: meta.json + float32 x/y/z, IFD at end of file",
+     lambda p: surface(p)),
+    ("tifxyz_bigtiff_clean", "clean surface stored as BigTIFF",
+     lambda p: surface(p, bigtiff=True)),
+    ("tifxyz_meta_missing", "meta.json confirmed absent",
+     lambda p: surface(p, meta=None)),
+    ("tifxyz_meta_unreadable", "meta.json is truncated JSON",
+     lambda p: surface(p, meta='{"format": "tifxyz", "scale": [0.05')),
+    ("tifxyz_meta_incomplete", "meta.json says format 'tifxyz' but has no scale",
+     lambda p: surface(p, meta_over={"scale": None})),
+    ("tifxyz_channel_missing", "z.tif confirmed absent",
+     lambda p: surface(p, channels="xy")),
+    ("tifxyz_tiff_unreadable", "z.tif is not a TIFF",
+     lambda p: (surface(p), _raw(os.path.join(p, "z.tif"), b"not a tiff file"))),
+    ("tifxyz_shape_mismatch", "z.tif grid is one column narrower than x and y",
+     lambda p: surface(p, mutate=_shape_mismatch)),
+    ("tifxyz_sample_format", "channels hold uint16, not floating point",
+     lambda p: surface(p, mutate=_as_uint16)),
+    ("tifxyz_empty", "every grid cell is -1: no geometry at all",
+     lambda p: surface(p, mutate=_cells(lambda x, y, z: [a.fill(-1) for a in (x, y, z)]))),
+    ("tifxyz_mask_mismatch", "two cells are -1 in x only",
+     lambda p: surface(p, mutate=_cells(lambda x, y, z: x.__setitem__((2, slice(2, 4)), -1)))),
+    ("tifxyz_nonfinite", "one valid cell holds NaN in z",
+     lambda p: surface(p, mutate=_cells(lambda x, y, z: z.__setitem__((3, 3), float("nan"))))),
+    ("tifxyz_bbox_mismatch", "declared bbox is 50 voxels off the stored coordinates",
+     lambda p: surface(p, meta_over={"bbox": [[150.0, 202.0, 301.0], [214.0, 210.0, 311.0]]})),
+    ("tifxyz_bbox_sentinel",
+     "declared bbox minimum is -1: the invalid marker leaked into it (loose, as on 28 public surfaces)",
+     lambda p: surface(p, meta_over={"bbox": [[-1.0, -1.0, -1.0], [114.0, 210.0, 311.0]]})),
+    ("tifxyz_absent", "requested surface does not exist (nothing to audit)",
+     lambda p: None),
+]
+
+
+def build_surfaces(out_dir: str = SURF_DIR) -> None:
+    """(Re)build every tifxyz case into ``out_dir``."""
+    if os.path.isdir(out_dir):
+        shutil.rmtree(out_dir)
+    os.makedirs(out_dir)
+    for name, _prop, fn in TIFXYZ_CASES:
+        fn(os.path.join(out_dir, f"{name}.tifxyz"))
+
+
+def run_tifxyz_case(name: str, store=None, base: str = SURF_DIR):
+    from zpa.httpstore import LocalStore
+    from zpa.report import consumer_verdict
+    from zpa.tifxyz import audit_surface
+    store = store or LocalStore(base)
+    report = audit_surface(store, f"{name}.tifxyz", content=True)
+    s = report["surface"]
+    projection = {
+        "integrity": report["integrity"],
+        "max_severity": report["max_severity"],
+        "kind": report["kind"],
+        "evidence": report["evidence"],
+        "surface": {"grid": s["grid"], "valid_fraction": s["valid_fraction"],
+                    "data_bbox": s["data_bbox"],
+                    "content_checked": s["content_checked"],
+                    "channels": {c: v.get("state") for c, v in
+                                 sorted(s["channels"].items())}},
+        "findings": sorted(
+            ({k: f[k] for k in ("code", "severity", "level",
+                                "evidence_state", "actionable")}
+             for f in report["findings"]),
+            key=lambda f: (f["level"], f["code"])),
+        "consumer_verdict": consumer_verdict(report),
+    }
+    return projection, report
+
+
 HTTP_CASES = [
     "http_503_everywhere", "http_403_forbidden", "http_429_level",
     "http_timeout_level", "http_soft_404_html", "http_listing_405",
@@ -380,6 +550,8 @@ def build(out_dir: str = ZARR_DIR) -> None:
     os.makedirs(out_dir)
     for name, _prop, fn in ZARR_CASES:
         fn(os.path.join(out_dir, f"{name}.zarr"))
+    if out_dir == ZARR_DIR:
+        build_surfaces()
 
 
 # ---------------------------------------------------------------------------
@@ -522,26 +694,33 @@ def run_http_case(name: str):
 
 
 def property_of(name: str) -> str:
-    for n, prop, _ in ZARR_CASES:
+    for n, prop, _ in ZARR_CASES + TIFXYZ_CASES:
         if n == name:
             return prop
     return load_http_case(name)["property"]
 
 
 def golden(name: str, projection: dict) -> dict:
-    source = (f"zarr/{name}.zarr" if any(n == name for n, *_ in ZARR_CASES)
-              else f"http/{name}.json")
+    if any(n == name for n, *_ in ZARR_CASES):
+        source = f"zarr/{name}.zarr"
+    elif any(n == name for n, *_ in TIFXYZ_CASES):
+        source = f"surfaces/{name}.tifxyz"
+    else:
+        source = f"http/{name}.json"
     return {"corpus_version": CORPUS_VERSION, "fixture": name,
             "property": property_of(name), "source": source, **projection}
 
 
 def all_case_names() -> list[str]:
-    return [n for n, *_ in ZARR_CASES] + list(HTTP_CASES)
+    return ([n for n, *_ in ZARR_CASES] + list(HTTP_CASES)
+            + [n for n, *_ in TIFXYZ_CASES])
 
 
 def compute(name: str) -> dict:
     if name in HTTP_CASES:
         projection, _ = run_http_case(name)
+    elif any(n == name for n, *_ in TIFXYZ_CASES):
+        projection, _ = run_tifxyz_case(name)
     else:
         projection, _ = run_zarr_case(name)
     return golden(name, projection)
@@ -556,7 +735,7 @@ def write_expected() -> None:
 def case_table() -> str:
     """The README's case table, rendered from the committed goldens."""
     rows = ["| case | property isolated | findings (severity, evidence) "
-            "| integrity | gate | chunk probe |",
+            "| integrity | gate | chunk probe / surface content |",
             "|---|---|---|---|---|---|"]
     for name in all_case_names():
         with open(os.path.join(EXPECTED_DIR, f"{name}.json"), encoding="utf-8") as fh:
@@ -571,8 +750,12 @@ def case_table() -> str:
             scan = ", ".join(statuses) + (
                 "; " + ", ".join(f"`{c}`" for c in codes) if codes else "")
             scan = scan or "—"
+        if "surface" in g:
+            vf = g["surface"]["valid_fraction"]
+            scan = "—" if vf is None else f"content: {vf:.0%} valid"
+        gate = g["gate"]["verdict"] if "gate" in g else "—"
         rows.append(f"| `{name}` | {g['property']} | {findings} | "
-                    f"{g['integrity']} | {g['gate']['verdict']} | {scan} |")
+                    f"{g['integrity']} | {gate} | {scan} |")
     return "\n".join(rows) + "\n"
 
 

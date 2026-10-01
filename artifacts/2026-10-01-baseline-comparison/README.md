@@ -37,10 +37,10 @@ non-PASS integrity.
 
 | tool | defects flagged | suspicious content flagged | false alarms on valid pyramids | out-of-model nodes identified |
 |---|---|---|---|---|
-| zarr-python | 8 / 25 | 0 / 3 | 0 / 10 | 1 / 4 |
-| ome-zarr-models | 13 / 25 | 0 / 3 | 0 / 10 | 4 / 4 |
-| ZPA header audit | 24 / 25 | 0 / 3 | 1 / 10 | 4 / 4 |
-| ZPA + sampled chunk probe | 25 / 25 | 3 / 3 | 2 / 10 | 4 / 4 |
+| zarr-python | 8 / 26 | 0 / 3 | 0 / 10 | 1 / 4 |
+| ome-zarr-models | 14 / 26 | 0 / 3 | 0 / 10 | 4 / 4 |
+| ZPA header audit | 25 / 26 | 0 / 3 | 1 / 10 | 4 / 4 |
+| ZPA + sampled chunk probe | 26 / 26 | 3 / 3 | 2 / 10 | 4 / 4 |
 
 What only ZPA reports here: chunkless levels (silent zeros), scale/shape
 mismatches, mixed rounding, non-monotonic scales, dtype/fill/separator
@@ -55,13 +55,15 @@ values).
   reading is per row, not per total: which *defect classes* each tool can see
   at all. The live result in section 1 is the evidence that does not depend
   on how the fixtures were chosen.
-- **Where a baseline does better.** ome-zarr-models enforces rules ZPA does
-  not check. Our first `clean_v3` fixture lacked the `dimension_names` that
-  OME-Zarr 0.5 requires: the validator rejected it and ZPA did not. (The
-  fixture was fixed; ZPA still has no `dimension_names` check.) The validator
-  also rejects every non-pyramid node, which is correct for its purpose. The
-  two tools are complementary: run the validator for spec compliance and ZPA
-  for structural integrity.
+- **Where a baseline did better, and what changed.** ome-zarr-models enforces
+  spec rules ZPA did not check. Our first `clean_v3` fixture lacked the
+  `dimension_names` that OME-Zarr 0.5 requires: the validator rejected it and
+  ZPA did not. The fixture was fixed, and ZPA gained
+  `DIMENSION_NAMES_MISMATCH` (`low`). The new `dimension_names_missing`
+  fixture is now flagged by both tools. The validator still covers the full
+  NGFF spec, which ZPA does not attempt, and it rejects every non-pyramid
+  node, which is correct for its purpose. The two tools are complementary:
+  run the validator for spec compliance and ZPA for structural integrity.
 - **ZPA's own false alarms.**
   - `compressor_drift` is legal; ZPA reports it as `low`, and integrity stays
     `PASS`.

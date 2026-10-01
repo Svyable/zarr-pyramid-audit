@@ -1,9 +1,9 @@
 | tool | defects flagged | suspicious content flagged | false alarms on valid pyramids | out-of-model nodes identified |
 |---|---|---|---|---|
-| zarr-python | 8 / 25 | 0 / 3 | 0 / 10 | 1 / 4 |
-| ome-zarr-models | 13 / 25 | 0 / 3 | 0 / 10 | 4 / 4 |
-| zpa (header audit) | 24 / 25 | 0 / 3 | 1 / 10 | 4 / 4 |
-| zpa (+ chunk probe) | 25 / 25 | 3 / 3 | 2 / 10 | 4 / 4 |
+| zarr-python | 8 / 26 | 0 / 3 | 0 / 10 | 1 / 4 |
+| ome-zarr-models | 14 / 26 | 0 / 3 | 0 / 10 | 4 / 4 |
+| zpa (header audit) | 25 / 26 | 0 / 3 | 1 / 10 | 4 / 4 |
+| zpa (+ chunk probe) | 26 / 26 | 3 / 3 | 2 / 10 | 4 / 4 |
 
 Per fixture (✓ = the tool gave its user a signal):
 
@@ -32,6 +32,7 @@ Per fixture (✓ = the tool gave its user a signal):
 | `ome_version_unmodelled` | out-of-model | · silent | ✓ rejects | PASS OME_VERSION_UNMODELLED | — |
 | `transform_scale_count` | defect | · silent | ✓ rejects | PASS TRANSFORM_SCALE_COUNT | — |
 | `transform_arity` | defect | · silent | ✓ rejects | PASS TRANSFORM_ARITY | — |
+| `dimension_names_missing` | defect | · silent | ✓ rejects | PASS DIMENSION_NAMES_MISMATCH | — |
 | `axes_invalid` | defect | · silent | ✓ rejects | PASS AXES_INVALID | — |
 | `multiscale_empty` | defect | · silent | ✓ rejects | FAIL MULTISCALE_EMPTY | — |
 | `not_multiscale` | out-of-model | · silent | ✓ rejects | PASS NOT_MULTISCALE | — |

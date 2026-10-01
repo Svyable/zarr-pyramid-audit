@@ -18,6 +18,7 @@ No cloud login, no telemetry, no credentials required for public buckets.
 
 from __future__ import annotations
 
+import os
 import random
 import re
 import threading
@@ -557,8 +558,9 @@ class LocalStore:
     a 403 or 5xx on the remote backends.
     """
 
-    def __init__(self, base_url: str = "", **_ignored):
+    def __init__(self, base_url: str | os.PathLike = "", **_ignored):
         import os
+        base_url = os.fspath(base_url)
         base = base_url[len("file://"):] if base_url.startswith("file://") else base_url
         self.root = os.path.abspath(base or ".")
         self.base_url = "file://" + self.root.rstrip("/") + "/"
@@ -667,8 +669,10 @@ def open_store(base_url: str, **kw):
     """Pick a backend from the URL scheme.
 
     ``s3://`` -> S3Store; ``http(s)://`` -> HttpStore; ``file://`` or a
-    plain filesystem path -> LocalStore (read-only, same evidence API).
+    plain filesystem path (str or ``os.PathLike``) -> LocalStore (read-only,
+    same evidence API).
     """
+    base_url = os.fspath(base_url)
     scheme = urlparse(base_url).scheme
     if scheme == "s3":
         return S3Store(base_url, **kw)

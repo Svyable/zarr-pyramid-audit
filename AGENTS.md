@@ -62,6 +62,11 @@ endpoint is unreachable from some networks, including some sandboxes).
     PASS/WARN/UNKNOWN/FAIL), schema in `data/audit-report.schema.json`,
     `contract()` / `contract_fingerprint()`
   - `bench.py` — `zpa-bench`: per-root latency, store calls, payload bytes
+  - `tifxyz.py` — `zpa-tifxyz`: tifxyz surface audit (`meta.json` + x/y/z
+    TIFFs). Header tier parses TIFF IFDs with strict range reads (no imaging
+    library); `--content` decodes plain strips built-in and everything else
+    via the optional `[tifxyz]` extra (tifffile). Codes in `TIFXYZ_SEVERITY`,
+    report schema `data/tifxyz-report.schema.json`
   - `gate.py` — publish-time gate over `audit_one`
   - `discover_zarr.py`, `count_chunks.py` — root discovery; measured chunk counts
   - `chunkscan.py` + `scan_empty_chunks.py` — chunk-content probe (engine + CLI)
@@ -78,8 +83,8 @@ endpoint is unreachable from some networks, including some sandboxes).
   `test_docs_consistency.py` checks that documented flags exist, the README
   check-code list matches `SEVERITY`, and the dashboard describes every code —
   if it fails, fix the docs, don't delete the test.
-- `fixtures/` — fixture corpus: one property per Zarr tree / replayed HTTP
-  case, golden outputs in `fixtures/expected/` (`python fixtures/corpus.py
+- `fixtures/` — fixture corpus: one property per Zarr tree / tifxyz surface
+  (`fixtures/surfaces/`) / replayed HTTP case, golden outputs in `fixtures/expected/` (`python fixtures/corpus.py
   expected` to regenerate; review the diff). See `fixtures/README.md`.
 - `examples/` — CI gate job, preflight script, Python API example (not active
   workflows; tested by `tests/test_integration_surface.py`)

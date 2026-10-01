@@ -57,6 +57,7 @@ CODE_BLURB = {
     "TRANSFORM_SCALE_COUNT": "dataset declares zero or several scale transforms",
     "TRANSFORM_ARITY": "scale/translation length does not match the axes",
     "AXES_INVALID": "duplicate axis names, or typed axes out of NGFF count/order",
+    "DIMENSION_NAMES_MISMATCH": "OME-Zarr 0.5: array dimension_names missing or not equal to the axes",
     "EMPTY_ZARR_DIR": "*.zarr directory with no contents",
     "NOT_A_ZARR_GROUP": "no .zgroup / zarr.json and nothing Zarr-like inside",
     "NOT_MULTISCALE": "valid Zarr group, never claimed to be a pyramid",
@@ -525,6 +526,7 @@ SEVERITY = {
     "PHYSICAL_SCALE_CONTRADICTION": "high", "PHYSICAL_SCALE_UNKNOWN": "info",
     "OME_VERSION_UNMODELLED": "info", "TRANSFORM_SCALE_COUNT": "low",
     "TRANSFORM_ARITY": "low", "AXES_INVALID": "low",
+    "DIMENSION_NAMES_MISMATCH": "low",
 }
 # Kept in lockstep with zpa.audit_pyramid.SEVERITY by tests/test_dashboard.py.
 # It is duplicated (not imported) so the Pages CI can regenerate the dashboard

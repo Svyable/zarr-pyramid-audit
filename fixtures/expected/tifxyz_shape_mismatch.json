@@ -1,0 +1,34 @@
+{
+  "consumer_verdict": "CAUTION",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_CHANNEL_SHAPE_MISMATCH",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "medium"
+    }
+  ],
+  "fixture": "tifxyz_shape_mismatch",
+  "integrity": "WARN",
+  "kind": "tifxyz",
+  "max_severity": "medium",
+  "property": "z.tif grid is one column narrower than x and y",
+  "source": "surfaces/tifxyz_shape_mismatch.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": false,
+    "data_bbox": null,
+    "grid": null,
+    "valid_fraction": null
+  }
+}

@@ -25,6 +25,12 @@ dev = [
     "pytest>=7",
     "build",
 ]
+# Content tier of zpa-tifxyz for tiled / LZW / predictor TIFFs. The header
+# tier and plain uncompressed or Deflate strips need neither.
+tifxyz = [
+    "tifffile>=2023.1",
+    "imagecodecs>=2023.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/Svyable/zarr-pyramid-audit"
@@ -42,6 +48,7 @@ zpa-known-defects = "zpa.build_known_defects:main"
 zpa-surface-support = "zpa.surface_support:main"
 zpa-surface-depth-profile = "zpa.surface_depth_profile:main"
 zpa-bench = "zpa.bench:main"
+zpa-tifxyz = "zpa.tifxyz:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

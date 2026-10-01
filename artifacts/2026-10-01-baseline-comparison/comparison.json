@@ -623,6 +623,33 @@
       }
     },
     {
+      "fixture": "dimension_names_missing",
+      "flagged": {
+        "ome-zarr-models": true,
+        "zarr-python": false,
+        "zpa (+ chunk probe)": true,
+        "zpa (header audit)": true
+      },
+      "ome_zarr_models": {
+        "detail": "RuntimeError",
+        "outcome": "rejects"
+      },
+      "property": "OME-Zarr 0.5 v3 pyramid whose arrays have no dimension_names",
+      "truth": "defect",
+      "zarr_python": {
+        "detail": "read 2 declared level(s)",
+        "outcome": "silent"
+      },
+      "zpa": {
+        "codes": [
+          "DIMENSION_NAMES_MISMATCH"
+        ],
+        "gate": "pass",
+        "integrity": "PASS",
+        "scan_flags": []
+      }
+    },
+    {
       "fixture": "axes_invalid",
       "flagged": {
         "ome-zarr-models": true,
@@ -1139,8 +1166,8 @@
         "of": 10
       },
       "defect": {
-        "flagged": 13,
-        "of": 25
+        "flagged": 14,
+        "of": 26
       },
       "out-of-model": {
         "flagged": 4,
@@ -1158,7 +1185,7 @@
       },
       "defect": {
         "flagged": 8,
-        "of": 25
+        "of": 26
       },
       "out-of-model": {
         "flagged": 1,
@@ -1175,8 +1202,8 @@
         "of": 10
       },
       "defect": {
-        "flagged": 25,
-        "of": 25
+        "flagged": 26,
+        "of": 26
       },
       "out-of-model": {
         "flagged": 4,
@@ -1193,8 +1220,8 @@
         "of": 10
       },
       "defect": {
-        "flagged": 24,
-        "of": 25
+        "flagged": 25,
+        "of": 26
       },
       "out-of-model": {
         "flagged": 4,

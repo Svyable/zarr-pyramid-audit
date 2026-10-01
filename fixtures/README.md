@@ -5,8 +5,8 @@ with the expected structured output committed next to it. They pin the
 evidence contract (missing ≠ empty ≠ zero-filled; UNKNOWN is never clean)
 and make any behaviour change show up as a reviewable diff.
 
-Corpus version: **1** · report schema: **1.1.0** ·
-42 on-disk cases, 8 replayed-HTTP cases,
+Corpus version: **1** · report schema: **1.2.0** ·
+43 on-disk cases, 8 replayed-HTTP cases, 15 tifxyz surface cases,
 19 byte-range cases.
 
 ## Layout
@@ -14,6 +14,7 @@ Corpus version: **1** · report schema: **1.1.0** ·
 | path | what |
 |---|---|
 | `zarr/<case>.zarr/` | tiny Zarr v2/v3 trees (raw chunks of a few hundred bytes), built by `corpus.py build` |
+| `surfaces/<case>.tifxyz/` | tifxyz surface patches (`meta.json` + float32 `x/y/z.tif`, IFD at the end of the file like the public data; classic TIFF and BigTIFF), built by `corpus.py build` and audited by `zpa-tifxyz --content` |
 | `http/<case>.json` | recorded HTTP responses (status + body per path) replayed through the real `HttpStore`: the transport failures a directory tree cannot show |
 | `http/range-cases.json` | byte-range and suffix-range responses, including ambiguous and invalid ones, with the exact expected bytes or error |
 | `expected/<case>.json` | golden output per case: every finding's code, severity, level and evidence state; per-level evidence; integrity and coverage; gate verdict; recommended consumer verdict; chunk-probe statuses (on-disk cases) |
@@ -62,7 +63,7 @@ removed or renamed.
 
 ## Cases
 
-| case | property isolated | findings (severity, evidence) | integrity | gate | chunk probe |
+| case | property isolated | findings (severity, evidence) | integrity | gate | chunk probe / surface content |
 |---|---|---|---|---|---|
 | `clean_v2` | clean 3-level v2 pyramid; no findings at any severity | — | PASS | pass | populated |
 | `clean_v3` | clean 2-level zarr v3 / OME 0.5 pyramid with raw 'bytes' chunks | — | PASS | pass | populated |
@@ -87,6 +88,7 @@ removed or renamed.
 | `ome_version_unmodelled` | declares OME-NGFF 0.6, newer than the audit models: conformance checks skipped (info) | `OME_VERSION_UNMODELLED` (info, PRESENT) | PASS | pass | populated |
 | `transform_scale_count` | level 1 declares two scale transforms (spec: exactly one) | `TRANSFORM_SCALE_COUNT` (low, PRESENT) | PASS | pass | populated |
 | `transform_arity` | level 1 translation has 2 entries for 3 axes | `TRANSFORM_ARITY` (low, PRESENT) | PASS | pass | populated |
+| `dimension_names_missing` | OME-Zarr 0.5 v3 pyramid whose arrays have no dimension_names | `DIMENSION_NAMES_MISMATCH` (low, PRESENT), `DIMENSION_NAMES_MISMATCH` (low, PRESENT) | PASS | pass | populated |
 | `axes_invalid` | two axes share the name 'y' | `AXES_INVALID` (low, PRESENT) | PASS | pass | populated |
 | `multiscale_empty` | multiscales key present with an empty datasets list | `MULTISCALE_EMPTY` (high, PRESENT) | FAIL | fail | — |
 | `not_multiscale` | valid Zarr group that never claims to be a pyramid (info) | `NOT_MULTISCALE` (info, PRESENT) | PASS | pass | — |
@@ -114,3 +116,18 @@ removed or renamed.
 | `http_listing_405` | no directory listings (405): chunk presence is a coverage gap, not LEVEL_NO_CHUNKS | — | PASS | pass | — |
 | `http_listing_hides_header` | listings succeed but never show the array header (dotfiles hidden / empty page): chunk presence unverified, no absence claimed | — | PASS | pass | — |
 | `http_empty_zarr_dir` | listing succeeds and is empty, all header probes 404: EMPTY_ZARR_DIR | `EMPTY_ZARR_DIR` (low, ABSENT) | UNKNOWN | absent | — |
+| `tifxyz_clean` | clean surface: meta.json + float32 x/y/z, IFD at end of file | — | PASS | — | content: 96% valid |
+| `tifxyz_bigtiff_clean` | clean surface stored as BigTIFF | — | PASS | — | content: 96% valid |
+| `tifxyz_meta_missing` | meta.json confirmed absent | `TIFXYZ_META_MISSING` (medium, ABSENT) | WARN | — | content: 96% valid |
+| `tifxyz_meta_unreadable` | meta.json is truncated JSON | `TIFXYZ_META_UNREADABLE` (medium, PRESENT) | WARN | — | content: 96% valid |
+| `tifxyz_meta_incomplete` | meta.json says format 'tifxyz' but has no scale | `TIFXYZ_META_INCOMPLETE` (low, PRESENT) | PASS | — | content: 96% valid |
+| `tifxyz_channel_missing` | z.tif confirmed absent | `TIFXYZ_CHANNEL_MISSING` (medium, ABSENT) | WARN | — | — |
+| `tifxyz_tiff_unreadable` | z.tif is not a TIFF | `TIFXYZ_TIFF_UNREADABLE` (medium, PRESENT) | WARN | — | — |
+| `tifxyz_shape_mismatch` | z.tif grid is one column narrower than x and y | `TIFXYZ_CHANNEL_SHAPE_MISMATCH` (medium, PRESENT) | WARN | — | — |
+| `tifxyz_sample_format` | channels hold uint16, not floating point | `TIFXYZ_SAMPLE_FORMAT` (low, PRESENT), `TIFXYZ_SAMPLE_FORMAT` (low, PRESENT), `TIFXYZ_SAMPLE_FORMAT` (low, PRESENT) | PASS | — | — |
+| `tifxyz_empty` | every grid cell is -1: no geometry at all | `TIFXYZ_EMPTY` (medium, PRESENT) | WARN | — | content: 0% valid |
+| `tifxyz_mask_mismatch` | two cells are -1 in x only | `TIFXYZ_INVALID_MASK_MISMATCH` (low, PRESENT) | PASS | — | content: 92% valid |
+| `tifxyz_nonfinite` | one valid cell holds NaN in z | `TIFXYZ_NONFINITE` (low, PRESENT) | PASS | — | content: 94% valid |
+| `tifxyz_bbox_mismatch` | declared bbox is 50 voxels off the stored coordinates | `TIFXYZ_BBOX_MISMATCH` (low, PRESENT) | PASS | — | content: 96% valid |
+| `tifxyz_bbox_sentinel` | declared bbox minimum is -1: the invalid marker leaked into it (loose, as on 28 public surfaces) | `TIFXYZ_BBOX_MISMATCH` (low, PRESENT) | PASS | — | content: 96% valid |
+| `tifxyz_absent` | requested surface does not exist (nothing to audit) | `TIFXYZ_ABSENT` (low, ABSENT) | UNKNOWN | — | — |

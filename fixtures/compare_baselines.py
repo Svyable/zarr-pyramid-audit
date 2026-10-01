@@ -67,7 +67,7 @@ GROUND_TRUTH = {
     "physical_scale_unspecified": BENIGN,
     "ome_version_unmodelled": OUT_OF_MODEL,
     "transform_scale_count": DEFECT, "transform_arity": DEFECT,
-    "axes_invalid": DEFECT,
+    "axes_invalid": DEFECT, "dimension_names_missing": DEFECT,
     "multiscale_empty": DEFECT, "not_multiscale": OUT_OF_MODEL,
     "bare_array": OUT_OF_MODEL, "headerless_chunk_store": DEFECT,
     "container_no_group_header": DEFECT, "not_a_zarr_group": OUT_OF_MODEL,

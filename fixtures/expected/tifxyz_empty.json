@@ -1,0 +1,37 @@
+{
+  "consumer_verdict": "CAUTION",
+  "corpus_version": "1",
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "TIFXYZ_EMPTY",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "medium"
+    }
+  ],
+  "fixture": "tifxyz_empty",
+  "integrity": "WARN",
+  "kind": "tifxyz",
+  "max_severity": "medium",
+  "property": "every grid cell is -1: no geometry at all",
+  "source": "surfaces/tifxyz_empty.tifxyz",
+  "surface": {
+    "channels": {
+      "x": "PRESENT",
+      "y": "PRESENT",
+      "z": "PRESENT"
+    },
+    "content_checked": true,
+    "data_bbox": null,
+    "grid": [
+      6,
+      8
+    ],
+    "valid_fraction": 0.0
+  }
+}
