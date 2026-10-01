@@ -162,7 +162,9 @@ def _physical_scale_contract(pm, base) -> tuple[dict, list[str]]:
         "physical_size_marker": marker,
         "spatial_axes": spatial_axes,
         "base_declared_scale": scale,
-        "absolute_scale_known": marker != "unknown",
+        "absolute_scale_state": (
+            "explicitly_unknown" if marker == "unknown" else "unspecified"
+        ),
     }
     contradictions: list[str] = []
     if marker == "unknown":
