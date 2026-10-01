@@ -1,0 +1,115 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "1",
+      "level_codes": [
+        "CHUNK_LEVEL_NO_CHUNKS"
+      ],
+      "samples": []
+    },
+    {
+      "all_empty": false,
+      "level": "2",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    }
+  ],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 1,
+      "PRESENT": 2,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 3,
+    "levels_present": 3,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "LEVEL_NO_CHUNKS",
+      "evidence_state": "ABSENT",
+      "level": "1",
+      "severity": "high"
+    }
+  ],
+  "fixture": "level_no_chunks",
+  "gate": {
+    "codes": [
+      "LEVEL_NO_CHUNKS"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": "NO_CHUNK_KEYS",
+      "chunk_evidence_state": "ABSENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": false,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        8,
+        8
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "2",
+      "present": true,
+      "shape": [
+        2,
+        4,
+        4
+      ]
+    }
+  ],
+  "max_severity": "high",
+  "property": "level 1 header present, zero chunk keys (silent fill_value)",
+  "source": "zarr/level_no_chunks.zarr"
+}

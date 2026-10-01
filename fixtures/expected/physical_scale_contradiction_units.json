@@ -1,0 +1,92 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": false,
+      "level": "0",
+      "level_codes": [],
+      "samples": [
+        "populated",
+        "populated",
+        "populated"
+      ]
+    },
+    {
+      "all_empty": false,
+      "level": "1",
+      "level_codes": [],
+      "samples": [
+        "populated"
+      ]
+    }
+  ],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 2,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 2,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "PHYSICAL_SCALE_CONTRADICTION",
+      "evidence_state": "PRESENT",
+      "level": "0",
+      "severity": "high"
+    }
+  ],
+  "fixture": "physical_scale_contradiction_units",
+  "gate": {
+    "codes": [
+      "PHYSICAL_SCALE_CONTRADICTION"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        8,
+        8
+      ]
+    }
+  ],
+  "max_severity": "high",
+  "property": "physical_size 'unknown' but spatial axes declare micrometer units",
+  "source": "zarr/physical_scale_contradiction_units.zarr"
+}

@@ -1,0 +1,55 @@
+{
+  "multiscales": [
+    {
+      "axes": [
+        {
+          "name": "z",
+          "type": "space",
+          "unit": "micrometer"
+        },
+        {
+          "name": "y",
+          "type": "space",
+          "unit": "micrometer"
+        },
+        {
+          "name": "x",
+          "type": "space",
+          "unit": "micrometer"
+        }
+      ],
+      "datasets": [
+        {
+          "coordinateTransformations": [
+            {
+              "scale": [
+                1.0,
+                1.0,
+                1.0
+              ],
+              "type": "scale"
+            }
+          ],
+          "path": "0"
+        },
+        {
+          "coordinateTransformations": [
+            {
+              "scale": [
+                2.0,
+                2.0,
+                2.0
+              ],
+              "type": "scale"
+            }
+          ],
+          "path": "1"
+        }
+      ],
+      "metadata": {
+        "physical_size": "unknown"
+      },
+      "version": "0.4"
+    }
+  ]
+}

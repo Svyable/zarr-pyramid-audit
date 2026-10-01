@@ -1,0 +1,18 @@
+{
+  "property": "access denied is not absence: 403 stays UNKNOWN",
+  "root": "root",
+  "routes": {
+    "root/": {
+      "status": 403
+    },
+    "root/.zarray": {
+      "status": 403
+    },
+    "root/.zgroup": {
+      "status": 403
+    },
+    "root/zarr.json": {
+      "status": 403
+    }
+  }
+}

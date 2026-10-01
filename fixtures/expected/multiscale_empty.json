@@ -1,0 +1,42 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "MULTISCALE_EMPTY",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "high"
+    }
+  ],
+  "fixture": "multiscale_empty",
+  "gate": {
+    "codes": [
+      "MULTISCALE_EMPTY"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "multiscale_empty",
+  "levels": [],
+  "max_severity": "high",
+  "property": "multiscales key present with an empty datasets list",
+  "source": "zarr/multiscale_empty.zarr"
+}

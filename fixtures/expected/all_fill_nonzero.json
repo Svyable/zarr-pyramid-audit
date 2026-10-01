@@ -1,0 +1,86 @@
+{
+  "chunk_scan": [
+    {
+      "all_empty": true,
+      "level": "0",
+      "level_codes": [
+        "CHUNK_SAMPLE_ALL_EMPTY"
+      ],
+      "samples": [
+        "empty",
+        "empty",
+        "empty"
+      ]
+    },
+    {
+      "all_empty": true,
+      "level": "1",
+      "level_codes": [
+        "CHUNK_SAMPLE_ALL_EMPTY"
+      ],
+      "samples": [
+        "empty"
+      ]
+    }
+  ],
+  "consumer_verdict": "DEFER_TO_QUALITY",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 2,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 2,
+    "levels_present": 2,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": null,
+    "state": "PRESENT"
+  },
+  "findings": [],
+  "fixture": "all_fill_nonzero",
+  "gate": {
+    "codes": [],
+    "fail": false,
+    "verdict": "pass"
+  },
+  "integrity": "PASS",
+  "kind": "pyramid",
+  "levels": [
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "0",
+      "present": true,
+      "shape": [
+        8,
+        16,
+        16
+      ]
+    },
+    {
+      "chunk_evidence_reason": null,
+      "chunk_evidence_state": "PRESENT",
+      "dtype": "|u1",
+      "evidence_reason": null,
+      "evidence_state": "PRESENT",
+      "has_chunks": true,
+      "path": "1",
+      "present": true,
+      "shape": [
+        4,
+        8,
+        8
+      ]
+    }
+  ],
+  "max_severity": "none",
+  "property": "every stored byte equals fill_value 255: empty, though no byte is zero",
+  "source": "zarr/all_fill_nonzero.zarr"
+}

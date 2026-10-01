@@ -1,0 +1,42 @@
+{
+  "chunk_scan": [],
+  "consumer_verdict": "DO NOT TRAIN",
+  "corpus_version": "1",
+  "coverage": {
+    "chunk_presence": {
+      "ABSENT": 0,
+      "PRESENT": 0,
+      "UNKNOWN": 0
+    },
+    "levels_declared": 0,
+    "levels_present": 0,
+    "levels_unknown": 0
+  },
+  "evidence": {
+    "reason": "METADATA_UNREADABLE",
+    "state": "PRESENT"
+  },
+  "findings": [
+    {
+      "actionable": true,
+      "code": "METADATA_UNREADABLE",
+      "evidence_state": "PRESENT",
+      "level": "",
+      "severity": "high"
+    }
+  ],
+  "fixture": "malformed_zattrs",
+  "gate": {
+    "codes": [
+      "METADATA_UNREADABLE"
+    ],
+    "fail": true,
+    "verdict": "fail"
+  },
+  "integrity": "FAIL",
+  "kind": "metadata_unreadable",
+  "levels": [],
+  "max_severity": "high",
+  "property": "valid .zgroup, truncated .zattrs JSON",
+  "source": "zarr/malformed_zattrs.zarr"
+}

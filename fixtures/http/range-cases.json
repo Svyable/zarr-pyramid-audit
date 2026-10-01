@@ -1,0 +1,354 @@
+{
+  "object": "0123456789",
+  "description": "Byte-range and suffix-range responses replayed through HttpStore.get_range / get_suffix. 'bytes' is the exact expected result; 'error' + 'match' the exception type and a regex its message must match. Ambiguous or inconsistent responses must fail closed: a truncated shard index or chunk must never be parsed as complete.",
+  "cases": [
+    {
+      "name": "range_206_exact",
+      "property": "206 with matching Content-Range returns the bytes",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "234",
+        "headers": {
+          "Content-Range": "bytes 2-4/10"
+        }
+      },
+      "expect": {
+        "bytes": "234"
+      }
+    },
+    {
+      "name": "range_200_ignored",
+      "property": "server ignores Range and returns the whole object: slice it",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 200,
+        "text": "0123456789",
+        "headers": {}
+      },
+      "expect": {
+        "bytes": "234"
+      }
+    },
+    {
+      "name": "range_206_unknown_total",
+      "property": "206 with an unknown total length ('*') but correct coordinates is accepted",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "234",
+        "headers": {
+          "Content-Range": "bytes 2-4/*"
+        }
+      },
+      "expect": {
+        "bytes": "234"
+      }
+    },
+    {
+      "name": "range_206_short_body",
+      "property": "206 body shorter than requested fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "23",
+        "headers": {
+          "Content-Range": "bytes 2-4/10"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "short ranged GET"
+      }
+    },
+    {
+      "name": "range_206_no_content_range",
+      "property": "206 without Content-Range is ambiguous and fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "234",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "range_206_wrong_offset",
+      "property": "206 for a different byte window fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "345",
+        "headers": {
+          "Content-Range": "bytes 3-5/10"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "range_206_total_too_small",
+      "property": "Content-Range total smaller than the window end fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "234",
+        "headers": {
+          "Content-Range": "bytes 2-4/4"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "range_206_garbage_header",
+      "property": "unparseable Content-Range fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 2,
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "234",
+        "headers": {
+          "Content-Range": "items 2-4"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "range_200_short_object",
+      "property": "whole-object 200 that is too short for the window fails closed",
+      "call": {
+        "method": "get_range",
+        "start": 8,
+        "length": 4
+      },
+      "response": {
+        "status": 200,
+        "text": "0123456789",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "short ranged GET"
+      }
+    },
+    {
+      "name": "range_416",
+      "property": "416 Range Not Satisfiable is an error, never empty data",
+      "call": {
+        "method": "get_range",
+        "start": 20,
+        "length": 4
+      },
+      "response": {
+        "status": 416,
+        "text": "",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "HTTP 416"
+      }
+    },
+    {
+      "name": "range_404",
+      "property": "404 on a ranged read is reported as not found",
+      "call": {
+        "method": "get_range",
+        "start": 0,
+        "length": 4
+      },
+      "response": {
+        "status": 404,
+        "text": "",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "404 Not Found"
+      }
+    },
+    {
+      "name": "range_503",
+      "property": "5xx on a ranged read is an error, never empty data",
+      "call": {
+        "method": "get_range",
+        "start": 0,
+        "length": 4
+      },
+      "response": {
+        "status": 503,
+        "text": "",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "HTTP 503"
+      }
+    },
+    {
+      "name": "suffix_206_exact",
+      "property": "suffix 206 proving the final bytes is accepted",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "789",
+        "headers": {
+          "Content-Range": "bytes 7-9/10"
+        }
+      },
+      "expect": {
+        "bytes": "789"
+      }
+    },
+    {
+      "name": "suffix_200_ignored",
+      "property": "server ignores the suffix Range: take the tail of the whole object",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 200,
+        "text": "0123456789",
+        "headers": {}
+      },
+      "expect": {
+        "bytes": "789"
+      }
+    },
+    {
+      "name": "suffix_206_unknown_total",
+      "property": "suffix 206 with total '*' cannot prove it is the tail: fails closed",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "789",
+        "headers": {
+          "Content-Range": "bytes 7-9/*"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "suffix_206_not_tail",
+      "property": "suffix 206 for a window that is not the tail fails closed",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "456",
+        "headers": {
+          "Content-Range": "bytes 4-6/10"
+        }
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "suffix_206_missing_header",
+      "property": "suffix 206 without Content-Range fails closed",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 206,
+        "text": "789",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "invalid Content-Range"
+      }
+    },
+    {
+      "name": "suffix_200_object_too_small",
+      "property": "whole object shorter than the suffix fails closed (truncated shard)",
+      "call": {
+        "method": "get_suffix",
+        "length": 16
+      },
+      "response": {
+        "status": 200,
+        "text": "0123456789",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "short suffix GET"
+      }
+    },
+    {
+      "name": "suffix_404",
+      "property": "404 on a suffix read is reported as not found",
+      "call": {
+        "method": "get_suffix",
+        "length": 3
+      },
+      "response": {
+        "status": 404,
+        "text": "",
+        "headers": {}
+      },
+      "expect": {
+        "error": "StoreError",
+        "match": "404 Not Found"
+      }
+    }
+  ]
+}

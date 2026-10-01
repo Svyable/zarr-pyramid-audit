@@ -34,6 +34,7 @@ zpa-dashboard = "zpa.build_dashboard:main"
 zpa-known-defects = "zpa.build_known_defects:main"
 zpa-surface-support = "zpa.surface_support:main"
 zpa-surface-depth-profile = "zpa.surface_depth_profile:main"
+zpa-bench = "zpa.bench:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -15,12 +15,15 @@ Design notes:
   - An all-fill chunk is *suspicious*, not proof of corruption: genuinely
     empty background regions exist. Hence CHUNK_SAMPLE_ALL_EMPTY is medium
     severity, and the positive POPULATED confirmation is the primary output.
-  - Two-phase fetch for uncompressed chunks: read the first 4 KiB; any
-    nonzero byte proves the chunk is populated without downloading the rest.
-    Only fully-zero prefixes trigger the full download.
-  - Decodable today: zarr v2 raw and v2 blosc; v3 sharded levels whose
-    inner codec is volcomp (the dl.ash2txt.org scroll volumes), decoded
-    with a vendored libvolcomp over HTTP byte ranges. Other v3 sharded
+  - Two-phase fetch for uncompressed integer chunks with a zero fill: read
+    the first 4 KiB; any nonzero byte proves the chunk is populated without
+    downloading the rest. Only fully-zero prefixes trigger the full
+    download. Any other fill value (255, "NaN", ...) is decoded in full,
+    because a nonzero byte proves nothing there.
+  - Decodable today: zarr v2 raw and v2 blosc; unsharded v3 raw ("bytes");
+    v3 sharded levels whose inner codec is volcomp (the dl.ash2txt.org
+    scroll volumes), decoded with a vendored libvolcomp over HTTP byte
+    ranges. Other v3 sharded
     stores and exotic codecs are reported as UNDECODEABLE, never silently
     skipped.
 """
@@ -79,7 +82,10 @@ def _decode(raw: bytes, dtype: str, compressor_id: str) -> np.ndarray | None:
     """Decode one chunk's bytes to a flat array. None => cannot decode."""
     cid = (compressor_id or "none").lower()
     payload = raw
-    if cid != "none":
+    # A v3 codec chain of just "bytes" is an uncompressed chunk; the bytes
+    # codec's default (and the only one zarr writers emit in practice) is
+    # little-endian, applied explicitly below.
+    if cid not in ("none", "bytes"):
         if cid.startswith("blosc"):
             if not _HAS_BLOSC:
                 return None
@@ -92,6 +98,8 @@ def _decode(raw: bytes, dtype: str, compressor_id: str) -> np.ndarray | None:
             return None
     try:
         dt = np.dtype(dtype)
+        if cid == "bytes" and dt.itemsize > 1:
+            dt = dt.newbyteorder("<")
     except Exception:
         return None
     if len(payload) < dt.itemsize:
@@ -100,15 +108,56 @@ def _decode(raw: bytes, dtype: str, compressor_id: str) -> np.ndarray | None:
                          dtype=dt)
 
 
+_SPECIAL_FLOATS = {"nan": float("nan"), "infinity": float("inf"),
+                   "-infinity": float("-inf")}
+
+
+def _fill_scalar(fill_value):
+    """Normalise a header fill_value to a comparable scalar.
+
+    Zarr v2 JSON encodes non-finite floats as the strings "NaN",
+    "Infinity" and "-Infinity"; a missing fill_value reads as 0.
+    """
+    if fill_value is None:
+        return 0
+    if isinstance(fill_value, str):
+        special = _SPECIAL_FLOATS.get(fill_value.lower())
+        if special is not None:
+            return special
+    return fill_value
+
+
+def _is_nan(value) -> bool:
+    return isinstance(value, float) and math.isnan(value)
+
+
 def _is_fill(arr: np.ndarray, fill_value) -> bool:
     try:
-        if fill_value is None:
-            fill_value = 0
-        if isinstance(fill_value, float) and math.isnan(fill_value):
+        fill_value = _fill_scalar(fill_value)
+        if _is_nan(fill_value):
             return bool(np.isnan(arr).all())
         return bool((arr == fill_value).all())
     except Exception:
         return False
+
+
+def _n_not_fill(arr: np.ndarray, fill_value) -> int:
+    fill_value = _fill_scalar(fill_value)
+    if _is_nan(fill_value):
+        return int((~np.isnan(arr)).sum())
+    return int((arr != fill_value).sum())
+
+
+def _prefix_proves_population(dtype: str, fill_value) -> bool:
+    """A nonzero raw byte proves non-fill data only for an all-zero-bytes
+    fill on an integer dtype (a float -0.0 equals a 0.0 fill)."""
+    try:
+        kind = np.dtype(dtype).kind
+    except Exception:
+        return False
+    fill_value = _fill_scalar(fill_value)
+    return (kind in "biu" and not isinstance(fill_value, str)
+            and not _is_nan(fill_value) and fill_value == 0)
 
 
 def probe_chunk(store, root: str, level: str, index: tuple[int, ...],
@@ -135,10 +184,18 @@ def probe_chunk(store, root: str, level: str, index: tuple[int, ...],
     except Exception as exc:
         sample.detail = f"existence check failed: {exc}"
         return sample
+    # Strict range reads fail closed on a short body, so never ask for more
+    # prefix than the object holds: a chunk smaller than the probe prefix
+    # would otherwise be reported as a fetch error instead of probed.
+    size = getattr(info, "size", None)
+    prefix = PROBE_PREFIX_BYTES
+    if isinstance(size, int) and not isinstance(size, bool) and size > 0:
+        prefix = min(prefix, size)
     try:
-        if cid == "none":
-            # Two-phase: a nonzero byte in the prefix proves population.
-            head = store.get_range(path, 0, PROBE_PREFIX_BYTES)
+        if cid == "none" and _prefix_proves_population(dtype, fill_value):
+            # Two-phase: with a zero fill, a nonzero byte in the prefix
+            # proves population.
+            head = store.get_range(path, 0, prefix)
             sample.bytes_fetched += len(head)
             if any(head):
                 sample.status = "populated"
@@ -164,10 +221,7 @@ def probe_chunk(store, root: str, level: str, index: tuple[int, ...],
         sample.detail = (f"{arr.size} values all == fill_value "
                          f"({fill_value!r}); {len(raw)} bytes on disk")
     else:
-        nz = int((arr != (0 if fill_value is None else fill_value)).sum()) \
-            if not (isinstance(fill_value, float)
-                    and fill_value is not None
-                    and math.isnan(fill_value)) else int((~np.isnan(arr)).sum())
+        nz = _n_not_fill(arr, fill_value)
         sample.status = "populated"
         sample.detail = f"{nz}/{arr.size} values differ from fill_value"
     return sample
@@ -440,3 +494,72 @@ def probe_level_volcomp_sharded(store, root: str, level_rec: dict,
                                    bytes_fetched=fetched))
             fetched = 0
     return out
+
+
+# Severity of every finding the chunk-content probe can emit. Part of the
+# public contract (``zpa.report.contract()["chunk_scan_codes"]``).
+SCAN_SEVERITY = {
+    "CHUNK_SAMPLE_POPULATED": "info",
+    "CHUNK_SAMPLE_EMPTY": "info",
+    "CHUNK_SAMPLE_MISSING": "info",
+    "CHUNK_SAMPLE_ABSENT": "info",
+    "CHUNK_LEVEL_NO_CHUNKS": "info",
+    "CHUNK_LEVEL_NO_SAMPLES": "info",
+    "CHUNK_UNDECODEABLE": "low",
+    "CHUNK_FETCH_ERROR": "low",
+    "CHUNK_SAMPLE_ALL_EMPTY": "medium",
+}
+
+_STATUS_CODE = {
+    "populated": "CHUNK_SAMPLE_POPULATED",
+    "empty": "CHUNK_SAMPLE_EMPTY",
+    "missing": "CHUNK_SAMPLE_MISSING",
+    "absent": "CHUNK_SAMPLE_ABSENT",
+    "undecodable": "CHUNK_UNDECODEABLE",
+}
+
+
+def classify_level(root: str, level: str, has_chunks,
+                   samples: list[ChunkSample],
+                   n_candidates: int = 9) -> tuple[list[dict], bool]:
+    """Turn one level's probe samples into findings.
+
+    Returns ``(findings, all_empty)``. Only *present, decodable* samples
+    count toward ``CHUNK_SAMPLE_ALL_EMPTY``: a key absent from a listing or
+    shard index is masked background (missing != empty), and a fetch or
+    decode failure is no evidence either way.
+    """
+    out: list[dict] = []
+
+    def emit(code, chunk="", detail="", bf=0):
+        out.append({"code": code, "severity": SCAN_SEVERITY[code],
+                    "root": root, "level": level, "chunk": chunk,
+                    "detail": detail, "bytes_fetched": bf})
+
+    if not samples:
+        if has_chunks is False:
+            # Audit-flagged chunkless level, confirmed: no chunk keys among
+            # the probe's spread candidates.
+            emit("CHUNK_LEVEL_NO_CHUNKS",
+                 detail=("level holds no stored chunks (audit: "
+                         f"has_chunks=false; probe: no keys among "
+                         f"{n_candidates} spread candidates)"))
+        else:
+            # Sparse level the spread sampling couldn't cover: not evidence
+            # of absence, reported as a coverage gap rather than a finding.
+            emit("CHUNK_LEVEL_NO_SAMPLES",
+                 detail=(f"no chunk keys among {n_candidates} spread "
+                         "candidates; sparse level not coverable by spread "
+                         "sampling"))
+        return out, False
+    for smp in samples:
+        emit(_STATUS_CODE.get(smp.status, "CHUNK_FETCH_ERROR"),
+             ".".join(map(str, smp.chunk_index)), smp.detail,
+             smp.bytes_fetched)
+    decodable = [smp for smp in samples if smp.status in ("populated", "empty")]
+    all_empty = bool(decodable) and all(smp.status == "empty" for smp in decodable)
+    if all_empty:
+        emit("CHUNK_SAMPLE_ALL_EMPTY",
+             detail=(f"all {len(decodable)} sampled chunks decode to "
+                     "fill_value; human review needed"))
+    return out, all_empty

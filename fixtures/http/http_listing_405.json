@@ -1,0 +1,102 @@
+{
+  "property": "no directory listings (405): chunk presence is a coverage gap, not LEVEL_NO_CHUNKS",
+  "root": "root",
+  "routes": {
+    "root/.zattrs": {
+      "json": {
+        "multiscales": [
+          {
+            "axes": [
+              {
+                "name": "y",
+                "type": "space"
+              },
+              {
+                "name": "x",
+                "type": "space"
+              }
+            ],
+            "datasets": [
+              {
+                "coordinateTransformations": [
+                  {
+                    "scale": [
+                      1.0,
+                      1.0
+                    ],
+                    "type": "scale"
+                  }
+                ],
+                "path": "0"
+              },
+              {
+                "coordinateTransformations": [
+                  {
+                    "scale": [
+                      2.0,
+                      2.0
+                    ],
+                    "type": "scale"
+                  }
+                ],
+                "path": "1"
+              }
+            ],
+            "version": "0.4"
+          }
+        ]
+      },
+      "status": 200
+    },
+    "root/.zgroup": {
+      "json": {
+        "zarr_format": 2
+      },
+      "status": 200
+    },
+    "root/0/": {
+      "status": 405
+    },
+    "root/0/.zarray": {
+      "json": {
+        "chunks": [
+          4,
+          4
+        ],
+        "compressor": null,
+        "dtype": "|u1",
+        "fill_value": 0,
+        "filters": null,
+        "order": "C",
+        "shape": [
+          8,
+          8
+        ],
+        "zarr_format": 2
+      },
+      "status": 200
+    },
+    "root/1/": {
+      "status": 405
+    },
+    "root/1/.zarray": {
+      "json": {
+        "chunks": [
+          4,
+          4
+        ],
+        "compressor": null,
+        "dtype": "|u1",
+        "fill_value": 0,
+        "filters": null,
+        "order": "C",
+        "shape": [
+          4,
+          4
+        ],
+        "zarr_format": 2
+      },
+      "status": 200
+    }
+  }
+}
