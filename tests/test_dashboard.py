@@ -63,3 +63,24 @@ def test_tifxyz_panel_reads_the_committed_summary(tmp_path):
     assert "medium or above: <b>1</b>" in panel
     assert "skipped on 2 surfaces" in panel
     assert build_dashboard.render_tifxyz_panel(str(tmp_path / "absent.json")) == ""
+
+
+def test_baseline_panel_reads_the_committed_comparison(page, tmp_path):
+    import json
+    comparison = json.loads((REPO / "artifacts" / "2026-10-01-baseline-comparison"
+                             / "comparison.json").read_text(encoding="utf-8"))
+    panel = build_dashboard.render_baseline_panel(
+        str(REPO / "artifacts" / "2026-10-01-baseline-comparison" / "comparison.json"))
+    assert panel and panel in page
+    for tool, label in build_dashboard.BASELINE_TOOLS:
+        d = comparison["summary"][tool]["defect"]
+        assert f'{label}</td><td class="num">{d["flagged"]} / {d["of"]}<' in panel
+    assert build_dashboard.render_baseline_panel(str(tmp_path / "absent.json")) == ""
+
+
+def test_dashboard_states_the_fail_closed_verdict_rules(page):
+    # ScrolIQ adopted the recommended mapping in scrollq#55: missing
+    # evidence (UNKNOWN) must read as DO NOT TRAIN, never fall through.
+    assert "<b>UNKNOWN</b>" in page
+    assert "https://github.com/Svyable/scrollq/pull/55" in page
+    assert "2026-10-01-health-verdicts-fail-closed" in page
