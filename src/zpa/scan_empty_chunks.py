@@ -18,6 +18,11 @@ Findings:
   CHUNK_SAMPLE_MISSING     [info]   inner chunk absent from a v3 shard index
                                     (masked background legitimately unstored)
   CHUNK_SAMPLE_ABSENT      [info]   v2 chunk key not present (sparse level)
+  SHARD_INDEX_CHECKSUM_MISMATCH [medium] a v3 shard's index fails its crc32c;
+                                    its offsets are untrusted so that shard is
+                                    not sampled. Human review -- not proof the
+                                    data is bad (a non-conforming writer looks
+                                    the same)
   CHUNK_LEVEL_NO_CHUNKS    [info]   level holds no stored chunks at all
                                     (audit-flagged, probe-confirmed)
   CHUNK_LEVEL_NO_SAMPLES   [info]   sparse level the spread sampling could not
@@ -48,6 +53,19 @@ from zpa.runio import RunManifest, write_json               # noqa: E402
 
 FINDING_HEADER = ["code", "severity", "root", "level", "chunk",
                   "detail", "bytes_fetched"]
+
+# ChunkSample.status -> (finding code, severity). Anything not listed keeps
+# the historical CHUNK_FETCH_ERROR fallback, so a new status must be added
+# here deliberately or it will read as a network error.
+SAMPLE_FINDINGS = {
+    "populated": ("CHUNK_SAMPLE_POPULATED", "info"),
+    "empty": ("CHUNK_SAMPLE_EMPTY", "info"),
+    "missing": ("CHUNK_SAMPLE_MISSING", "info"),
+    "absent": ("CHUNK_SAMPLE_ABSENT", "info"),
+    "undecodable": ("CHUNK_UNDECODEABLE", "low"),
+    "index_checksum_mismatch": ("SHARD_INDEX_CHECKSUM_MISMATCH", "medium"),
+}
+FALLBACK_FINDING = ("CHUNK_FETCH_ERROR", "low")
 
 
 def main() -> int:
@@ -109,6 +127,7 @@ def main() -> int:
     fd_path = os.path.join(out_dir, "scan_empty_chunks.findings.csv")
     sm_path = os.path.join(out_dir, "scan_empty_chunks.summary.json")
     codes = Counter()
+    index_crc_counts = Counter()   # verified | mismatch | unchecksummed | n/a
     bytes_total = 0
     levels_scanned = 0
     levels_all_empty = []
@@ -192,30 +211,12 @@ def main() -> int:
                     continue
                 for s in samples:
                     bytes_total += s.bytes_fetched
-                    if s.status == "populated":
-                        emit("CHUNK_SAMPLE_POPULATED", "info", s.root,
-                             s.level, ".".join(map(str, s.chunk_index)),
-                             s.detail, s.bytes_fetched)
-                    elif s.status == "empty":
-                        emit("CHUNK_SAMPLE_EMPTY", "info", s.root, s.level,
-                             ".".join(map(str, s.chunk_index)), s.detail,
-                             s.bytes_fetched)
-                    elif s.status == "missing":
-                        emit("CHUNK_SAMPLE_MISSING", "info", s.root, s.level,
-                             ".".join(map(str, s.chunk_index)), s.detail,
-                             s.bytes_fetched)
-                    elif s.status == "absent":
-                        emit("CHUNK_SAMPLE_ABSENT", "info", s.root, s.level,
-                             ".".join(map(str, s.chunk_index)), s.detail,
-                             s.bytes_fetched)
-                    elif s.status == "undecodable":
-                        emit("CHUNK_UNDECODEABLE", "low", s.root, s.level,
-                             ".".join(map(str, s.chunk_index)), s.detail,
-                             s.bytes_fetched)
-                    else:
-                        emit("CHUNK_FETCH_ERROR", "low", s.root, s.level,
-                             ".".join(map(str, s.chunk_index)), s.detail,
-                             s.bytes_fetched)
+                    index_crc_counts[s.index_crc or "n/a"] += 1
+                    code, severity = SAMPLE_FINDINGS.get(s.status,
+                                                         FALLBACK_FINDING)
+                    emit(code, severity, s.root, s.level,
+                         ".".join(map(str, s.chunk_index)), s.detail,
+                         s.bytes_fetched)
                 # Only *present* chunks count toward the all-empty verdict;
                 # missing inner chunks legitimately read as fill (masked).
                 decodable = [s for s in samples
@@ -234,6 +235,9 @@ def main() -> int:
             "n_levels_all_empty": len(levels_all_empty),
             "bytes_fetched": bytes_total,
             "by_code": dict(codes.most_common()),
+            # Coverage of the shard-index checksum, per sample: absence of a
+            # mismatch finding only means something where this says verified.
+            "index_crc": dict(index_crc_counts.most_common()),
         }
         write_json(sm_path, summary)
         man.set("summary", summary)

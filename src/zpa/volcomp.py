@@ -123,6 +123,7 @@ class ShardingInfo:
     shape: tuple[int, ...]
     inner_codec: str               # e.g. "volcomp"
     index_codecs: list[str]
+    index_location: str = "end"    # sharding_indexed default; may be "start"
 
 
 def parse_zarr_json(meta: dict) -> ShardingInfo | None:
@@ -140,7 +141,8 @@ def parse_zarr_json(meta: dict) -> ShardingInfo | None:
                                 for c in cfg.get("index_codecs", [])]
                 inner_codec = inner_codecs[0] if inner_codecs else "?"
                 return ShardingInfo(outer, inner, shape, inner_codec,
-                                    index_codecs)
+                                    index_codecs,
+                                    str(cfg.get("index_location") or "end"))
     except (KeyError, TypeError, ValueError):
         pass
     return None
@@ -172,6 +174,54 @@ def parse_index(raw: bytes, n_inner: int,
     if len(raw) != 16 * n_inner:
         return None
     return [struct.unpack_from("<QQ", raw, i * 16) for i in range(n_inner)]
+
+
+def _crc32c_table() -> list[int]:
+    poly = 0x82F63B78  # CRC-32C (Castagnoli), reflected
+    table = []
+    for i in range(256):
+        c = i
+        for _ in range(8):
+            c = (c >> 1) ^ poly if c & 1 else c >> 1
+        table.append(c)
+    return table
+
+
+_CRC32C_TABLE = _crc32c_table()
+
+
+def _crc32c_py(data: bytes) -> int:
+    """Pure-Python CRC-32C. Index blobs are a few KB, so speed is irrelevant."""
+    c = 0xFFFFFFFF
+    for b in data:
+        c = _CRC32C_TABLE[(c ^ b) & 0xFF] ^ (c >> 8)
+    return c ^ 0xFFFFFFFF
+
+
+try:  # zarr-python's own crc32c codec uses this; optional here
+    import google_crc32c as _gcrc
+
+    def crc32c(data: bytes) -> int:
+        return int(_gcrc.value(bytes(data)))
+except ImportError:  # pragma: no cover - exercised where the package is absent
+    crc32c = _crc32c_py
+
+
+def verify_index_checksum(raw: bytes, index_codecs: list[str]) -> bool | None:
+    """Verify the CRC-32C that ``sharding_indexed`` appends to the shard index.
+
+    ``raw`` is the encoded index exactly as ``parse_index`` receives it. The
+    checksum is a little-endian uint32 over every preceding byte (the Zarr v3
+    ``crc32c`` codec). Returns True/False, or None when the index carries no
+    ``crc32c`` codec and so there is nothing to verify -- "unchecked" is kept
+    distinct from "verified". ``parse_index`` does not call this: it only
+    strips the checksum, so a corrupt index still parses.
+    """
+    if "crc32c" not in index_codecs:
+        return None
+    if len(raw) < 4:
+        return False
+    return crc32c(raw[:-4]) == int.from_bytes(raw[-4:], "little")
 
 
 def inner_chunks_per_shard(info: ShardingInfo,
