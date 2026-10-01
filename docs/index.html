@@ -270,22 +270,22 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 
   <h3 style="margin:1.4rem 0 .4rem;font-size:.95rem">One verdict per volume: <code>scrollq-health</code></h3>
   <div style="overflow-x:auto"><table><thead><tr><th>integrity (this repo)</th><th>quality (ScrolIQ)</th><th>verdict</th></tr></thead><tbody>
-  <tr><td><b>FAIL</b> — any high finding, or the audit itself errored</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
-  <tr><td><b>UNKNOWN</b> — unreadable level, absent root, nothing to audit</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
-  <tr><td><b>WARN</b> — medium finding(s), no high</td><td>not consulted</td><td><span class="verdict caution">CAUTION</span></td></tr>
+  <tr><td><b>FAIL</b>: any <b>high</b> finding, or the audit itself crashed</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
+  <tr><td><b>UNKNOWN</b>: unreadable level, absent root, nothing auditable</td><td>not consulted</td><td><span class="verdict stopv">DO NOT TRAIN</span></td></tr>
+  <tr><td><b>WARN</b>: medium finding(s)</td><td>not consulted</td><td><span class="verdict caution">CAUTION</span></td></tr>
   <tr><td><b>PASS</b></td><td>unscorable, or score below 40</td><td><span class="verdict caution">CAUTION</span></td></tr>
   <tr><td><b>PASS</b></td><td>score 40 or above</td><td><span class="verdict train">TRAIN</span></td></tr>
   </tbody></table></div>
   <p style="font-size:.85rem">Rules as implemented in ScrolIQ's
   <a href="https://github.com/Svyable/scrollq/blob/main/src/scrollq/health.py"><code>health.py</code></a>
-  (checked 2026-10-01). Since
-  <a href="https://github.com/Svyable/scrollq/pull/55">scrollq#55</a> ScrolIQ takes integrity from
-  this repo's versioned report (<code>zpa.report.audit_root</code>) and its recommended mapping, so
-  missing evidence fails closed instead of falling through to the quality score. Live runs
+  (checked 2026-10-01): integrity comes from this repo's <code>zpa.report.audit_root</code> and follows
+  <code>RECOMMENDED_CONSUMER_VERDICT</code>, so missing evidence fails closed
+  (<a href="https://github.com/Svyable/scrollq/pull/55">ScrolIQ #55</a>; until then UNKNOWN read as a pass).
+  All outcomes were run on live data
   (<a href="https://github.com/Svyable/scrollq/tree/main/artifacts/2026-10-01-health-verdicts-fail-closed">ScrolIQ evidence</a>):
-  <b>DO NOT TRAIN</b> on the defective PHerc0814 pyramid (FAIL) and on an absent root (UNKNOWN,
-  the negative control), <b>TRAIN</b> on a healthy PHerc0813 dl volume, and <b>CAUTION</b> on the
-  v2 dev mesh (integrity PASS, quality unscorable).</p>
+  <b>DO NOT TRAIN</b> on the defective PHerc0814 pyramid — its quality is unscorable, so the
+  verdict comes from this audit alone — <b>TRAIN</b> on a healthy PHerc0813 dl volume,
+  <b>CAUTION</b> on the v2 dev mesh, and <b>DO NOT TRAIN</b> on a root that does not exist.</p>
 
   <h3 style="margin:1.4rem 0 .2rem;font-size:.95rem">Where ScrolIQ builds on this repo</h3>
   <ul class="ties">
@@ -296,7 +296,7 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     The dependency runs one way: this repo never imports ScrolIQ.</li>
     <li><b>Integrity before quality.</b> A scan-health score is only worth trusting on a pyramid that
     passes integrity, so <code>scrollq-health</code> runs this audit alongside the score and lets a
-    high finding override it.</li>
+    high finding, or missing evidence, override it.</li>
     <li><b>Grand Prize evidence chain.</b> ScrolIQ's <code>scroliq-provenance</code> gate requires a
     <code>zarr_audit</code> record for the CT volume — tool name, audit-manifest SHA-256, and a root
     naming the exact eligible volume — and its probe protocol makes this repo's audit Stage A.</li>
