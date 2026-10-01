@@ -29,7 +29,7 @@ needs, in the same PR:
 
 ### Contract 1.2.0 — tifxyz surfaces; OME 0.5 dimension_names
 
-`contract-fingerprint: 003aae7430a1`
+`contract-fingerprint: 08f47eac96db`
 
 Minor schema bump (`schema_version` `1.2.0`): a second report kind and new
 codes, nothing removed or renamed, the pyramid report's fields unchanged.
@@ -47,7 +47,8 @@ Migration notes for consumers:
     `TIFXYZ_CHANNEL_MISSING`, `TIFXYZ_TIFF_UNREADABLE`,
     `TIFXYZ_CHANNEL_SHAPE_MISMATCH`, `TIFXYZ_EMPTY`;
   - low: `TIFXYZ_ABSENT`, `TIFXYZ_META_INCOMPLETE`, `TIFXYZ_SAMPLE_FORMAT`,
-    `TIFXYZ_INVALID_MASK_MISMATCH`, `TIFXYZ_NONFINITE`, `TIFXYZ_BBOX_MISMATCH`;
+    `TIFXYZ_INVALID_MASK_MISMATCH`, `TIFXYZ_NONFINITE`,
+    `TIFXYZ_NEGATIVE_COORDINATE`, `TIFXYZ_BBOX_MISMATCH`;
   - info: `TIFXYZ_CONTENT_UNDECODED` (coverage gap), `ACCESS_UNKNOWN`.
 
   `TIFXYZ_ABSENT` joins `ROOT_ABSENT` / `EMPTY_ZARR_DIR` as "nothing to

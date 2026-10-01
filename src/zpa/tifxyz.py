@@ -17,8 +17,8 @@ metadata says it is?*
       share one grid; the samples are floating point.
   content tier (--content, reads the three channels in full): the surface
       has valid points at all; the channels agree on which points are
-      invalid; valid coordinates are finite; the declared bbox matches the
-      coordinates actually stored.
+      invalid; valid coordinates are finite and non-negative (inside some
+      volume); the declared bbox matches the coordinates actually stored.
 
 Evidence semantics match the rest of the package: a confirmed 404 is
 ABSENT, a read that fails (timeout, 403, 5xx, short range) is UNKNOWN and
@@ -83,6 +83,7 @@ TIFXYZ_SEVERITY = {
     "TIFXYZ_EMPTY": "medium",                 # content: no valid point at all
     "TIFXYZ_INVALID_MASK_MISMATCH": "low",    # content: channels disagree on -1
     "TIFXYZ_NONFINITE": "low",                # content: NaN/inf at valid points
+    "TIFXYZ_NEGATIVE_COORDINATE": "low",      # content: valid point outside any volume
     "TIFXYZ_BBOX_MISMATCH": "low",            # content: meta bbox != data extent
     "TIFXYZ_CONTENT_UNDECODED": "info",       # content tier skipped: coverage gap
     "ACCESS_UNKNOWN": "info",                 # a read could not be completed
@@ -470,6 +471,16 @@ def _content_checks(arrays, meta, surface, add) -> None:
         add("TIFXYZ_NONFINITE", "",
             f"{nonfinite} cells not marked -1 hold NaN or inf",
             observed=nonfinite, expected=0)
+    # Voxel coordinates are >= 0 in every CT volume, so a valid point with a
+    # negative coordinate lies outside the scan whatever the volume is.
+    negative = valid & ((x < 0) | (y < 0) | (z < 0))
+    n_negative = int(negative.sum())
+    if n_negative:
+        axes = [ax for ax, a in zip("xyz", (x, y, z)) if bool((valid & (a < 0)).any())]
+        add("TIFXYZ_NEGATIVE_COORDINATE", "",
+            f"{n_negative} of {n_valid} valid points have a negative "
+            f"{'/'.join(axes)} coordinate: they lie outside any CT volume",
+            observed=n_negative, expected=0)
     lo = [float(a[valid].min()) for a in (x, y, z)]
     hi = [float(a[valid].max()) for a in (x, y, z)]
     surface["data_bbox"] = [lo, hi]
@@ -558,6 +569,7 @@ def main(argv=None) -> int:
     rp_path = os.path.join(args.out_dir, "tifxyz.reports.jsonl")
     sm_path = os.path.join(args.out_dir, "tifxyz.summary.json")
     codes, integ, sev = Counter(), Counter(), Counter()
+    content_checked = 0
     failed = 0
     order = {"info": 0, "low": 1, "medium": 2, "high": 3}
     with RunManifest("tifxyz", args.out_dir) as man, \
@@ -578,6 +590,7 @@ def main(argv=None) -> int:
             else:
                 rep = res.value
                 w_rp.write(rep)
+                content_checked += bool(rep["surface"]["content_checked"])
             integ[rep["integrity"]] += 1
             for f in rep["findings"]:
                 w_fd.write({"root": rep["root"], **{k: f.get(k, "") for k in
@@ -590,6 +603,7 @@ def main(argv=None) -> int:
                 failed += 1
         summary = {"base": args.base, "surfaces": len(roots),
                    "content_tier": bool(args.content),
+                   "content_checked": content_checked,
                    "by_integrity": dict(integ.most_common()),
                    "by_code": dict(codes.most_common()),
                    "by_severity": dict(sev.most_common())}

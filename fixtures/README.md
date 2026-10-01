@@ -6,7 +6,7 @@ evidence contract (missing ≠ empty ≠ zero-filled; UNKNOWN is never clean)
 and make any behaviour change show up as a reviewable diff.
 
 Corpus version: **1** · report schema: **1.2.0** ·
-43 on-disk cases, 8 replayed-HTTP cases, 15 tifxyz surface cases,
+43 on-disk cases, 8 replayed-HTTP cases, 16 tifxyz surface cases,
 19 byte-range cases.
 
 ## Layout
@@ -128,6 +128,7 @@ removed or renamed.
 | `tifxyz_empty` | every grid cell is -1: no geometry at all | `TIFXYZ_EMPTY` (medium, PRESENT) | WARN | — | content: 0% valid |
 | `tifxyz_mask_mismatch` | two cells are -1 in x only | `TIFXYZ_INVALID_MASK_MISMATCH` (low, PRESENT) | PASS | — | content: 92% valid |
 | `tifxyz_nonfinite` | one valid cell holds NaN in z | `TIFXYZ_NONFINITE` (low, PRESENT) | PASS | — | content: 94% valid |
+| `tifxyz_negative_coordinate` | two valid cells have y < 0: outside any CT volume | `TIFXYZ_NEGATIVE_COORDINATE` (low, PRESENT), `TIFXYZ_BBOX_MISMATCH` (low, PRESENT) | PASS | — | content: 96% valid |
 | `tifxyz_bbox_mismatch` | declared bbox is 50 voxels off the stored coordinates | `TIFXYZ_BBOX_MISMATCH` (low, PRESENT) | PASS | — | content: 96% valid |
 | `tifxyz_bbox_sentinel` | declared bbox minimum is -1: the invalid marker leaked into it (loose, as on 28 public surfaces) | `TIFXYZ_BBOX_MISMATCH` (low, PRESENT) | PASS | — | content: 96% valid |
 | `tifxyz_absent` | requested surface does not exist (nothing to audit) | `TIFXYZ_ABSENT` (low, ABSENT) | UNKNOWN | — | — |

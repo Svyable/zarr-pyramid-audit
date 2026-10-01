@@ -222,6 +222,7 @@ def test_cli_writes_reports_and_findings(tmp_path):
     assert all(validate_report(r) == [] for r in reports)
     summary = json.load(open(out / "tifxyz.summary.json"))
     assert summary["by_code"] == {"TIFXYZ_EMPTY": 1}
+    assert summary["content_checked"] == 2
 
 
 def test_cli_gate_mode_fails_closed(tmp_path):

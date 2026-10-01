@@ -428,7 +428,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
   The tool is published for anyone to rerun at larger sample sizes.</p>
 </div>
 
-<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
+{tifxyz_panel}<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
   <table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
@@ -533,6 +533,49 @@ SEVERITY = {
 # on a bare Python install with no audit dependencies.
 
 
+TIFXYZ_BLURB = {
+    "TIFXYZ_BBOX_MISMATCH": "declared bbox differs from the stored coordinates",
+    "TIFXYZ_NEGATIVE_COORDINATE": "valid points with a negative coordinate (outside any volume)",
+    "TIFXYZ_CONTENT_UNDECODED": "content tier skipped (size cap or layout): coverage gap",
+    "TIFXYZ_EMPTY": "no valid point at all",
+    "TIFXYZ_INVALID_MASK_MISMATCH": "channels disagree on the -1 invalid marker",
+    "TIFXYZ_NONFINITE": "NaN/inf where a cell is not marked invalid",
+}
+
+
+def render_tifxyz_panel(summary_path: str) -> str:
+    """Surface-audit panel from a committed zpa-tifxyz summary ('' if absent)."""
+    try:
+        t = load_json(summary_path)
+    except FileNotFoundError:
+        return ""
+    integ = t.get("by_integrity", {})
+    sev = t.get("by_severity", {})
+    rows = "".join(
+        f'<tr><td><code>{html.escape(code)}</code></td>'
+        f'<td class="num">{n}</td>'
+        f'<td style="color:var(--muted)">{html.escape(TIFXYZ_BLURB.get(code, ""))}</td></tr>'
+        for code, n in sorted(t.get("by_code", {}).items(), key=lambda kv: -kv[1]))
+    undecoded = t.get("by_code", {}).get("TIFXYZ_CONTENT_UNDECODED", 0)
+    blocking = sum(sev.get(s, 0) for s in ("medium", "high"))
+    return (
+        '<div class="panel" id="surfaces"><h2>tifxyz surfaces'
+        '<span class="sub">2026-10-01 · <code>zpa-tifxyz --content</code> on every '
+        'surface patch in the S3 bucket</span></h2>\n'
+        f'  <p><b>{t["surfaces"]}</b> surfaces audited: '
+        f'<b>{integ.get("PASS", 0)}</b> integrity PASS, '
+        f'{integ.get("WARN", 0)} WARN, {integ.get("UNKNOWN", 0)} UNKNOWN, '
+        f'{integ.get("FAIL", 0)} FAIL. Findings at medium or above: '
+        f'<b>{blocking}</b>. Content tier skipped on {undecoded} surfaces '
+        '(channels over the 32 MiB cap) &mdash; reported as a coverage gap, '
+        'not a pass.</p>\n'
+        '  <table><thead><tr><th>code</th><th class="num">surfaces</th>'
+        f'<th>meaning</th></tr></thead><tbody>{rows}</tbody></table>\n'
+        '  <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/'
+        'tree/main/artifacts/2026-10-01-s3-tifxyz">Run artifacts &rarr;</a></p>\n'
+        '</div>\n')
+
+
 def load_json(p):
     with open(p, encoding="utf-8") as fh:
         return json.load(fh)
@@ -625,6 +668,9 @@ def main() -> int:
     chunks_probed = (cs["by_code"].get("CHUNK_SAMPLE_POPULATED", 0) + vc_pop + v2_pop
                      + (csv3["by_code"].get("CHUNK_SAMPLE_POPULATED", 0) if csv3 else 0))
 
+    tifxyz_panel = render_tifxyz_panel(
+        f"{ART}/2026-10-01-s3-tifxyz/tifxyz.summary.json")
+
     artifact_dates = sorted(
         name[:10] for name in os.listdir(ART)
         if len(name) >= 10 and name[4:5] == "-" and name[7:8] == "-"
@@ -644,7 +690,7 @@ def main() -> int:
         dl_actionable=dl["findings_actionable"], dl_info=dl["findings_informational"],
         probe_rows=probe_rows, v2_note=v2_note,
         vc_pop=vc_pop, v2_pop=v2_pop, kd_n=kd_n, stamp=stamp,
-        n_codes=len(SEVERITY),
+        n_codes=len(SEVERITY), tifxyz_panel=tifxyz_panel,
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:

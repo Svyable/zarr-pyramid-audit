@@ -192,6 +192,7 @@ scale cannot, by itself, support a trustworthy physical-distance scale bar.
 | `TIFXYZ_EMPTY` | medium | *(content)* no valid point at all: the surface has no geometry |
 | `TIFXYZ_INVALID_MASK_MISMATCH` | low | *(content)* cells that are `-1` in some channels but not all |
 | `TIFXYZ_NONFINITE` | low | *(content)* NaN/inf where the cell is not marked invalid |
+| `TIFXYZ_NEGATIVE_COORDINATE` | low | *(content)* valid points with a negative coordinate: outside any CT volume |
 | `TIFXYZ_BBOX_MISMATCH` | low | *(content)* declared `bbox` differs from the extent of the stored coordinates |
 | `TIFXYZ_CONTENT_UNDECODED` | info | *(content)* layout not decodable here, or over `--max-content-bytes`: a coverage gap |
 | `ACCESS_UNKNOWN` | info | a read failed (timeout, 403, 5xx): `UNKNOWN`, never a finding about the data |

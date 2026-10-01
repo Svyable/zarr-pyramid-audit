@@ -12,6 +12,7 @@ actually observed.
 |---|---|---|
 | Block a CI job on a bad root | [`examples/github-actions/zarr-gate.yml`](../examples/github-actions/zarr-gate.yml) | a `zarr-gate` job audits the published roots (header-only), annotates findings, uploads the JSON report; the downstream job `needs:` it |
 | Check before you upload, train or publish | [`examples/preflight.sh`](../examples/preflight.sh) | `zpa-gate` on a local staging directory or any store, writes `zpa-preflight.json`, exits 1 on high severity, unreadable evidence or a missing root |
+| Gate tifxyz surfaces before use | `zpa-tifxyz --base <store> --roots discover_zarr.surfaces.jsonl --content --fail-on medium --out-dir out/` | exits 1 when a surface has a medium finding or `UNKNOWN` integrity; one schema'd report per surface in `tifxyz.reports.jsonl` |
 | Feed a ranking / training pipeline | [`examples/python_api.py`](../examples/python_api.py) | calls `zpa.report.audit_root`, applies an example policy (drop FAIL/UNKNOWN, down-weight WARN) and keeps the evidence attached to each decision |
 
 All three run offline against the committed fixture corpus, and
