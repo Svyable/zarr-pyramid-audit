@@ -82,6 +82,75 @@ def test_http_get_range_rejects_short_full_response(monkeypatch):
         store.get_range("object", 1, 4)
 
 
+def test_http_get_suffix_accepts_exact_partial_response(monkeypatch):
+    store = HttpStore("https://example.test")
+
+    def request(method, path, **kwargs):
+        assert kwargs["headers"]["Range"] == "bytes=-3"
+        return SimpleNamespace(
+            status_code=206,
+            content=b"789",
+            headers={"Content-Range": "bytes 7-9/10"},
+        )
+
+    monkeypatch.setattr(store, "_request", request)
+
+    assert store.get_suffix("object", 3) == b"789"
+
+
+def test_http_get_suffix_slices_full_response(monkeypatch):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(status_code=200, content=b"012345")
+    monkeypatch.setattr(store, "_request", lambda *args, **kwargs: response)
+
+    assert store.get_suffix("object", 3) == b"345"
+
+
+@pytest.mark.parametrize(
+    "content_range",
+    [
+        "",
+        "bytes 6-8/10",
+        "bytes 7-9/11",
+        "bytes 7-9/*",
+        "items 7-9/10",
+    ],
+)
+def test_http_get_suffix_rejects_unproven_coordinates(monkeypatch, content_range):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(
+        status_code=206,
+        content=b"789",
+        headers={"Content-Range": content_range},
+    )
+    monkeypatch.setattr(store, "_request", lambda *args, **kwargs: response)
+
+    with pytest.raises(StoreError, match="invalid Content-Range"):
+        store.get_suffix("object", 3)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "content", "message"),
+    [
+        (206, b"89", "expected 3 bytes, got 2"),
+        (200, b"89", "expected 3 bytes, got 2"),
+    ],
+)
+def test_http_get_suffix_rejects_short_reads(
+    monkeypatch, status_code, content, message
+):
+    store = HttpStore("https://example.test")
+    response = SimpleNamespace(
+        status_code=status_code,
+        content=content,
+        headers={"Content-Range": "bytes 7-9/10"},
+    )
+    monkeypatch.setattr(store, "_request", lambda *args, **kwargs: response)
+
+    with pytest.raises(StoreError, match=message):
+        store.get_suffix("object", 3)
+
+
 def test_s3_get_range_rejects_short_read():
     class FakeFS:
         def open(self, path, mode):
@@ -95,6 +164,53 @@ def test_s3_get_range_rejects_short_read():
         store.get_range("object", 1, 4)
 
 
+def test_s3_get_suffix_reads_exact_tail():
+    class FakeFS:
+        def info(self, path):
+            return {"size": 6}
+
+        def open(self, path, mode):
+            return BytesIO(b"012345")
+
+    store = object.__new__(S3Store)
+    store.base_url = "s3://bucket/"
+    store.fs = FakeFS()
+
+    assert store.get_suffix("object", 3) == b"345"
+
+
+def test_s3_get_suffix_rejects_short_object_without_opening():
+    class FakeFS:
+        def info(self, path):
+            return {"size": 2}
+
+        def open(self, path, mode):
+            pytest.fail("short object must fail before opening")
+
+    store = object.__new__(S3Store)
+    store.base_url = "s3://bucket/"
+    store.fs = FakeFS()
+
+    with pytest.raises(StoreError, match="object has 2"):
+        store.get_suffix("object", 3)
+
+
+def test_s3_get_suffix_rejects_short_read_after_reported_size():
+    class FakeFS:
+        def info(self, path):
+            return {"size": 6}
+
+        def open(self, path, mode):
+            return BytesIO(b"01234")
+
+    store = object.__new__(S3Store)
+    store.base_url = "s3://bucket/"
+    store.fs = FakeFS()
+
+    with pytest.raises(StoreError, match="expected 3 bytes, got 2"):
+        store.get_suffix("object", 3)
+
+
 def test_zero_length_range_is_empty_without_io(monkeypatch):
     store = HttpStore("https://example.test")
     monkeypatch.setattr(
@@ -104,6 +220,22 @@ def test_zero_length_range_is_empty_without_io(monkeypatch):
     )
 
     assert store.get_range("object", 5, 0) == b""
+
+
+def test_zero_length_suffix_is_empty_without_io(monkeypatch):
+    store = HttpStore("https://example.test")
+    monkeypatch.setattr(
+        store,
+        "_request",
+        lambda *args, **kwargs: pytest.fail("zero-length suffix should not perform IO"),
+    )
+
+    assert store.get_suffix("object", 0) == b""
+
+
+def test_negative_suffix_length_is_rejected():
+    with pytest.raises(ValueError, match="non-negative"):
+        HttpStore("https://example.test").get_suffix("object", -1)
 
 
 def test_http_get_range_accepts_matching_content_range(monkeypatch):
