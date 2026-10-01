@@ -15,11 +15,13 @@
 ## Docs
 
 - [ ] README / dashboard / September page updated if behavior changed
+- [ ] `docs/index.html` regenerated (`zpa-dashboard`) if `artifacts/`, `data/known-defects.json` or the dashboard builder changed
 - [ ] `tests/` updated; `python -m pytest tests/ -q` green
 
 ## Checklist
 
 - [ ] Small, single-purpose PR branched from `main`
 - [ ] Missing ≠ empty ≠ zero-filled (masked background is legitimate)
+- [ ] Failed/ambiguous reads stay `UNKNOWN`, never reported as absent
 - [ ] Upstream fix proposed to sgsllc-jr/zarr-pyramid-audit if generally applicable
 - [ ] Follows `.github/CONTRIBUTING.md`

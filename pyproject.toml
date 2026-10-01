@@ -20,9 +20,16 @@ dependencies = [
 ]
 keywords = ["zarr", "ome-zarr", "vesuvius", "data-integrity", "audit"]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "build",
+]
+
 [project.urls]
 Homepage = "https://github.com/Svyable/zarr-pyramid-audit"
 Repository = "https://github.com/Svyable/zarr-pyramid-audit"
+Issues = "https://github.com/Svyable/zarr-pyramid-audit/issues"
 
 [project.scripts]
 zpa-discover = "zpa.discover_zarr:main"

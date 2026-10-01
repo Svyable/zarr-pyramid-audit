@@ -1,23 +1,26 @@
-
-#  the measured run superseded; publishing it would ship a known-false figure.)
-# (The 2026-09-08 draft still carries the pre-count_chunks storage estimate that
-# Published evidence lives in artifacts/, copied there deliberately.
-# Working drafts held back from publication until their numbers are corrected.
-# python
-# scratch / intermediate run output.
-# timestamped backups created by our own never-overwrite policy
 # virtualenv
-*.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].bak
-*.bak
-*.egg-info/
-*.py[cod]
 .venv/
-__pycache__/
-build/
-reports/*DRAFT*
-tmp/
 venv/
 
-# Built release archives and test cache
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+
+# built release archives and test cache
 dist/
 .pytest_cache/
+
+# timestamped backups created by our own never-overwrite policy
+*.bak
+*.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].bak
+
+# scratch / intermediate run output.
+# Published evidence lives in artifacts/, copied there deliberately.
+tmp/
+
+# Working drafts held back from publication until their numbers are corrected.
+# (The 2026-09-08 draft still carries the pre-count_chunks storage estimate that
+#  the measured run superseded; publishing it would ship a known-false figure.)
+reports/*DRAFT*
