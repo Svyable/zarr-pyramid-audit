@@ -182,6 +182,7 @@ class RunManifest:
         self.out_dir = Path(out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self._t0 = time.time()
+        self._output_paths: list[Path] = []
         self.data: dict[str, Any] = {
             "run_name": name,
             "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -219,6 +220,7 @@ class RunManifest:
 
     def add_output(self, path: str | os.PathLike, desc: str = "") -> None:
         p = Path(path)
+        self._output_paths.append(p.resolve())
         self.data["outputs"].append({
             "path": str(p),
             "exists": p.exists(),
@@ -227,6 +229,13 @@ class RunManifest:
         })
 
     def save(self, filename: str | None = None) -> Path:
+        # Outputs are commonly registered while a buffered writer is still
+        # open.  Refresh the metadata after sibling context managers have
+        # closed so the manifest describes the completed files rather than a
+        # pre-flush snapshot.
+        for output, path in zip(self.data["outputs"], self._output_paths):
+            output["exists"] = path.exists()
+            output["bytes"] = path.stat().st_size if path.exists() else None
         self.data["ended_utc"] = datetime.now(timezone.utc).isoformat()
         self.data["wall_seconds"] = round(time.time() - self._t0, 3)
         fn = filename or f"{self.name}.manifest.json"
