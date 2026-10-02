@@ -25,6 +25,12 @@ that does not exist / is empty (`GATE_ROOT_ABSENT`) · `2` usage error. The two
 escape hatches, `--ignore-unreadable` and `--allow-absent`, are explicit
 policy choices. Do not set them by default.
 
+`--ignore-unreadable` only waives unreadable evidence. If another level has
+a confirmed finding at or above `--fail-on`, the root still fails and the
+finding stays visible. For example, a confirmed missing level plus an
+inaccessible level must fail even with `--ignore-unreadable`. The offline
+regression is `python -m pytest tests/test_evidence_semantics.py -q`.
+
 ## The report (schema 1.x)
 
 `zpa.report.audit_root(store, root)` and `zpa-gate --out` (one per root)

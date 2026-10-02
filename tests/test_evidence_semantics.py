@@ -1,6 +1,7 @@
 """Evidence semantics: failures must never masquerade as missing data."""
 import io
 import json
+import pytest
 from types import SimpleNamespace
 
 from zpa.audit_pyramid import audit_one
@@ -363,3 +364,23 @@ def test_publish_gate_fails_closed_on_unknown_access():
     ignored = check_one(store, "root", args)
     assert ignored["verdict"] == "unreadable"
     assert ignored["fail"] is False
+
+
+@pytest.mark.parametrize("ignore_unreadable", [False, True])
+def test_unreadable_level_does_not_hide_confirmed_defect(ignore_unreadable):
+    # Level 0 is confirmed missing; level 1 is inaccessible. Ignoring the
+    # latter must never waive the known high-severity defect in level 0.
+    store, _ = routed_store({
+        "root/.zgroup": (200, encoded(GROUP)),
+        "root/.zattrs": (200, encoded({"multiscales": [{"datasets": [
+            {"path": "0"}, {"path": "1"}]}]})),
+        "root/1/.zarray": (403, b""),
+        "root/1/zarr.json": (403, b""),
+    })
+    args = SimpleNamespace(no_chunk_presence=True,
+                           ignore_unreadable=ignore_unreadable, fail_on="high")
+    result = check_one(store, "root", args)
+    assert result["fail"] is True
+    assert result["verdict"] == "fail"
+    assert "LEVEL_MISSING" in {f["code"] for f in result["findings"]}
+    assert "ACCESS_UNKNOWN" in {f["code"] for f in result["informational"]}

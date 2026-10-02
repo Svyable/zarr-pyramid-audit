@@ -27,6 +27,15 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Gate defect precedence
+
+`--ignore-unreadable` no longer suppresses a confirmed finding at or above
+`--fail-on` when the same root also has inaccessible levels. Such roots
+return a failing verdict with their confirmed findings and retain the
+unreadable evidence in the embedded report. No check codes, severities or
+report schema fields changed. Consumers using this escape hatch may now
+receive exit 1 for mixed defective/unreadable roots that previously passed.
+
 ### Contract 1.2.0 — tifxyz surfaces; OME 0.5 dimension_names
 
 `contract-fingerprint: 08f47eac96db`

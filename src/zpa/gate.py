@@ -102,8 +102,14 @@ def check_one(store, root: str, args) -> dict:
                 "fail": not args.ignore_unreadable, "integrity": "UNKNOWN",
                 "findings": [{"code": "GATE_UNREADABLE", "severity": "high",
                               "level": "", "detail": f"{type(e).__name__}: {e}"}]}
+    threshold = SEV_ORDER[args.fail_on]
+    # Escape hatches waive missing evidence only. A different level can
+    # already have a confirmed defect; keep that defect blocking and visible.
+    failing = [f for f in findings
+               if f["code"] != "ACCESS_UNKNOWN"
+               and SEV_ORDER.get(f["severity"], 0) >= threshold]
     access_unknown = [f for f in findings if f["code"] == "ACCESS_UNKNOWN"]
-    if access_unknown:
+    if access_unknown and not failing:
         details = "; ".join(
             f"{f.get('level') or 'root'}: {f.get('observed') or f.get('detail')}"
             for f in access_unknown
@@ -146,9 +152,6 @@ def check_one(store, root: str, args) -> dict:
             "informational": [],
         }
 
-    threshold = SEV_ORDER[args.fail_on]
-    failing = [f for f in findings
-               if SEV_ORDER.get(f["severity"], 0) >= threshold]
     info = [f for f in findings if f["code"] in INFO_CODES]
     below = [f for f in findings
              if f not in failing and f["code"] not in INFO_CODES]
