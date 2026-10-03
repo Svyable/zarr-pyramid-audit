@@ -169,12 +169,9 @@ is not detected (only negative coordinates are).</td>
 <td>(a) Content-tier evidence for the 148, through a higher cap or streamed decode, or a named list of what still cannot
 be decoded and why. (b) An overrun check against the target volume's shape: a fixture, a golden output, a contract note,
 and a re-run of the S3 survey.</td></tr>
-<tr><td>G4</td><td><b>Decide and ship triangular-mesh coverage</b><span class="tag plan">planned</span></td>
-<td>The criteria name meshes alongside OME-Zarr and tifxyz. Today ZPA does not read them, and mesh and winding audits
-live in ScrolIQ.</td>
-<td>A written scope decision. Either a mesh integrity check in this repo (file readable, finite vertices, face indices
-in range, non-empty, bounds against the volume) with fixtures and a survey of public meshes, or a documented handoff
-to ScrolIQ with a shared report contract. Not both.</td></tr>
+<tr><td>G4</td><td><b>Decide and ship triangular-mesh coverage</b><span class="tag done">done</span></td>
+<td>Triangular-mesh topology and parameterization are downstream geometry semantics, while ZPA's scope is storage/input integrity.</td>
+<td><b>Done by explicit handoff.</b> ZPA will not duplicate OBJ auditing. ScrolIQ owns the read-only <code>scroliq-obj</code> diagnostic for parseability, finite/indexed geometry, topology, winding, edge jumps, neighbouring normals and UV-to-3D isometry. The cross-repo provenance envelope and claim boundary are frozen in <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/TRIANGULAR_MESH_HANDOFF.md"><code>docs/TRIANGULAR_MESH_HANDOFF.md</code></a>.</td></tr>
 <tr><td>G5</td><td><b>ScrolIQ consumes surface reports</b><span class="tag plan">planned</span></td>
 <td>ScrolIQ pins <code>e473afd</code>, which predates the tifxyz report, so surface integrity does not reach its
 verdicts.</td>
@@ -243,6 +240,8 @@ Not <code>high</code>: indexes parse and chunks decode. Contract 1.3.1, fingerpr
 241 pyramids, 18 defective, 175 findings (50 actionable) — identical to 2026-09-29 and 2026-09-09.
 Strict diff: zero fixed, zero new, 175 unchanged. Third consecutive clean regression.
 (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-dl-regression"><code>2026-10-03-dl-regression</code></a>).</td></tr>
+<tr><td>2026-10-03</td><td><b>G4, done.</b> Triangular-mesh diagnostics are formally delegated to ScrolIQ rather than duplicated in ZPA. The handoff contract binds the exact OBJ SHA-256, ScrolIQ <code>obj-mesh-audit</code> report, and upstream ZPA input report while keeping each tool's claim semantics separate.
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/TRIANGULAR_MESH_HANDOFF.md"><code>TRIANGULAR_MESH_HANDOFF.md</code></a>).</td></tr>
 </tbody></table></div>
 
 </div>
