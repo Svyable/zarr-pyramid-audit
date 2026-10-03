@@ -16,7 +16,8 @@ clean. See [Limitations](#limitations).
 
 **Reviewing a submission?** Start with the [2027 Grand Prize integrity map](https://svyable.github.io/zarr-pyramid-audit/grand-prize-readiness.html), which separates what ZPA can prove from what remains the responsibility of the unrolling and ink pipeline. [`docs/SUBMISSION.md`](docs/SUBMISSION.md) maps each Progress Prize criterion to the command
 or artifact behind it, including how ZPA compares with zarr-python and the OME-NGFF validator on the
-same live defect ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)). October's goals, each with the evidence that will count as done, are on
+same live defect. [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md) defines the independent
+benchmark protocol, applicability rules, and third-party provenance constraints ([`artifacts/2026-10-01-baseline-comparison/`](artifacts/2026-10-01-baseline-comparison/)). October's goals, each with the evidence that will count as done, are on
 [`docs/october-2026.html`](https://svyable.github.io/zarr-pyramid-audit/october-2026.html).
 
 ## Reproduce in 60 seconds
