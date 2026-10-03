@@ -27,6 +27,35 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Contract 1.3.0 — audited metadata source attestation
+
+`contract-fingerprint: 86fa4df586d0`
+
+Minor schema bump (`schema_version` `1.3.0`): pyramid audit reports gain a
+required `source_attestation` block. No check code, severity, integrity state,
+or recommended consumer verdict changed. TIFXYZ reports keep the same shape
+but carry the shared `1.3.0` schema version.
+
+Migration notes for consumers:
+
+- `source_attestation.algorithm` is `zpa-metadata-semantics-v1`.
+- `metadata_semantics_sha256` is a deterministic SHA-256 of the parsed root
+  attributes plus the parsed level-header fields ZPA actually used. It binds
+  the report to those audited metadata semantics across HTTP, S3, and local
+  mirrors; it is deliberately **not** described as a raw-object byte hash,
+  ETag, or proof that voxel payload bytes are immutable.
+- The block also exposes the declared axes, level-0 declared scale, spatial
+  axis units, and ZPA's conservative absolute-scale state so model/inference
+  pipelines can make their physical-input contract explicit without
+  re-parsing NGFF metadata.
+- When readable Zarr metadata was not available, the digest is `null` and
+  the attestation keeps the report's `PRESENT / ABSENT / UNKNOWN` evidence
+  state. Missing evidence is never converted into a synthetic fingerprint.
+- Existing consumers that only branch on `integrity` need no policy change.
+  Consumers validating against the bundled schema must accept the new required
+  block and `schema_version=1.3.0`.
+
+
 ### Contract 1.2.0 — tifxyz surfaces; OME 0.5 dimension_names
 
 `contract-fingerprint: 08f47eac96db`
