@@ -139,9 +139,17 @@ def yaozarrs_(path: str) -> dict:
 
 def zarr_lint_(path: str) -> dict:
     import zarr_lint
-    # Benchmark infrastructure errors are not validator findings. Let them
-    # fail the run rather than silently turning a tool failure into "clean".
-    report = zarr_lint.lint(path)
+    try:
+        report = zarr_lint.lint(path)
+    except Exception as exc:
+        # zarr-lint distinguishes lint findings from store-access/internal
+        # errors. Preserve that distinction: an error is neither clean nor a
+        # credited detection.
+        return {
+            "outcome": "error",
+            "detail": f"{type(exc).__name__}: {exc}",
+            "rules": [],
+        }
     diagnostics = report.get("diagnostics") or []
     rules = sorted({str(d.get("rule", "unknown")) for d in diagnostics
                     if isinstance(d, dict)})
@@ -210,25 +218,31 @@ def summary(rows: list[dict]) -> dict:
 
     out = {}
     for tool in TOOLS:
-        out[tool] = {
+        per_truth = {
             truth: {"flagged": sum(1 for r in rows if r["truth"] == truth
                                    and hit(r, tool)),
                     "of": sum(1 for r in rows if r["truth"] == truth)}
             for truth in TRUTHS}
+        per_truth["tool_errors"] = (
+            sum(1 for r in rows if tool == "zarr-lint"
+                and r["zarr_lint"]["outcome"] == "error")
+        )
+        out[tool] = per_truth
     return out
 
 
 def markdown(rows: list[dict], summ: dict, versions: dict) -> str:
     lines = [
-        "| tool | defects flagged | suspicious content flagged | false alarms on valid pyramids | out-of-model nodes identified |",
-        "|---|---|---|---|---|",
+        "| tool | defects flagged | suspicious content flagged | false alarms on valid pyramids | out-of-model nodes identified | tool errors |",
+        "|---|---|---|---|---|---|",
     ]
     for tool in TOOLS:
         s = summ[tool]
         lines.append(f"| {tool} | {s[DEFECT]['flagged']} / {s[DEFECT]['of']} | "
                      f"{s[SUSPICIOUS]['flagged']} / {s[SUSPICIOUS]['of']} | "
                      f"{s[BENIGN]['flagged']} / {s[BENIGN]['of']} | "
-                     f"{s[OUT_OF_MODEL]['flagged']} / {s[OUT_OF_MODEL]['of']} |")
+                     f"{s[OUT_OF_MODEL]['flagged']} / {s[OUT_OF_MODEL]['of']} | "
+                     f"{s['tool_errors']} |")
     lines += ["", "Per fixture (✓ = the tool gave its user a signal):", "",
               "| fixture | truth | zarr-python | ome-zarr-models | yaozarrs | zarr-lint | ZPA integrity / codes | ZPA chunk probe |",
               "|---|---|---|---|---|---|---|---|"]
@@ -241,7 +255,7 @@ def markdown(rows: list[dict], summ: dict, versions: dict) -> str:
             f"{mark[r['flagged']['ome-zarr-models']]} {r['ome_zarr_models']['outcome']} | "
             f"{mark[r['flagged']['yaozarrs']]} {r['yaozarrs']['outcome']} | "
             f"{mark[r['flagged']['zarr-lint']]} {r['zarr_lint']['outcome']} "
-            f"{', '.join(r['zarr_lint']['rules']) or '—'} | "
+            f"{', '.join(r['zarr_lint']['rules']) or r['zarr_lint']['detail']} | "
             f"{z['integrity']} {', '.join(z['codes']) or '—'} | "
             f"{', '.join(z['scan_flags']) or '—'} |")
     lines += ["", "Versions: " + ", ".join(f"{k} {v}" for k, v in versions.items())]
