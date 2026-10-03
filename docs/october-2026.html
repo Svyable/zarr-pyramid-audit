@@ -2,13 +2,18 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>October 2026 goals — zarr-pyramid-audit</title>
-<meta name="description" content="zarr-pyramid-audit: October 2026 work plan. Goals, exit criteria and the evidence each must produce, starting from the September 2026 submission.">
+<meta name="description" content="zarr-pyramid-audit: October 2026 work plan and live status. Goal-by-goal evidence for Vesuvius data integrity, publish-time gating, surface checks, integration, and adoption.">
 <link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/october-2026.html">
 <meta property="og:title" content="zarr-pyramid-audit — October 2026 goals">
 <meta property="og:description" content="What October must prove, and the committed evidence each goal has to produce.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/october-2026.html">
+<meta name="theme-color" content="#0d0b08">
+<meta name="color-scheme" content="dark">
+<meta property="og:image" content="https://svyable.github.io/zarr-pyramid-audit/favicon.svg">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="zarr-pyramid-audit — October 2026 work plan + status">
+<meta name="twitter:description" content="Judge-oriented October evidence: live regression, CRC validation, coverage gaps, integration goals, and adoption criteria.">
 <style>
 :root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;
 --ink:#ece3d2;--muted:#a89880;--dim:#6f6350;
@@ -87,7 +92,39 @@ footer a{color:var(--muted)}
 .phase .point .k{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ember);font-weight:800}
 .phase .point p{margin:.4rem 0 0;font-size:.88rem}
 .tablewrap{overflow-x:auto}
+
+.topnav{position:sticky;top:0;z-index:20;background:rgba(13,11,8,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topnav .wrap{display:flex;gap:.35rem;align-items:center;overflow-x:auto;padding-top:.55rem;padding-bottom:.55rem;scrollbar-width:none}
+.topnav .wrap::-webkit-scrollbar{display:none}
+.topnav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.78rem;border:1px solid transparent;border-radius:999px;padding:.32rem .62rem}
+.topnav a:hover,.topnav a:focus-visible{color:var(--ink);border-color:var(--line);outline:none}
+.review-panel{border-color:#4c3a24;background:linear-gradient(135deg,rgba(255,122,26,.08),rgba(255,209,102,.025))}
+.review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.7rem;margin-top:1rem}
+.review-card{display:block;text-decoration:none;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:1rem;min-height:120px}
+.review-card:hover,.review-card:focus-visible{border-color:#5b4934;outline:none;transform:translateY(-1px)}
+.review-card b{display:block;color:var(--ink);margin-bottom:.28rem}
+.review-card span{display:block;color:var(--muted);font-size:.85rem;line-height:1.45}
+.criteria-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem;margin-top:1rem}
+.criterion{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:1rem}
+.criterion .state{display:inline-block;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;border:1px solid var(--line);border-radius:999px;padding:.16rem .46rem;margin-bottom:.45rem}
+.criterion .state.strong{color:var(--good);border-color:#36583b}
+.criterion .state.partial{color:var(--gold);border-color:#5a4b24}
+.criterion .state.gap{color:var(--warn);border-color:#6a3b24}
+.criterion h3{font-size:1rem;margin:.1rem 0 .35rem}
+.criterion p{margin:.2rem 0}
+.panel[id]{scroll-margin-top:4rem}
+@media (max-width:620px){.hero{padding-top:2.6rem}.panel{padding:1.15rem}table{display:block;overflow-x:auto}}
 </style></head><body>
+<nav class="topnav" aria-label="Progress pages"><div class="wrap">
+<a href="./">Dashboard</a>
+<a href="#review">Reviewer path</a>
+<a href="#prize-fit">Prize fit</a>
+<a href="#goals">Goals</a>
+<a href="#status">Status log</a>
+<a href="./september-2026.html">September</a>
+<a href="./grand-prize-readiness.html">2027 readiness</a>
+<a href="https://svyable.github.io/scrollq/october-2026-update.html">ScrolIQ update</a>
+</div></nav>
 
 <header class="hero"><div class="wrap">
 <div class="eyebrow">VESUVIUS CHALLENGE · OCTOBER 2026 · WORK PLAN</div>
@@ -120,6 +157,32 @@ Prize criteria and deadlines: <a href="https://scrollprize.org/prizes">scrollpri
 </div></header>
 
 <div class="wrap" style="margin-top:2.5rem">
+
+<div class="panel review-panel" id="review">
+<div class="kicker">Reviewer path · criteria checked 2026-10-03</div>
+<h2>What can be verified today—and what still has to land</h2>
+<p>The current <a href="https://scrollprize.org/prizes#progress-prizes">Progress Prize criteria</a> reward early open release, real-data improvements or actionable findings, clear advantages over existing solutions, documentation, standard community formats, and evidence of actual use. October is organized around converting strong diagnostic evidence into adoption.</p>
+<div class="review-grid">
+<a class="review-card" href="./september-2026.html#case"><b>1 · Live failure + prevention</b><span>Start with the silent-zero PHerc0814 case and the fail-closed publish-time gate that rejects it.</span></a>
+<a class="review-card" href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-baseline-comparison"><b>2 · Compare against existing validators</b><span>See which defect classes are caught by zarr-python, the OME-NGFF validator, the header audit, and the content probe.</span></a>
+<a class="review-card" href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-crc-byte-verification"><b>3 · Live-shard validation</b><span>Independent bit-by-bit CRC-32C verification turns a suspected mismatch into a bounded, evidence-backed writer defect.</span></a>
+<a class="review-card" href="#goals"><b>4 · Inspect remaining gaps</b><span>Coverage, triangular meshes, release pinning, ScrolIQ integration, and upstream gate adoption each have an explicit exit criterion.</span></a>
+<a class="review-card" href="./grand-prize-readiness.html"><b>5 · See the 2027 role</b><span>Integrity is necessary but not sufficient; the readiness map keeps unrolling and legibility requirements separate.</span></a>
+<a class="review-card" href="https://svyable.github.io/scrollq/october-2026-update.html"><b>6 · Follow the downstream consumer</b><span>ScrolIQ turns integrity evidence into fail-closed training verdicts and broader geometry/ink provenance.</span></a>
+</div>
+</div>
+
+<div class="panel" id="prize-fit"><h2>Progress Prize fit: evidence versus remaining gap</h2>
+<div class="criteria-grid">
+<div class="criterion"><span class="state strong">strong evidence</span><h3>Released early and reproducibly</h3><p>MIT source, dated campaign artifacts, exact commands, stable report schemas, golden fixtures, and visible corrections are already public.</p></div>
+<div class="criterion"><span class="state strong">strong evidence</span><h3>Real-data actionable information</h3><p>Live silent-zero corruption, persistent regression findings, surface review candidates, and shard-checksum defects are emitted as concrete machine-readable evidence.</p></div>
+<div class="criterion"><span class="state strong">strong evidence</span><h3>Advantage over baseline tooling</h3><p>The committed comparison shows the failure classes that ordinary reads or a spec validator do not detect, while keeping the comparison corpus limitation explicit.</p></div>
+<div class="criterion"><span class="state strong">strong evidence</span><h3>Standard formats and integration</h3><p>Zarr v2/v3 and TIFXYZ are first-class inputs; versioned JSON reports are designed for CI and downstream consumers such as ScrolIQ.</p></div>
+<div class="criterion"><span class="state partial">partial</span><h3>Downstream workflow impact</h3><p>ScrolIQ consumes integrity fail-closed, but broader community workflows have not yet demonstrated a before/after result attributable to the gate.</p></div>
+<div class="criterion"><span class="state gap">gap</span><h3>Actual community adoption</h3><p>G7 is still the decisive missing proof: get the publish-time gate into an upstream or community workflow and report whether it is used.</p></div>
+</div>
+<p class="meta">This is a descriptive evidence map, not a prize score. Missing adoption evidence stays missing.</p>
+</div>
 
 <div class="panel" id="start"><h2>Where September left off</h2>
 <div class="callout"><p><span class="kicker">Status at 2026-10-01.</span>
@@ -248,7 +311,7 @@ Strict diff: zero fixed, zero new, 175 unchanged. Third consecutive clean regres
 </div>
 
 <footer><div class="wrap">
-<a href="./">← back to the data-health dashboard</a> · <a href="./grand-prize-readiness.html">Grand Prize role</a> · <a href="./september-2026.html">September 2026 submission</a><br><br>
+<a href="./">← back to the data-health dashboard</a> · <a href="#review">reviewer path</a> · <a href="./grand-prize-readiness.html">Grand Prize role</a> · <a href="./september-2026.html">September 2026 submission</a><br><br>
 Built by Sven + Muse · October 2026
 </div></footer>
 </body></html>
