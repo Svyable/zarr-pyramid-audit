@@ -155,6 +155,63 @@ def test_vc3d_target_context_is_preserved_in_report(tmp_path):
     assert validate_report(report) == []
 
 
+def test_expected_target_volume_guard_accepts_exact_id_path_and_zarr_name(tmp_path):
+    d = copy_case(tmp_path)
+    meta_path = d / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["target_volume"] = "s3://bucket/PHerc0813/volumes/20250821151723.zarr"
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    store = LocalStore(tmp_path)
+
+    for expected in (
+        "20250821151723",
+        "20250821151723.zarr",
+        "s3://other-bucket/volumes/20250821151723.zarr",
+    ):
+        tx.validate_expected_target_volume(store, [d.name], expected)
+
+
+def test_expected_target_volume_guard_rejects_wrong_or_missing_target(tmp_path):
+    d = copy_case(tmp_path)
+    store = LocalStore(tmp_path)
+
+    with pytest.raises(ValueError, match="target_volume"):
+        tx.validate_expected_target_volume(
+            store, [d.name], "20250821151723"
+        )
+
+    meta_path = d / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["target_volume"] = "20250821151724.zarr"
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="20250821151724"):
+        tx.validate_expected_target_volume(
+            store, [d.name], "20250821151723"
+        )
+
+
+def test_cli_expected_target_guard_fails_before_report_outputs(tmp_path):
+    d = copy_case(tmp_path)
+    meta_path = d / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["target_volume"] = "wrong-volume.zarr"
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+    out = tmp_path / "guarded-out"
+
+    code = tx.main([
+        "--base", str(tmp_path),
+        "--root", d.name,
+        "--workers", "1",
+        "--expected-target-volume", "20250821151723",
+        "--out-dir", str(out),
+    ])
+
+    assert code == 2
+    assert not (out / "tifxyz.reports.jsonl").exists()
+    assert not (out / "tifxyz.summary.json").exists()
+
+
 def test_truncated_ifd_is_unreadable_not_a_crash(tmp_path):
     d = copy_case(tmp_path)
     blob = (d / "x.tif").read_bytes()
