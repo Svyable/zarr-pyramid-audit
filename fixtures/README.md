@@ -65,7 +65,8 @@ inspection is not evidence that child arrays were checked.
 
 The previously committed 2026-10-01 artifact predates the current harness and
 must remain frozen evidence. Re-run into a new dated directory to add yaozarrs
-or zarr-lint results.
+or zarr-lint results. zarr-lint store-access/internal errors are retained as a
+separate outcome; they are not credited as findings and are never shown as clean.
 
 ## Use it elsewhere
 
