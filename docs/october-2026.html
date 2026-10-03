@@ -146,23 +146,16 @@ triangular meshes are not audited; ScrolIQ pins a commit that predates the tifxy
 <div class="panel" id="goals"><h2>October goals</h2>
 <p>Ordered by how much a reader of our numbers depends on them. Each row's last column is the definition of done.</p>
 <div class="tablewrap"><table class="goals"><thead><tr><th>#</th><th>goal</th><th>why now</th><th>done when (committed evidence)</th></tr></thead><tbody>
-<tr><td>G1</td><td><b>Re-verify live state on both hosts</b><span class="tag prog">in progress</span></td>
-<td>Every live claim is dated. The dl campaigns stop at 2026-09-30 because <code>dl.ash2txt.org</code> was unreachable
-from the 2026-10-01 environment.</td>
-<td>A dated <code>artifacts/2026-10-*-dl-regression/</code> re-running the 2026-09-09 root list with a strict diff
-(fixed / new / unchanged), and a dated S3 re-audit. Whatever the result, it is published.<br>
-<b>2026-10-01:</b> S3 half done
-(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a>). dl half blocked: the
-environment's network policy refuses <code>dl.ash2txt.org</code>.</td></tr>
-<tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag prog">in progress</span></td>
-<td><code>SHARD_INDEX_CHECKSUM_MISMATCH</code> is <code>low</code> because it has never seen a live shard; a writer that
-skips or computes the checksum differently would look like corruption.</td>
-<td>A volcomp probe over the 64 dl scroll volumes whose summary splits <code>index_crc</code> into verified /
-unchecksummed / mismatch. Any severity change ships with a CHANGELOG migration note and corpus evidence, or the
-code stays <code>low</code>.<br>
-<b>2026-10-02:</b> probe complete (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-02-crc-validation"><code>2026-10-02-crc-validation</code></a>):
-1,167 verified (58%), 331 mismatch (16.5%), 510 n/a (25%). Mismatches not proven real — severity stays <code>low</code>
-pending byte-level verification of whether our CRC or the writer is wrong.</td></tr>
+<tr><td>G1</td><td><b>Re-verify live state on both hosts</b><span class="tag done">done</span></td>
+<td>Every live claim is dated and both public hosts have now been re-run from frozen root lists.</td>
+<td><b>Done.</b> S3 re-audit on 2026-10-01 reproduced 957 roots, 956 clean and the same single defective PHerc0814 surface volume. The dl regression on 2026-10-03 re-ran the exact 241-root list: 18 defective pyramids, 175 findings (50 actionable), with a strict diff of 0 fixed / 0 new / 175 unchanged.<br>
+Evidence: <a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a> and
+<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-dl-regression"><code>2026-10-03-dl-regression</code></a>.</td></tr>
+<tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag done">done</span></td>
+<td>The live writer's shard-index checksum behavior is now independently characterized instead of inferred from zpa alone.</td>
+<td><b>Done.</b> The 64-volume campaign covered 2,008 shards: 1,167 verified, 331 mismatched and 510 without a declared CRC32C. Independent bit-by-bit CRC-32C over the exact fetched index bytes confirmed the 331 mismatches, while 58% verify through the same byte-domain path. The finding is therefore writer non-conformance, not decoded-voxel corruption; severity is <code>medium</code>, not <code>high</code>, because affected indexes still parse and chunks decode.<br>
+Evidence: <a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-02-crc-validation"><code>2026-10-02-crc-validation</code></a> and
+<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-crc-byte-verification"><code>2026-10-03-crc-byte-verification</code></a>. Contract 1.3.1 fingerprint <code>854ed060f90f</code>.</td></tr>
 <tr><td>G3</td><td><b>Close the tifxyz coverage gaps</b><span class="tag plan">planned</span></td>
 <td>148 of 1,539 surfaces have header-tier evidence only, and a surface that runs past the top of its target volume
 is not detected (only negative coordinates are).</td>
