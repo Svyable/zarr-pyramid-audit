@@ -1,0 +1,5 @@
+# External tools used by fixtures/compare_baselines.py.
+# Pin exact releases so published comparison artifacts are reproducible.
+ome-zarr-models==1.7
+yaozarrs[io]==0.3.2
+zarr-lint==0.0.3
