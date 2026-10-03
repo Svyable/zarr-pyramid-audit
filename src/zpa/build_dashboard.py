@@ -613,6 +613,7 @@ def render_prize_preflight_card(summary_path: str) -> str:
 BASELINE_TOOLS = (
     ("zarr-python", "zarr-python (open + read every level)"),
     ("ome-zarr-models", "ome-zarr-models (OME-NGFF validator)"),
+    ("yaozarrs", "yaozarrs (OME-NGFF metadata + structure)"),
     ("zpa (header audit)", "ZPA header audit"),
     ("zpa (+ chunk probe)", "ZPA + sampled chunk probe"),
 )
@@ -637,13 +638,14 @@ def render_baseline_panel(comparison_path: str) -> str:
         + "</tr>"
         for tool, label in BASELINE_TOOLS if tool in summ)
     art = ("https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/"
-           "2026-10-01-baseline-comparison")
+           "2026-10-03-baseline-yaozarrs")
     return (
         '<div class="panel" id="baselines"><h2>Against the tools people already use'
-        f'<span class="sub">2026-10-01 · zarr-python {html.escape(ver.get("zarr", "?"))}, '
-        f'ome-zarr-models {html.escape(ver.get("ome-zarr-models", "?"))}</span></h2>\n'
-        '  <p><b>On the live defect,</b> both baselines treat the PHerc0814 '
-        '<code>-L1</code> pyramid as healthy: the OME-NGFF validator accepts it, '
+        f'<span class="sub">2026-10-03 · zarr-python {html.escape(ver.get("zarr", "?"))}, '
+        f'ome-zarr-models {html.escape(ver.get("ome-zarr-models", "?"))}, '
+        f'yaozarrs {html.escape(ver.get("yaozarrs", "?"))}</span></h2>\n'
+        '  <p><b>On the live defect,</b> all three baselines treat the PHerc0814 '
+        '<code>-L1</code> pyramid as healthy: both OME-NGFF validators accept it, '
         'and zarr-python reads a level-5 window as all zeros without an error. '
         'The ZPA gate rejects it (6 &times; <code>LEVEL_NO_CHUNKS</code>).</p>\n'
         '  <p><b>On the fixture corpus</b> (ground truth assigned from what each '
@@ -655,8 +657,8 @@ def render_baseline_panel(comparison_path: str) -> str:
         f'<tbody>{rows}</tbody></table></div>\n'
         '  <p style="font-size:.85rem">Selection bias: the corpus was written around '
         'ZPA&rsquo;s failure classes, so read it per defect class, not as a score. '
-        'The validator checks the full NGFF spec, which ZPA does not attempt; run '
-        'both. ZPA&rsquo;s false alarms are a legal compressor drift (low, integrity '
+        'The validators check the NGFF spec, which ZPA does not attempt; run '
+        'both kinds. ZPA&rsquo;s false alarms are a legal compressor drift (low, integrity '
         'stays PASS) and a sampled probe on a mostly empty level.</p>\n'
         f'  <p class="smalllink"><a href="{art}">Comparison, method and caveats &rarr;</a></p>\n'
         '</div>\n')
@@ -759,7 +761,7 @@ def main() -> int:
     prize_preflight_card = render_prize_preflight_card(
         f"{ART}/2026-10-02-grand-prize-ct-preflight/summary.json")
     baseline_panel = render_baseline_panel(
-        f"{ART}/2026-10-01-baseline-comparison/comparison.json")
+        f"{ART}/2026-10-03-baseline-yaozarrs/comparison.json")
 
     artifact_dates = sorted(
         name[:10] for name in os.listdir(ART)
