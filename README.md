@@ -36,6 +36,20 @@ zpa-gate --base s3://vesuvius-challenge-open-data \
 #           (artifacts/2026-10-01-gate-proof/gate-rejects-defective.log)
 ```
 
+For a prize-eligible CT source, the gate can also fail closed on a wrong-resolution
+substitution. Supply the exact eligible level-0 voxel size; ZPA converts declared
+spatial units to micrometers and requires every spatial axis to match:
+
+```bash
+zpa-gate --base s3://vesuvius-challenge-open-data \
+  --root <eligible-volume>.zarr \
+  --expected-voxel-size-um 9.362
+# mismatch or unprovable physical scale => GATE_VOXEL_SIZE_MISMATCH/UNKNOWN, exit 1
+```
+
+This fence is opt-in because generic OME-Zarr auditing must not guess which
+physical resolution a caller intended.
+
 Offline, from a checkout, against the [fixture corpus](fixtures/README.md):
 
 ```bash
