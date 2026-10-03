@@ -252,7 +252,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     opens it fine and gets plausible all-zero voxels — no error, no warning.
     Proven by direct read; independently confirms
     <a href="https://github.com/scrollprize/villa/issues/1892">villa #1892</a>.</p></div>
-  <div class="card"><h3>20-day regression</h3>
+  {prize_preflight_card}  <div class="card"><h3>20-day regression</h3>
     <p>The identical audit re-ran over the identical 241-root dl list on
     2026-09-29. Strict diff on every finding field: <b>empty</b>. 18 defective
     pyramids, 50 actionable findings — <b>zero fixed, zero new</b>. Published
@@ -583,6 +583,33 @@ def render_tifxyz_panel(summary_path: str) -> str:
         '</div>\n')
 
 
+def render_prize_preflight_card(summary_path: str) -> str:
+    """Grand Prize exact-volume CT preflight card from a committed summary."""
+    try:
+        p = load_json(summary_path)
+    except FileNotFoundError:
+        return ""
+    t = p.get("totals", {})
+    found = t.get("exact_roots_found", 0)
+    eligible = t.get("eligible_targets", 0)
+    zero = t.get("roots_with_zero_findings", 0)
+    levels = t.get("roots_with_all_declared_levels_present", 0)
+    chunked = t.get("roots_with_no_chunkless_levels", 0)
+    known = t.get("roots_with_no_unknown_chunk_presence", 0)
+    return (
+        '<div class="card"><h3>Grand Prize CT preflight</h3>'
+        f'<p><b>{found} / {eligible}</b> exact prize-listed CT roots were found in the '
+        'frozen S3 audit. '
+        f'<b>{levels} / {eligible}</b> have all declared levels present, '
+        f'<b>{chunked} / {eligible}</b> have no chunkless level, '
+        f'<b>{known} / {eligible}</b> have no unknown chunk-presence state, and '
+        f'<b>{zero} / {eligible}</b> have zero header findings. '
+        'This is input-integrity evidence, not scan/surface/ink readiness. '
+        '<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/'
+        '2026-10-02-grand-prize-ct-preflight">Exact-volume artifact &rarr;</a></p></div>\n'
+    )
+
+
 BASELINE_TOOLS = (
     ("zarr-python", "zarr-python (open + read every level)"),
     ("ome-zarr-models", "ome-zarr-models (OME-NGFF validator)"),
@@ -729,6 +756,8 @@ def main() -> int:
 
     tifxyz_panel = render_tifxyz_panel(
         f"{ART}/2026-10-01-s3-tifxyz/tifxyz.summary.json")
+    prize_preflight_card = render_prize_preflight_card(
+        f"{ART}/2026-10-02-grand-prize-ct-preflight/summary.json")
     baseline_panel = render_baseline_panel(
         f"{ART}/2026-10-01-baseline-comparison/comparison.json")
 
@@ -752,6 +781,7 @@ def main() -> int:
         probe_rows=probe_rows, v2_note=v2_note,
         vc_pop=vc_pop, v2_pop=v2_pop, kd_n=kd_n, stamp=stamp,
         n_codes=len(SEVERITY), tifxyz_panel=tifxyz_panel,
+        prize_preflight_card=prize_preflight_card,
         baseline_panel=baseline_panel,
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
