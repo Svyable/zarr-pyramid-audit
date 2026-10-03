@@ -113,7 +113,7 @@ Other advantages, each backed by an artifact or a test:
 | Raw, Blosc and `bytes` chunks | **decoded** by the probe; other codecs are reported `CHUNK_UNDECODEABLE`, never guessed |
 | Stores: `https://` autoindex, `s3://` (anonymous), `file://` or a local path | **all**, same evidence semantics |
 | tifxyz quadmeshes (`meta.json` + `x/y/z.tif`, classic TIFF or BigTIFF, uncompressed or tiled/LZW/predictor) | **audited** by `zpa-tifxyz`: structure from TIFF headers via strict range reads; coordinates with `--content`. All 1,539 public S3 surfaces surveyed ([`2026-10-01-s3-tifxyz`](../artifacts/2026-10-01-s3-tifxyz/)); `zpa-discover` lists them in `discover_zarr.surfaces.jsonl` |
-| Triangular meshes | **not audited by ZPA.** Mesh and winding audits live in the companion [ScrolIQ](https://github.com/Svyable/scrollq) |
+| Triangular meshes | **intentionally delegated to ScrolIQ, not duplicated in ZPA.** The formal [triangular-mesh handoff contract](TRIANGULAR_MESH_HANDOFF.md) binds the exact OBJ hash, upstream ZPA input report and ScrolIQ `obj-mesh-audit` report while keeping geometry findings out of ZPA's integrity code system |
 
 ### Maintains consistent output formats
 
@@ -151,8 +151,9 @@ Other advantages, each backed by an artifact or a test:
   2026-10-01 and the exact 241-root dl corpus on 2026-10-03. The volcomp
   CRC32C check has also been run over 2,008 live shards and independently
   byte-verified; future changes on either host still require a fresh campaign.
-- Triangular meshes are not audited by ZPA (see the table above). The tifxyz
-  content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
+- Triangular meshes are intentionally audited in ScrolIQ under the documented
+  [handoff contract](TRIANGULAR_MESH_HANDOFF.md), rather than duplicated here.
+  The tifxyz content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
   1,539); the other 148 have header-tier evidence only, reported as a
   coverage gap. `TIFXYZ_NEGATIVE_COORDINATE` catches geometry below a
   volume's grid; overruns past its top need the target volume's shape and
