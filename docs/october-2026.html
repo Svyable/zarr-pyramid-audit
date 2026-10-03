@@ -232,6 +232,13 @@ needs an environment that can reach the host.</td></tr>
 Mismatches not proven real — severity stays <code>low</code> pending byte-level verification.
 (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-02-crc-validation"><code>2026-10-02-crc-validation</code></a>).
 <b>Note:</b> <code>dl.ash2txt.org</code> reachable from this environment — G1 dl half unblocked.</td></tr>
+<tr><td>2026-10-03</td><td><b>G2, done.</b> Byte-level verification with an independent bit-by-bit CRC-32C
+implementation confirms the 331 mismatches are real — the volcomp writer is non-conforming, not zpa.
+58% of shards verify correctly with the same code path, proving zpa's byte-domain interpretation is right.
+Severity raised <code>low</code> → <code>medium</code> (16.5% is not "rare"; maps to CAUTION in ScrolIQ).
+Not <code>high</code>: indexes parse and chunks decode. Contract 1.3.1, fingerprint
+<code>854ed060f90f</code>.
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-crc-byte-verification"><code>2026-10-03-crc-byte-verification</code></a>).</td></tr>
 </tbody></table></div>
 
 </div>

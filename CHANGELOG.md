@@ -27,6 +27,20 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Contract 1.3.1 — SHARD_INDEX_CHECKSUM_MISMATCH severity low → medium
+
+`contract-fingerprint: 854ed060f90f`
+
+Patch severity change: `SHARD_INDEX_CHECKSUM_MISMATCH` moves from `low` to
+`medium`. Byte-level verification (2026-10-03, independent bit-by-bit CRC-32C
+implementation) proved the volcomp writer is non-conforming: 16.5% of 2,008
+shards across 39/64 volumes carry invalid index checksums. The "low until a
+live run shows mismatches are rare" condition is now false — 16.5% is not
+rare. Consumer action: ScrolIQ maps `medium` → CAUTION (was: no verdict
+change). The shard is still not sampled (fail-closed); the index parses and
+chunks decode, so this is not `high`. See
+`artifacts/2026-10-03-crc-byte-verification/README.md`.
+
 ### Contract 1.3.0 — audited metadata source attestation
 
 `contract-fingerprint: 86fa4df586d0`

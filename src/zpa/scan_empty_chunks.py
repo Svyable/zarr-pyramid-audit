@@ -18,11 +18,10 @@ Findings:
   CHUNK_SAMPLE_MISSING     [info]   inner chunk absent from a v3 shard index
                                     (masked background legitimately unstored)
   CHUNK_SAMPLE_ABSENT      [info]   v2 chunk key not present (sparse level)
-  SHARD_INDEX_CHECKSUM_MISMATCH [low]    a v3 shard's index fails its crc32c;
+  SHARD_INDEX_CHECKSUM_MISMATCH [medium] a v3 shard's index fails its crc32c;
                                     its offsets are untrusted so that shard is
-                                    not sampled. Human review -- not proof the
-                                    data is bad (a non-conforming writer looks
-                                    the same)
+                                    not sampled. 2026-10-03: writer proven
+                                    non-conforming (16.5% mismatch rate).
   CHUNK_LEVEL_NO_CHUNKS    [info]   level holds no stored chunks at all
                                     (audit-flagged, probe-confirmed)
   CHUNK_LEVEL_NO_SAMPLES   [info]   sparse level the spread sampling could not

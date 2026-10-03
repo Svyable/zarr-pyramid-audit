@@ -132,10 +132,11 @@ def test_status_table_preserves_historical_codes_and_adds_the_new_one():
     assert SAMPLE_FINDINGS["absent"] == ("CHUNK_SAMPLE_ABSENT", "info")
     assert SAMPLE_FINDINGS["undecodable"] == ("CHUNK_UNDECODEABLE", "low")
     assert FALLBACK_FINDING == ("CHUNK_FETCH_ERROR", "low")
-    # low until validated on live data: medium maps to CAUTION downstream, and
-    # a non-conforming writer would flag every shard
+    # 2026-10-03: medium after byte-level verification proved writer
+    # non-conformance (16.5% mismatch rate, not rare). See
+    # artifacts/2026-10-03-crc-byte-verification/README.md.
     assert SAMPLE_FINDINGS["index_checksum_mismatch"] == (
-        "SHARD_INDEX_CHECKSUM_MISMATCH", "low")
+        "SHARD_INDEX_CHECKSUM_MISMATCH", "medium")
 
 
 def test_cli_emits_the_finding_and_reports_checksum_coverage(
@@ -163,7 +164,7 @@ def test_cli_emits_the_finding_and_reports_checksum_coverage(
 
     rows = list(csv.DictReader(open(out / "scan_empty_chunks.findings.csv")))
     assert [(r["code"], r["severity"]) for r in rows] == [
-        ("SHARD_INDEX_CHECKSUM_MISMATCH", "low")]
+        ("SHARD_INDEX_CHECKSUM_MISMATCH", "medium")]
     summary = json.load(open(out / "scan_empty_chunks.summary.json"))
     assert summary["index_crc"] == {"mismatch": 1}
     assert summary["by_code"] == {"SHARD_INDEX_CHECKSUM_MISMATCH": 1}

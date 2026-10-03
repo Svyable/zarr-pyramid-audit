@@ -545,9 +545,13 @@ SCAN_SEVERITY = {
     "CHUNK_LEVEL_NO_SAMPLES": "info",
     "CHUNK_UNDECODEABLE": "low",
     "CHUNK_FETCH_ERROR": "low",
-    # low until a live run shows mismatches are rare: a non-conforming
-    # writer would flag every shard, and medium maps to CAUTION downstream.
-    "SHARD_INDEX_CHECKSUM_MISMATCH": "low",
+    # 2026-10-03: raised to medium after byte-level verification proved the
+    # volcomp writer is non-conforming (16.5% of 2,008 shards across 39/64
+    # volumes; independent bit-by-bit CRC implementation confirms zpa is
+    # correct). Not high: the index parses and chunks decode; the integrity
+    # guarantee is void, not the data. See
+    # artifacts/2026-10-03-crc-byte-verification/README.md.
+    "SHARD_INDEX_CHECKSUM_MISMATCH": "medium",
     "CHUNK_SAMPLE_ALL_EMPTY": "medium",
 }
 
