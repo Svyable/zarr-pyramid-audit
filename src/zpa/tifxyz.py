@@ -294,6 +294,13 @@ def audit_surface(store, root: str, *, content: bool = False,
         meta = m.value
         surface["meta"] = {k: meta.get(k) for k in ("format", "type", "uuid",
                                                     "scale", "bbox")}
+        # Modern VC3D writers record enough context to catch a surface copied
+        # from the wrong scroll/volume. Preserve that evidence verbatim when
+        # present; do not infer it for older TIFXYZ directories.
+        for key in ("source", "target_volume", "scroll_source",
+                    "vc_gsfs_mode", "vc_gsfs_version"):
+            if key in meta:
+                surface["meta"][key] = meta[key]
         problems = []
         if meta.get("format") != "tifxyz":
             problems.append(f"format={meta.get('format')!r}")

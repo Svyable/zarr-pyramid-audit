@@ -131,6 +131,30 @@ def test_big_endian_tiff_parses_and_decodes(tmp_path):
     assert report["surface"]["valid_fraction"] == pytest.approx(46 / 48)
 
 
+def test_vc3d_target_context_is_preserved_in_report(tmp_path):
+    d = copy_case(tmp_path)
+    meta_path = d / "meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta.update({
+        "source": "vc_grow_seg_from_seed",
+        "target_volume": "20250821151723.zarr",
+        "scroll_source": "PHerc0813",
+        "vc_gsfs_mode": "seed",
+        "vc_gsfs_version": "dev",
+    })
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    report = tx.audit_surface(LocalStore(tmp_path), d.name)
+
+    assert report["integrity"] == "PASS"
+    assert report["surface"]["meta"]["source"] == "vc_grow_seg_from_seed"
+    assert report["surface"]["meta"]["target_volume"] == "20250821151723.zarr"
+    assert report["surface"]["meta"]["scroll_source"] == "PHerc0813"
+    assert report["surface"]["meta"]["vc_gsfs_mode"] == "seed"
+    assert report["surface"]["meta"]["vc_gsfs_version"] == "dev"
+    assert validate_report(report) == []
+
+
 def test_truncated_ifd_is_unreadable_not_a_crash(tmp_path):
     d = copy_case(tmp_path)
     blob = (d / "x.tif").read_bytes()
