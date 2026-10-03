@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "diagnostic": "2027-grand-prize-exact-ct-preflight",
+  "as_of": "2026-10-02",
+  "audit_as_of": "2026-09-29",
+  "rule": "Match the exact prize-listed scroll and volume_id to the frozen S3 pyramid audit. Same-scroll substitute scans do not count.",
+  "sources": {
+    "prize_manifest": "prize-manifest.json",
+    "s3_pyramid_audit": "../2026-09-29-s3/audit_pyramid.pyramids.jsonl"
+  },
+  "totals": {
+    "eligible_targets": 13,
+    "exact_roots_found": 13,
+    "ambiguous_or_missing": 0,
+    "roots_with_zero_findings": 13,
+    "roots_with_all_declared_levels_present": 13,
+    "roots_with_no_chunkless_levels": 13,
+    "roots_with_no_unknown_chunk_presence": 13
+  },
+  "targets": [
+    {
+      "scroll": "PHerc0125",
+      "volume_id": "20250821151825",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0125/volumes/20250821151825-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0191",
+      "volume_id": "20250821151635",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0191/volumes/20250821151635-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0211",
+      "volume_id": "20250821151803",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0211/volumes/20250821151803-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0257",
+      "volume_id": "20250821151750",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0257/volumes/20250821151750-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0268",
+      "volume_id": "20251110183117",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0268/volumes/20251110183117-8.640um-1.2m-116keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0358",
+      "volume_id": "20250821151737",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0358/volumes/20250821151737-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0800",
+      "volume_id": "20250521135224",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0800/volumes/20250521135224-8.640um-1.2m-116keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0813",
+      "volume_id": "20250821151723",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0813/volumes/20250821151723-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc0826",
+      "volume_id": "20250821151701",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc0826/volumes/20250821151701-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc1203",
+      "volume_id": "20250820131727",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc1203/volumes/20250820131727-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc1218",
+      "volume_id": "20250521120456",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc1218/volumes/20250521120456-8.640um-1.2m-116keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc1447",
+      "volume_id": "20250521151220",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc1447/volumes/20250521151220-8.640um-1.2m-116keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    },
+    {
+      "scroll": "PHerc1545",
+      "volume_id": "20250821151648",
+      "matches": 1,
+      "roots": [
+        {
+          "root": "PHerc1545/volumes/20250821151648-9.362um-1.2m-113keV-masked.zarr",
+          "zarr_format": 2,
+          "n_levels": 6,
+          "n_levels_present": 6,
+          "levels_no_chunks": [],
+          "levels_chunks_unknown": [],
+          "errors": [],
+          "n_findings": 0,
+          "codes": []
+        }
+      ]
+    }
+  ],
+  "claim_boundary": [
+    "This is a header/chunk-presence cross-cut of the frozen S3 audit; it does not decode all CT content.",
+    "Zero findings does not certify semantic voxel correctness, scan quality, surface identity, flattening quality, or ink.",
+    "The result is dated to the 2026-09-29 S3 audit and should be re-run before a final submission freeze."
+  ]
+}
