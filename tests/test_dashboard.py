@@ -67,10 +67,10 @@ def test_tifxyz_panel_reads_the_committed_summary(tmp_path):
 
 def test_baseline_panel_reads_the_committed_comparison(page, tmp_path):
     import json
-    comparison = json.loads((REPO / "artifacts" / "2026-10-01-baseline-comparison"
+    comparison = json.loads((REPO / "artifacts" / "2026-10-03-baseline-yaozarrs"
                              / "comparison.json").read_text(encoding="utf-8"))
     panel = build_dashboard.render_baseline_panel(
-        str(REPO / "artifacts" / "2026-10-01-baseline-comparison" / "comparison.json"))
+        str(REPO / "artifacts" / "2026-10-03-baseline-yaozarrs" / "comparison.json"))
     assert panel and panel in page
     for tool, label in build_dashboard.BASELINE_TOOLS:
         d = comparison["summary"][tool]["defect"]

@@ -1,7 +1,7 @@
 """
 compare_baselines.py -- what do existing tools say about each fixture?
 
-Runs three readers over every on-disk case in fixtures/zarr/ and records
+Runs four readers over every on-disk case in fixtures/zarr/ and records
 what each one *tells its user*:
 
   zarr-python      open the group and read every declared level in full,
@@ -10,6 +10,10 @@ what each one *tells its user*:
                    signal of any kind).
   ome-zarr-models  the OME-NGFF metadata validator (pydantic models of the
                    0.4/0.5 spec): "rejects" or "accepts".
+  yaozarrs         pydantic-only OME-NGFF validator; its validate_zarr_store()
+                   (what the `yaozarrs validate` CLI runs) checks metadata
+                   *and* that declared levels exist as arrays with matching
+                   dimensionality: "rejects" or "accepts".
   zpa              this package: report integrity + codes, gate verdict,
                    and the sampled chunk-probe flags.
 
@@ -27,7 +31,7 @@ A tool "flags" a fixture when it gives its user any signal: zarr-python
 raises, ome-zarr-models rejects, ZPA reports a non-info code or a non-PASS
 integrity (the chunk-probe column also counts non-info probe codes).
 
-    pip install ome-zarr-models          # not a dependency of this package
+    pip install ome-zarr-models 'yaozarrs[io]'   # not dependencies of this package
     python fixtures/compare_baselines.py --out-dir artifacts/<date>-baseline-comparison
 
 The replayed-HTTP cases are not included: they exist only as recorded
@@ -120,6 +124,15 @@ def ome_zarr_models(path: str) -> dict:
     return {"outcome": "accepts", "detail": type(model).__name__}
 
 
+def yaozarrs_(path: str) -> dict:
+    import yaozarrs
+    try:
+        yaozarrs.validate_zarr_store(path)
+    except Exception as exc:
+        return {"outcome": "rejects", "detail": type(exc).__name__}
+    return {"outcome": "accepts", "detail": "validate_zarr_store"}
+
+
 def zpa(name: str) -> dict:
     with open(os.path.join(corpus.EXPECTED_DIR, f"{name}.json"), encoding="utf-8") as fh:
         g = json.load(fh)
@@ -141,6 +154,7 @@ def flagged(row: dict) -> dict:
     return {
         "zarr-python": row["zarr_python"]["outcome"] == "raises",
         "ome-zarr-models": row["ome_zarr_models"]["outcome"] == "rejects",
+        "yaozarrs": row["yaozarrs"]["outcome"] == "rejects",
         "zpa (header audit)": header,
         "zpa (+ chunk probe)": header or probe,
     }
@@ -154,13 +168,14 @@ def run() -> list[dict]:
         row = {"fixture": name, "property": prop, "truth": GROUND_TRUTH[name],
                "zarr_python": zarr_python(path),
                "ome_zarr_models": ome_zarr_models(path),
+               "yaozarrs": yaozarrs_(path),
                "zpa": zpa(name)}
         row["flagged"] = flagged(row)
         rows.append(row)
     return rows
 
 
-TOOLS = ["zarr-python", "ome-zarr-models", "zpa (header audit)", "zpa (+ chunk probe)"]
+TOOLS = ["zarr-python", "ome-zarr-models", "yaozarrs", "zpa (header audit)", "zpa (+ chunk probe)"]
 
 
 def summary(rows: list[dict]) -> dict:
@@ -193,8 +208,8 @@ def markdown(rows: list[dict], summ: dict, versions: dict) -> str:
                      f"{s[BENIGN]['flagged']} / {s[BENIGN]['of']} | "
                      f"{s[OUT_OF_MODEL]['flagged']} / {s[OUT_OF_MODEL]['of']} |")
     lines += ["", "Per fixture (✓ = the tool gave its user a signal):", "",
-              "| fixture | truth | zarr-python | ome-zarr-models | ZPA integrity / codes | ZPA chunk probe |",
-              "|---|---|---|---|---|---|"]
+              "| fixture | truth | zarr-python | ome-zarr-models | yaozarrs | ZPA integrity / codes | ZPA chunk probe |",
+              "|---|---|---|---|---|---|---|"]
     mark = {True: "✓", False: "·"}
     for r in rows:
         z = r["zpa"]
@@ -202,6 +217,7 @@ def markdown(rows: list[dict], summ: dict, versions: dict) -> str:
             f"| `{r['fixture']}` | {r['truth']} | "
             f"{mark[r['flagged']['zarr-python']]} {r['zarr_python']['outcome']} | "
             f"{mark[r['flagged']['ome-zarr-models']]} {r['ome_zarr_models']['outcome']} | "
+            f"{mark[r['flagged']['yaozarrs']]} {r['yaozarrs']['outcome']} | "
             f"{z['integrity']} {', '.join(z['codes']) or '—'} | "
             f"{', '.join(z['scan_flags']) or '—'} |")
     lines += ["", "Versions: " + ", ".join(f"{k} {v}" for k, v in versions.items())]
@@ -214,9 +230,11 @@ def main(argv=None) -> int:
     ap.add_argument("--out-dir", required=True)
     args = ap.parse_args(argv)
     import ome_zarr_models as ozm
+    import yaozarrs
     import zarr
     from importlib.metadata import version
     versions = {"zarr": zarr.__version__, "ome-zarr-models": ozm.__version__,
+                "yaozarrs": yaozarrs.__version__,
                 "zarr-pyramid-audit": version("zarr-pyramid-audit"),
                 "fixture corpus": corpus.CORPUS_VERSION}
     rows = run()

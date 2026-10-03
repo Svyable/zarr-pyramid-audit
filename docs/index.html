@@ -221,12 +221,12 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <div class="gatebox"><b>Grand Prize preflight:</b> use the same gate on the exact prize-eligible CT, surface, and derived Zarr inputs before expensive geometry or ink work. A silent storage defect should fail before it can contaminate an unrolling campaign. Before 2.5D ink inference, run <code>zpa-surface-depth-profile</code> on the rendered stack to pin the slice count, source volume, sampled depth integrity, and depth profile. <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/surface-depth-profile.md">Protocol →</a></div>
 </div>
 
-<div class="panel" id="baselines"><h2>Against the tools people already use<span class="sub">2026-10-01 · zarr-python 3.1.6, ome-zarr-models 1.7</span></h2>
-  <p><b>On the live defect,</b> both baselines treat the PHerc0814 <code>-L1</code> pyramid as healthy: the OME-NGFF validator accepts it, and zarr-python reads a level-5 window as all zeros without an error. The ZPA gate rejects it (6 &times; <code>LEVEL_NO_CHUNKS</code>).</p>
+<div class="panel" id="baselines"><h2>Against the tools people already use<span class="sub">2026-10-03 · zarr-python 3.1.6, ome-zarr-models 1.7, yaozarrs 0.3.2</span></h2>
+  <p><b>On the live defect,</b> all three baselines treat the PHerc0814 <code>-L1</code> pyramid as healthy: both OME-NGFF validators accept it, and zarr-python reads a level-5 window as all zeros without an error. The ZPA gate rejects it (6 &times; <code>LEVEL_NO_CHUNKS</code>).</p>
   <p><b>On the fixture corpus</b> (ground truth assigned from what each fixture was built to contain), flagged / total:</p>
-  <div style="overflow-x:auto"><table><thead><tr><th>tool</th><th class="num">defects</th><th class="num">suspicious content</th><th class="num">false alarms on valid pyramids</th><th class="num">out-of-model nodes</th></tr></thead><tbody><tr><td>zarr-python (open + read every level)</td><td class="num">8 / 26</td><td class="num">0 / 3</td><td class="num">0 / 10</td><td class="num">1 / 4</td></tr><tr><td>ome-zarr-models (OME-NGFF validator)</td><td class="num">14 / 26</td><td class="num">0 / 3</td><td class="num">0 / 10</td><td class="num">4 / 4</td></tr><tr><td>ZPA header audit</td><td class="num">25 / 26</td><td class="num">0 / 3</td><td class="num">1 / 10</td><td class="num">4 / 4</td></tr><tr><td>ZPA + sampled chunk probe</td><td class="num">26 / 26</td><td class="num">3 / 3</td><td class="num">2 / 10</td><td class="num">4 / 4</td></tr></tbody></table></div>
-  <p style="font-size:.85rem">Selection bias: the corpus was written around ZPA&rsquo;s failure classes, so read it per defect class, not as a score. The validator checks the full NGFF spec, which ZPA does not attempt; run both. ZPA&rsquo;s false alarms are a legal compressor drift (low, integrity stays PASS) and a sampled probe on a mostly empty level.</p>
-  <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-baseline-comparison">Comparison, method and caveats &rarr;</a></p>
+  <div style="overflow-x:auto"><table><thead><tr><th>tool</th><th class="num">defects</th><th class="num">suspicious content</th><th class="num">false alarms on valid pyramids</th><th class="num">out-of-model nodes</th></tr></thead><tbody><tr><td>zarr-python (open + read every level)</td><td class="num">8 / 26</td><td class="num">0 / 3</td><td class="num">0 / 10</td><td class="num">1 / 4</td></tr><tr><td>ome-zarr-models (OME-NGFF validator)</td><td class="num">14 / 26</td><td class="num">0 / 3</td><td class="num">0 / 10</td><td class="num">4 / 4</td></tr><tr><td>yaozarrs (OME-NGFF metadata + structure)</td><td class="num">13 / 26</td><td class="num">0 / 3</td><td class="num">0 / 10</td><td class="num">4 / 4</td></tr><tr><td>ZPA header audit</td><td class="num">25 / 26</td><td class="num">0 / 3</td><td class="num">1 / 10</td><td class="num">4 / 4</td></tr><tr><td>ZPA + sampled chunk probe</td><td class="num">26 / 26</td><td class="num">3 / 3</td><td class="num">2 / 10</td><td class="num">4 / 4</td></tr></tbody></table></div>
+  <p style="font-size:.85rem">Selection bias: the corpus was written around ZPA&rsquo;s failure classes, so read it per defect class, not as a score. The validators check the NGFF spec, which ZPA does not attempt; run both kinds. ZPA&rsquo;s false alarms are a legal compressor drift (low, integrity stays PASS) and a sampled probe on a mostly empty level.</p>
+  <p class="smalllink"><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-03-baseline-yaozarrs">Comparison, method and caveats &rarr;</a></p>
 </div>
 <div class="panel" id="method"><h2>Audit before publish<span class="sub">fail closed on defects, stay honest about unknown evidence</span></h2>
   <div class="actiongrid">
@@ -420,7 +420,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
   manifests, and runbooks in <code>artifacts/</code> in the
   <a href="https://github.com/Svyable/zarr-pyramid-audit">repo</a> (MIT fork of sgsllc-jr/zarr-pyramid-audit; upstream credit retained).
   Companion: <a href="https://github.com/Svyable/scrollq">ScrolIQ</a> (<a href="#scroliq">how they fit</a>).<br>
-  Built by Sven + Muse · updated 2026-10-02.
+  Built by Sven + Muse · updated 2026-10-03.
 </div></footer>
 
 <script>

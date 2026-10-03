@@ -503,7 +503,10 @@ defects flagged: zarr-python 8 / 26, the validator 14 / 26, the ZPA header audit
 the sampled chunk probe 26 / 26. The corpus was written around ZPA's failure classes, so read it per
 defect class rather than as a score. The validator checks the full NGFF spec, which ZPA does not;
 the two are complementary. ZPA's false alarms on valid pyramids (1 / 10 header-only, 2 / 10 with the
-probe) and the caveats are in the artifact README.
+probe) and the caveats are in the artifact README. A third baseline, the yaozarrs 0.3.2 validator,
+which also checks that each declared level exists as an array of the right dimensionality, was added
+on 2026-10-03 ([`artifacts/2026-10-03-baseline-yaozarrs/`](artifacts/2026-10-03-baseline-yaozarrs/)):
+it accepts the live defect too, and flags 13 / 26 fixture defects.
 
 **Known defects.** [`data/known-defects.json`](data/known-defects.json) lists 19 confirmed
 defective pyramids across both stores, with finding codes, severity and evidence pointers.

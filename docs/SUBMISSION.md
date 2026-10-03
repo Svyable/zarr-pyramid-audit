@@ -52,10 +52,11 @@ runs the tools people already use on the same inputs:
 |---|---|
 | zarr-python (read level 5) | returns 249,856 voxels, **all zero, no error** |
 | ome-zarr-models 1.7 (OME-NGFF validator) | **accepts** it as a valid `Image` |
+| yaozarrs 0.3.2 (NGFF metadata + structure, [2026-10-03](../artifacts/2026-10-03-baseline-yaozarrs/)) | **accepts** it |
 | ZPA | gate **FAIL**, 6 × `LEVEL_NO_CHUNKS` (high) |
 
 On the 43 on-disk fixtures, ZPA's header audit flags 25 of the 26 built-in
-defects; zarr-python flags 8 and ome-zarr-models 14. The artifact README
+defects; zarr-python flags 8, ome-zarr-models 14 and yaozarrs 13. The artifact README
 states the selection bias: the corpus was built around ZPA's failure classes.
 It also says where the validator did better: it caught a missing OME 0.5
 `dimension_names` that ZPA missed, which led to ZPA's
