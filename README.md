@@ -3,6 +3,9 @@
 Read-only integrity auditing for OME-Zarr multiscale pyramids, and for the tifxyz surface patches
 segmented from them, served over HTTP, S3 or a local directory.
 
+> **Fork lineage.** This repository is based on the original [`sgsllc-jr/zarr-pyramid-audit`](https://github.com/sgsllc-jr/zarr-pyramid-audit) (MIT), which established the header-first, read-only OME-Zarr auditing approach and the original `dl.ash2txt.org` campaign. The Svyable fork's claim is the extension: versioned evidence contracts and gating, chunk-content / volcomp support, TIFXYZ surface auditing, expanded S3 and Grand Prize preflight campaigns, validator comparisons, and downstream ScrolIQ integration. See [fork scope and attribution](docs/FORK_SCOPE.md).
+
+
 **What it audits, what it emits, what it cannot certify.** ZPA checks whether a pyramid is what its
 metadata says it is: every declared level present and readable, shapes consistent with the declared
 scales, dtype/fill/codec/separator consistent across levels, chunk keys actually stored, physical-scale
