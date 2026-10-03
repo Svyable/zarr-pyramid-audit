@@ -460,7 +460,10 @@ scrollq-health --root &lt;volume&gt;</code></div>
   manifests, and runbooks in <code>artifacts/</code> in the
   <a href="{repo}">repo</a> (MIT fork of sgsllc-jr/zarr-pyramid-audit; upstream credit retained).
   Companion: <a href="https://github.com/Svyable/scrollq">ScrolIQ</a> (<a href="#scroliq">how they fit</a>).<br>
-  Built by Sven + Muse · updated {stamp}.
+  Built by Sven + Muse · updated {stamp}.<br>
+  Community: <a href="https://discord.com/invite/V4fJhvtaQn">Vesuvius Discord</a>
+  · <a href="https://scrollprize.org">Vesuvius Challenge</a>
+  · <a href="https://github.com/ScrollPrize/villa">villa monorepo</a>
 </div></footer>
 
 <script>
