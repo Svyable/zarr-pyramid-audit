@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2027 Grand Prize role — zarr-pyramid-audit</title>
+<meta name="description" content="Reviewer-facing map of how zarr-pyramid-audit supports the 2027 Vesuvius Challenge Grand Prize pipeline, what its evidence proves, and what remains out of scope.">
+<link rel="canonical" href="https://svyable.github.io/zarr-pyramid-audit/grand-prize-readiness.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="zarr-pyramid-audit — 2027 Grand Prize role">
+<meta property="og:description" content="Integrity evidence for the data and surface artifacts a Grand Prize pipeline depends on.">
+<meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/grand-prize-readiness.html">
+<style>
+:root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;--ink:#ece3d2;--muted:#a89880;--dim:#756957;--ember:#ff7a1a;--gold:#ffd166;--amber:#ffb347;--good:#8fd694;--warn:#ffb347;--bad:#ff7d7d}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
+a{color:var(--amber)}.wrap{max-width:1100px;margin:0 auto;padding:0 1.25rem}.top{border-bottom:1px solid var(--line);background:rgba(13,11,8,.94);position:sticky;top:0;z-index:20}
+.top .wrap{display:flex;gap:1rem;align-items:center;min-height:58px}.brand{font-weight:850;color:var(--ink);text-decoration:none}.brand b{color:var(--ember)}
+.nav{display:flex;gap:.8rem;flex-wrap:wrap;margin-left:auto}.nav a{font-size:.84rem;text-decoration:none;color:var(--muted)}.nav a:hover{color:var(--ink)}
+.hero{padding:4.8rem 0 3rem;background:radial-gradient(1000px 500px at 75% -20%,rgba(255,122,26,.15),transparent 62%),var(--bg)}
+.eyebrow{font-size:.72rem;letter-spacing:.24em;color:var(--ember);font-weight:800;text-transform:uppercase}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif}.hero h1{font-size:clamp(2.2rem,5vw,4.1rem);line-height:1.04;margin:.55rem 0 .7rem;letter-spacing:-.025em}
+.lede{max-width:850px;color:var(--muted);font-size:1.08rem}.lede strong{color:var(--ink)}
+main{padding:2rem 0 4rem}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.25rem 1.35rem;margin:0 0 1rem}.panel h2{font-size:1.45rem;margin:.1rem 0 .8rem}
+.sub{display:block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-weight:400;color:var(--muted);font-size:.86rem;margin-top:.2rem}
+.callout{border-left:3px solid var(--ember);background:var(--panel2);padding:1rem 1.1rem;border-radius:0 10px 10px 0;color:var(--muted)}.callout b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:.8rem}.card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:1rem}.card h3{margin:.05rem 0 .5rem;font-size:1.02rem}.card p{margin:.2rem 0;color:var(--muted);font-size:.9rem}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{padding:.78rem .7rem;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}td:first-child{min-width:205px;font-weight:750}
+.status{white-space:nowrap;font-weight:850;font-size:.75rem}.status.good{color:var(--good)}.status.partial{color:var(--warn)}.status.gap{color:var(--bad)}
+code{background:#0b0907;border:1px solid var(--line);border-radius:5px;padding:.05rem .28rem;color:var(--gold)}footer{border-top:1px solid var(--line);padding:1.8rem 0 3rem;color:var(--dim);font-size:.82rem}
+@media(max-width:720px){.nav{display:none}.hero{padding-top:3.4rem}th,td{padding:.65rem .5rem}}
+</style></head><body>
+<div class="top"><div class="wrap">
+<a class="brand" href="./"><b>Z</b> zarr-pyramid-audit</a>
+<div class="nav"><a href="./">Dashboard</a><a href="#matrix">Prize role</a><a href="#controls">Controls</a><a href="./october-2026.html">October plan</a><a href="https://github.com/Svyable/zarr-pyramid-audit">GitHub</a></div>
+</div></div>
+
+<header class="hero"><div class="wrap">
+<div class="eyebrow">Vesuvius Challenge · 2027 Grand Prize</div>
+<h1>Integrity is upstream<br>of every readable letter.</h1>
+<p class="lede"><strong>zarr-pyramid-audit is not an unrolling or ink-reading system.</strong> Its Grand Prize role is narrower and load-bearing: detect silent data defects, preserve evidence semantics, audit TIFXYZ surfaces, and make corrupted or unverified inputs fail loudly before they contaminate segmentation, training, rendering, or submission artifacts.</p>
+</div></header>
+
+<main class="wrap">
+<section class="panel">
+<h2>Why this matters for the Grand Prize<span class="sub">Official rules checked 2026-10-02; the Challenge page remains authoritative.</span></h2>
+<p>The 2027 Grand Prize requires reviewers to reproduce a complete pipeline, inspect TIFXYZ meshes, verify generated images, and trust that the submitted result is supported by the CT data. Silent all-zero or malformed pyramids can invalidate that chain without producing an obvious reader error.</p>
+<p><a href="https://scrollprize.org/prizes#2027-grand-prize">Official Grand Prize requirements →</a></p>
+<div class="callout"><b>Scope boundary:</b> a clean integrity audit does not prove correct sheet identity, full recto coverage, legible ink, or Grand Prize readiness. It proves only the checks actually run over the evidence available.</div>
+</section>
+
+<section class="panel" id="matrix">
+<h2>Where the integrity gate fits<span class="sub">The right-hand column is intentionally blunt about what belongs elsewhere in the winning pipeline.</span></h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Grand Prize requirement</th><th>zarr-pyramid-audit contribution</th><th>Status</th><th>Outside this tool</th></tr></thead>
+<tbody>
+<tr><td>Fully reproducible public pipeline</td><td>MIT-licensed CLI, deterministic reports, schemas, fixtures, manifests, and committed campaign artifacts make integrity checks replayable.</td><td><span class="status good">IMPLEMENTED</span></td><td>The final Grand Prize pipeline still needs its own end-to-end runner, Docker image, and system requirements.</td></tr>
+<tr><td>Reliable CT / Zarr inputs</td><td><code>zpa-audit</code>, <code>zpa-gate</code>, and chunk-content probes distinguish malformed metadata, missing levels, header-only levels, unknown evidence, and sampled present-but-empty content.</td><td><span class="status good">IMPLEMENTED</span></td><td>Surface identification and unrolling correctness.</td></tr>
+<tr><td>VC3D integration</td><td>Machine-readable reports and TIFXYZ audits are designed for modular integration; review coordinates and standard formats can feed downstream tooling.</td><td><span class="status partial">PARTIAL</span></td><td>A seamless in-VC3D user workflow is not demonstrated here.</td></tr>
+<tr><td>100% recto unrolled</td><td>TIFXYZ files can be structurally audited before acceptance into a larger coverage ledger.</td><td><span class="status partial">SUPPORTING</span></td><td>Segmentation, sheet identity, flattening, and proof of whole-scroll recto coverage.</td></tr>
+<tr><td>Per-column TIFXYZ submission meshes</td><td><code>zpa-tifxyz</code> checks native TIFXYZ structure/provenance and optional content-tier consistency.</td><td><span class="status good">AUDIT EXISTS</span></td><td>Column boundaries, low-distortion isometry quality, sequential naming, and final package completeness.</td></tr>
+<tr><td>Visible and legible ink</td><td>Integrity gating can prevent known-bad input volumes from entering training or inference.</td><td><span class="status gap">OUT OF SCOPE</span></td><td>Ink detection, legibility, papyrological evaluation, and line counts.</td></tr>
+<tr><td>No train/prediction overlap</td><td>Can ensure the underlying stores and surface files used by an external split are the expected artifacts.</td><td><span class="status gap">OUT OF SCOPE</span></td><td>Spatial split definition and leakage auditing belong in ScrolIQ / the ink pipeline.</td></tr>
+<tr><td>False-positive mitigation</td><td>Fail-closed tri-state evidence prevents timeouts/403s/unknown listings from being misreported as absence; direct chunk reads test whether “present” data actually contain voxels.</td><td><span class="status good">IMPLEMENTED FOR DATA</span></td><td>Ink hallucination controls and held-out text validation.</td></tr>
+<tr><td>Held-out validation</td><td>Offline fixtures, positive controls, and live known-clean / known-defective controls validate integrity logic.</td><td><span class="status partial">DOMAIN-SPECIFIC</span></td><td>The Challenge's held-out ink/ground-truth validation must be satisfied by the unrolling/ink method itself.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="panel" id="controls">
+<h2>Controls that reduce reviewer risk</h2>
+<div class="grid">
+<div class="card"><h3>Unknown is not absent</h3><p>Timeouts, permission failures, rate limits, and unsupported listings remain <b>UNKNOWN</b>; they cannot silently become a missing-data finding.</p><p><a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/INTEGRATION.md">Report contract →</a></p></div>
+<div class="card"><h3>Headers are not content</h3><p>The fast audit checks metadata and chunk presence; the sampled content probe separately decodes real voxels to test a different silent-corruption class.</p><p><a href="./#probe">Chunk probe evidence →</a></p></div>
+<div class="card"><h3>Fail closed before publish</h3><p><code>zpa-gate</code> converts severity policy into a non-zero CI exit code so known defect classes can block a publication step.</p><p><a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/examples/github-actions-gate.yml">CI example →</a></p></div>
+<div class="card"><h3>Surface files get their own audit</h3><p>TIFXYZ checks are separate from Zarr checks because a valid CT store does not imply a valid submitted surface.</p><p><a href="https://github.com/Svyable/zarr-pyramid-audit#tifxyz-surface-audit">TIFXYZ usage →</a></p></div>
+<div class="card"><h3>Claims stay dated</h3><p>Live-store findings are tied to dated artifacts so “still broken” is never presented as an eternal fact.</p><p><a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts">Artifact campaigns →</a></p></div>
+<div class="card"><h3>Companion boundary</h3><p>ScrolIQ owns downstream quality/evidence judgments; this repository supplies integrity primitives and does not infer readability.</p><p><a href="https://svyable.github.io/scrollq/grand-prize-readiness.html">ScrolIQ Grand Prize map →</a></p></div>
+</div>
+</section>
+
+<section class="panel">
+<h2>What a winning pipeline should do with this</h2>
+<div class="callout"><b>Recommended integration point:</b> run the integrity gate before expensive segmentation/training and again before freezing final inputs; run TIFXYZ audits before accepting meshes into the column/coverage manifest. Persist the exact report hashes beside the downstream artifact so a reviewer can reconstruct which data passed which checks.</div>
+<p style="margin-bottom:.1rem"><a href="./">Return to the live integrity dashboard →</a> · <a href="./october-2026.html">October evidence plan →</a> · <a href="https://github.com/Svyable/zarr-pyramid-audit">Source repository →</a></p>
+</section>
+</main>
+<footer><div class="wrap">zarr-pyramid-audit · Grand Prize integrity role · updated 2026-10-02</div></footer>
+</body></html>
