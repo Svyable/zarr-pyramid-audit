@@ -1,0 +1,2 @@
+# Separate because xzarrguard requires Python 3.12+.
+xzarrguard==0.1.2
