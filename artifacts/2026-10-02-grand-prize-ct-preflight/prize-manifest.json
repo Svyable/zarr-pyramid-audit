@@ -1,0 +1,236 @@
+{
+ "schema_version": 1,
+ "prize_id": "grand-prize-2027",
+ "prize": "2027 Grand Prize",
+ "prize_label": "2027 Grand Prize",
+ "as_of": "2026-10-01",
+ "prize_url": "https://scrollprize.org/prizes",
+ "required_assets": [
+  "surface_prediction",
+  "lasagna_prediction"
+ ],
+ "provenance": {
+  "eligibility_source": "ScrollPrize/villa@56d7c3aeea4bbccf5f56b195ce2a44ea2cf601dd:scrollprize.org/src/data/prizeEligibility.json",
+  "eligibility_sha256": "d549d8e8e0e20a6b4a7f7548287c6d0631d825c8a4063c78ac0bd86bdc9e30a7",
+  "index_sha256": "15848845907fe640e63c16d0de200715fe74ed4f256623c94ef603cc84831b22"
+ },
+ "problems": [],
+ "targets": [
+  {
+   "scroll": "PHerc0125",
+   "volume_id": "20250821151825",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0125"
+  },
+  {
+   "scroll": "PHerc0191",
+   "volume_id": "20250821151635",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0191"
+  },
+  {
+   "scroll": "PHerc0211",
+   "volume_id": "20250821151803",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0211"
+  },
+  {
+   "scroll": "PHerc0257",
+   "volume_id": "20250821151750",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0257"
+  },
+  {
+   "scroll": "PHerc0268",
+   "volume_id": "20251110183117",
+   "voxel_size_um": 8.64,
+   "energy_kev": 116.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0268"
+  },
+  {
+   "scroll": "PHerc0358",
+   "volume_id": "20250821151737",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0358"
+  },
+  {
+   "scroll": "PHerc0800",
+   "volume_id": "20250521135224",
+   "voxel_size_um": 8.64,
+   "energy_kev": 116.0,
+   "segments": 6,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0800"
+  },
+  {
+   "scroll": "PHerc0813",
+   "volume_id": "20250821151723",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0813"
+  },
+  {
+   "scroll": "PHerc0826",
+   "volume_id": "20250821151701",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc0826"
+  },
+  {
+   "scroll": "PHerc1203",
+   "volume_id": "20250820131727",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc1203",
+   "excluded_same_scroll_higher_res": [
+    {
+     "volume_id": "20260319130212",
+     "voxel_size_um": 2.403,
+     "energy_kev": 77.0,
+     "reason": "The 2027 Grand Prize fixes this scroll to the listed volume. The prize rules prohibit using data derived from a higher-resolution scan of the submitted scroll volume."
+    }
+   ]
+  },
+  {
+   "scroll": "PHerc1218",
+   "volume_id": "20250521120456",
+   "voxel_size_um": 8.64,
+   "energy_kev": 116.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc1218"
+  },
+  {
+   "scroll": "PHerc1447",
+   "volume_id": "20250521151220",
+   "voxel_size_um": 8.64,
+   "energy_kev": 116.0,
+   "segments": 15,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc1447"
+  },
+  {
+   "scroll": "PHerc1545",
+   "volume_id": "20250821151648",
+   "voxel_size_um": 9.362,
+   "energy_kev": 113.0,
+   "segments": 0,
+   "surface_prediction": "20260413222639",
+   "lasagna_prediction": "20260419180421",
+   "all_surface_predictions": [
+    "20260413222639"
+   ],
+   "all_lasagna_predictions": [
+    "20260419180421"
+   ],
+   "source_url": "https://scrollprize.org/data_browser/PHerc1545"
+  }
+ ]
+}

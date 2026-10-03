@@ -214,7 +214,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 <nav class="topbar" aria-label="Primary"><div class="navinner">
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
-    <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
+    <a href="#overview">Overview</a><a href="#surfaces">Surfaces</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
     <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a><a href="./october-2026.html">October plan</a>
     <a href="{repo}">GitHub</a>
   </div>
@@ -252,7 +252,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     opens it fine and gets plausible all-zero voxels — no error, no warning.
     Proven by direct read; independently confirms
     <a href="https://github.com/scrollprize/villa/issues/1892">villa #1892</a>.</p></div>
-  <div class="card"><h3>20-day regression</h3>
+  {prize_preflight_card}  <div class="card"><h3>20-day regression</h3>
     <p>The identical audit re-ran over the identical 241-root dl list on
     2026-09-29. Strict diff on every finding field: <b>empty</b>. 18 defective
     pyramids, 50 actionable findings — <b>zero fixed, zero new</b>. Published
@@ -266,7 +266,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     <p><code>zpa-surface-depth-profile</code> checks the rendered ink-model input stack itself: expected slice count, deterministic per-depth signal/texture, sampled all-zero layers, duplicate sampled-layer digests, and exact source-volume lineage. It reports evidence rather than pretending these observations prove ink.</p></div>
 </section>
 
-<div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
+{tifxyz_panel}<div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
   <div class="actiongrid">
     <div><h3>1 · Inspect frozen evidence</h3>
       <p>Every headline number on this page is generated from committed run artifacts. Pages CI regenerates the dashboard and rejects drift from the evidence.</p>
@@ -434,7 +434,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
   The tool is published for anyone to rerun at larger sample sizes.</p>
 </div>
 
-{tifxyz_panel}<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
+<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
   <div style="overflow-x:auto"><table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
@@ -583,6 +583,33 @@ def render_tifxyz_panel(summary_path: str) -> str:
         '</div>\n')
 
 
+def render_prize_preflight_card(summary_path: str) -> str:
+    """Grand Prize exact-volume CT preflight card from a committed summary."""
+    try:
+        p = load_json(summary_path)
+    except FileNotFoundError:
+        return ""
+    t = p.get("totals", {})
+    found = t.get("exact_roots_found", 0)
+    eligible = t.get("eligible_targets", 0)
+    zero = t.get("roots_with_zero_findings", 0)
+    levels = t.get("roots_with_all_declared_levels_present", 0)
+    chunked = t.get("roots_with_no_chunkless_levels", 0)
+    known = t.get("roots_with_no_unknown_chunk_presence", 0)
+    return (
+        '<div class="card"><h3>Grand Prize CT preflight</h3>'
+        f'<p><b>{found} / {eligible}</b> exact prize-listed CT roots were found in the '
+        'frozen S3 audit. '
+        f'<b>{levels} / {eligible}</b> have all declared levels present, '
+        f'<b>{chunked} / {eligible}</b> have no chunkless level, '
+        f'<b>{known} / {eligible}</b> have no unknown chunk-presence state, and '
+        f'<b>{zero} / {eligible}</b> have zero header findings. '
+        'This is input-integrity evidence, not scan/surface/ink readiness. '
+        '<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/'
+        '2026-10-02-grand-prize-ct-preflight">Exact-volume artifact &rarr;</a></p></div>\n'
+    )
+
+
 BASELINE_TOOLS = (
     ("zarr-python", "zarr-python (open + read every level)"),
     ("ome-zarr-models", "ome-zarr-models (OME-NGFF validator)"),
@@ -729,6 +756,8 @@ def main() -> int:
 
     tifxyz_panel = render_tifxyz_panel(
         f"{ART}/2026-10-01-s3-tifxyz/tifxyz.summary.json")
+    prize_preflight_card = render_prize_preflight_card(
+        f"{ART}/2026-10-02-grand-prize-ct-preflight/summary.json")
     baseline_panel = render_baseline_panel(
         f"{ART}/2026-10-01-baseline-comparison/comparison.json")
 
@@ -752,6 +781,7 @@ def main() -> int:
         probe_rows=probe_rows, v2_note=v2_note,
         vc_pop=vc_pop, v2_pop=v2_pop, kd_n=kd_n, stamp=stamp,
         n_codes=len(SEVERITY), tifxyz_panel=tifxyz_panel,
+        prize_preflight_card=prize_preflight_card,
         baseline_panel=baseline_panel,
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
