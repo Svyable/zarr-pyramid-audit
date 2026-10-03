@@ -260,6 +260,56 @@ def _close(a: float, b: float) -> bool:
     return math.isclose(a, b, rel_tol=1e-5, abs_tol=1e-2)
 
 
+def _canonical_volume_id(value) -> str | None:
+    """Return a stable volume identifier from an ID, path or *.zarr name."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    name = value.strip().rstrip("/").rsplit("/", 1)[-1]
+    if name.endswith(".zarr"):
+        name = name[:-5]
+    return name or None
+
+
+def validate_expected_target_volume(store, roots: list[str], expected: str) -> None:
+    """Fail closed unless every surface declares the exact expected CT target.
+
+    This is an input guard, not a surface-quality finding. It is deliberately
+    opt-in so legacy TIFXYZ directories without modern VC3D target metadata
+    remain auditable under the existing evidence contract.
+    """
+    expected_id = _canonical_volume_id(expected)
+    if expected_id is None:
+        raise ValueError("expected target volume must be a non-empty volume ID or path")
+
+    failures: list[str] = []
+    for root in roots:
+        clean_root = root.rstrip("/")
+        evidence = store.json_evidence(f"{clean_root}/meta.json")
+        if evidence.state != "PRESENT":
+            failures.append(
+                f"{clean_root}: meta.json target evidence is {evidence.state}"
+            )
+            continue
+        if not isinstance(evidence.value, dict):
+            failures.append(f"{clean_root}: meta.json is not a JSON object")
+            continue
+        declared = evidence.value.get("target_volume")
+        observed_id = _canonical_volume_id(declared)
+        if observed_id != expected_id:
+            failures.append(
+                f"{clean_root}: target_volume={declared!r} "
+                f"(expected {expected_id!r})"
+            )
+
+    if failures:
+        detail = "; ".join(failures[:8])
+        if len(failures) > 8:
+            detail += f"; ... and {len(failures) - 8} more"
+        raise ValueError(
+            "expected target-volume guard failed before audit: " + detail
+        )
+
+
 def audit_surface(store, root: str, *, content: bool = False,
                   max_content_bytes: int = 256 * 1024 * 1024) -> dict:
     """Audit one tifxyz surface; return its schema-versioned report."""
@@ -553,6 +603,14 @@ def main(argv=None) -> int:
     ap.add_argument("--root", action="append", help="explicit surface (repeatable)")
     ap.add_argument("--content", action="store_true",
                     help="also read x/y/z in full and check the coordinates")
+    ap.add_argument(
+        "--expected-target-volume",
+        help=(
+            "optional fail-closed compliance guard: require every surface "
+            "meta.json target_volume to identify this exact CT volume before "
+            "any audit outputs are written"
+        ),
+    )
     ap.add_argument("--max-content-bytes", type=int, default=256 * 1024 * 1024)
     ap.add_argument("--fail-on", default=None,
                     choices=["high", "medium", "low", "info"],
@@ -575,6 +633,14 @@ def main(argv=None) -> int:
     kw = {} if args.base.startswith("s3://") else {
         "timeout": args.timeout, "max_rps": args.max_rps}
     store = open_store(args.base, **kw)
+    if args.expected_target_volume:
+        try:
+            validate_expected_target_volume(
+                store, roots, args.expected_target_volume
+            )
+        except ValueError as exc:
+            print(f"zpa-tifxyz: {exc}", file=sys.stderr)
+            return 2
 
     fd_path = os.path.join(args.out_dir, "tifxyz.findings.csv")
     rp_path = os.path.join(args.out_dir, "tifxyz.reports.jsonl")
@@ -588,6 +654,7 @@ def main(argv=None) -> int:
         man.set("base", args.base)
         man.set("n_roots", len(roots))
         man.set("content", bool(args.content))
+        man.set("expected_target_volume", args.expected_target_volume)
         for res in parallel_map(
                 lambda r: audit_surface(store, r, content=args.content,
                                         max_content_bytes=args.max_content_bytes),
@@ -614,6 +681,7 @@ def main(argv=None) -> int:
                 failed += 1
         summary = {"base": args.base, "surfaces": len(roots),
                    "content_tier": bool(args.content),
+                   "expected_target_volume": args.expected_target_volume,
                    "content_checked": content_checked,
                    "by_integrity": dict(integ.most_common()),
                    "by_code": dict(codes.most_common()),
