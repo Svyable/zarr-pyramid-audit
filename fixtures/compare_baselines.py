@@ -138,10 +138,9 @@ def yaozarrs_(path: str) -> dict:
 
 def zarr_lint_(path: str) -> dict:
     import zarr_lint
-    try:
-        report = zarr_lint.lint(path)
-    except Exception as exc:
-        return {"outcome": "error", "detail": type(exc).__name__, "rules": []}
+    # Benchmark infrastructure errors are not validator findings. Let them
+    # fail the run rather than silently turning a tool failure into "clean".
+    report = zarr_lint.lint(path)
     diagnostics = report.get("diagnostics") or []
     rules = sorted({str(d.get("rule", "unknown")) for d in diagnostics
                     if isinstance(d, dict)})
