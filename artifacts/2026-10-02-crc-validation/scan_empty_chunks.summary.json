@@ -1,0 +1,17 @@
+{
+  "roots_scanned": 64,
+  "levels_scanned": 384,
+  "levels_all_empty": [],
+  "n_levels_all_empty": 0,
+  "bytes_fetched": 119140499,
+  "by_code": {
+    "CHUNK_SAMPLE_MISSING": 1219,
+    "CHUNK_SAMPLE_POPULATED": 458,
+    "SHARD_INDEX_CHECKSUM_MISMATCH": 331
+  },
+  "index_crc": {
+    "verified": 1167,
+    "n/a": 510,
+    "mismatch": 331
+  }
+}

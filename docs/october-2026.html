@@ -154,12 +154,15 @@ from the 2026-10-01 environment.</td>
 <b>2026-10-01:</b> S3 half done
 (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a>). dl half blocked: the
 environment's network policy refuses <code>dl.ash2txt.org</code>.</td></tr>
-<tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag plan">planned</span></td>
+<tr><td>G2</td><td><b>Validate the volcomp CRC32C check on live shards</b><span class="tag prog">in progress</span></td>
 <td><code>SHARD_INDEX_CHECKSUM_MISMATCH</code> is <code>low</code> because it has never seen a live shard; a writer that
 skips or computes the checksum differently would look like corruption.</td>
 <td>A volcomp probe over the 64 dl scroll volumes whose summary splits <code>index_crc</code> into verified /
 unchecksummed / mismatch. Any severity change ships with a CHANGELOG migration note and corpus evidence, or the
-code stays <code>low</code>.</td></tr>
+code stays <code>low</code>.<br>
+<b>2026-10-02:</b> probe complete (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-02-crc-validation"><code>2026-10-02-crc-validation</code></a>):
+1,167 verified (58%), 331 mismatch (16.5%), 510 n/a (25%). Mismatches not proven real — severity stays <code>low</code>
+pending byte-level verification of whether our CRC or the writer is wrong.</td></tr>
 <tr><td>G3</td><td><b>Close the tifxyz coverage gaps</b><span class="tag plan">planned</span></td>
 <td>148 of 1,539 surfaces have header-tier evidence only, and a surface that runs past the top of its target volume
 is not detected (only negative coordinates are).</td>
@@ -224,6 +227,11 @@ keys at any level at 07:32 UTC
 (<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-01-s3-regression"><code>2026-10-01-s3-regression</code></a>).
 <b>dl half blocked:</b> <code>dl.ash2txt.org</code> is refused by the build environment's network policy; it
 needs an environment that can reach the host.</td></tr>
+<tr><td>2026-10-02</td><td><b>G2, probe complete.</b> CRC32C validation over 64 dl volcomp volumes (384 levels,
+2,008 shards): 1,167 verified (58%), 331 mismatch (16.5%), 510 n/a (25%).
+Mismatches not proven real — severity stays <code>low</code> pending byte-level verification.
+(<a href="https://github.com/Svyable/zarr-pyramid-audit/tree/main/artifacts/2026-10-02-crc-validation"><code>2026-10-02-crc-validation</code></a>).
+<b>Note:</b> <code>dl.ash2txt.org</code> reachable from this environment — G1 dl half unblocked.</td></tr>
 </tbody></table></div>
 
 </div>

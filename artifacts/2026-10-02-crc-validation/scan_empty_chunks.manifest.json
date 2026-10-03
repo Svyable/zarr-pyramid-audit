@@ -1,0 +1,61 @@
+{
+  "run_name": "scan_empty_chunks",
+  "started_utc": "2026-10-03T04:51:41.742333+00:00",
+  "argv": [
+    "bin/scan_empty_chunks.py",
+    "--base",
+    "https://dl.ash2txt.org/",
+    "--levels-jsonl",
+    "artifacts/2026-09-29-dl-regression/audit_pyramid.levels.jsonl",
+    "--only-sharded",
+    "--random-roots",
+    "64",
+    "--seed",
+    "7",
+    "--samples-per-level",
+    "4",
+    "--workers",
+    "6",
+    "--out-dir",
+    "artifacts/2026-10-02-crc-validation"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-39-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python",
+  "packages": {
+    "numpy": "2.5.3",
+    "zarr": "3.4.0",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {},
+  "outputs": [],
+  "notes": [],
+  "base": "https://dl.ash2txt.org/",
+  "n_roots": 64,
+  "samples_per_level": 4,
+  "summary": {
+    "roots_scanned": 64,
+    "levels_scanned": 384,
+    "levels_all_empty": [],
+    "n_levels_all_empty": 0,
+    "bytes_fetched": 119140499,
+    "by_code": {
+      "CHUNK_SAMPLE_MISSING": 1219,
+      "CHUNK_SAMPLE_POPULATED": 458,
+      "SHARD_INDEX_CHECKSUM_MISMATCH": 331
+    },
+    "index_crc": {
+      "verified": 1167,
+      "n/a": 510,
+      "mismatch": 331
+    }
+  },
+  "ended_utc": "2026-10-03T04:54:24.357990+00:00",
+  "wall_seconds": 162.616
+}
