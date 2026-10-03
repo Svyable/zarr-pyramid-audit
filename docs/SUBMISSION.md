@@ -21,8 +21,9 @@ evidence that downstream tools consume.
 |---|---|
 | A confirmed silent-zeros defect is live in the official S3 bucket: a PHerc0814 surface volume whose 6 levels all have valid headers and zero chunks | [`artifacts/2026-09-29-s3/SILENT_ZEROS.md`](../artifacts/2026-09-29-s3/SILENT_ZEROS.md); re-verified [`2026-09-30-s3-reverify`](../artifacts/2026-09-30-s3-reverify/); independently confirms [villa #1892](https://github.com/scrollprize/villa/issues/1892) |
 | Audited the whole S3 bucket: 957 roots, 956 clean, 1 defective | [`artifacts/2026-09-29-s3/`](../artifacts/2026-09-29-s3/); reproduced row for row on 2026-10-01 with the conformance checks on, [`2026-10-01-s3-conformance`](../artifacts/2026-10-01-s3-conformance/) |
-| Audited all 241 `dl.ash2txt.org` roots: 18 defective pyramids. A 20-day re-run found 0 of them fixed | [`artifacts/2026-09-09/`](../artifacts/2026-09-09/), [`2026-09-29-dl-regression`](../artifacts/2026-09-29-dl-regression/) |
+| Audited all 241 `dl.ash2txt.org` roots: 18 defective pyramids. The 2026-10-03 strict regression reproduced all 175 findings with 0 fixed / 0 new / 175 unchanged | [`artifacts/2026-09-09/`](../artifacts/2026-09-09/), [`2026-10-03-dl-regression`](../artifacts/2026-10-03-dl-regression/) |
 | All 1,539 tifxyz surface patches in the S3 bucket audited. All are structurally complete. 161 have points outside any CT volume (up to 39.7% of a surface); 30 declare a bbox that disagrees with their stored coordinates (28 with the `-1` marker leaked into the minimum, 2 with points outside the declared box) | [`artifacts/2026-10-01-s3-tifxyz/`](../artifacts/2026-10-01-s3-tifxyz/) |
+| Verified volcomp shard-index CRC32C behavior over 2,008 live shards: 1,167 verified, 331 mismatched, 510 undeclared. An independent bit-by-bit implementation confirms the 331 mismatches are writer non-conformance; affected indexes still parse and chunks decode, so this is a medium integrity warning rather than evidence of voxel corruption | [`artifacts/2026-10-02-crc-validation/`](../artifacts/2026-10-02-crc-validation/), [`2026-10-03-crc-byte-verification/`](../artifacts/2026-10-03-crc-byte-verification/) |
 | The dl findings were filed upstream on 2026-09-10 as villa #1755–#1760 | [`issues/README.md`](../issues/README.md): drafts, repro commands and issue links |
 | Sampled chunk-content probes across both hosts: 4,355 populated samples in four campaigns; 7 all-empty levels, all in one dev mesh derivative (`other/dev/meshes/…`, medium, human review) | README "Latest results" table → `artifacts/2026-09-30-{s3-chunkscan,s3-chunkscan-v3,dl-volcomp-probe,dl-v2-probe}/` |
 
@@ -112,7 +113,7 @@ Other advantages, each backed by an artifact or a test:
 | Raw, Blosc and `bytes` chunks | **decoded** by the probe; other codecs are reported `CHUNK_UNDECODEABLE`, never guessed |
 | Stores: `https://` autoindex, `s3://` (anonymous), `file://` or a local path | **all**, same evidence semantics |
 | tifxyz quadmeshes (`meta.json` + `x/y/z.tif`, classic TIFF or BigTIFF, uncompressed or tiled/LZW/predictor) | **audited** by `zpa-tifxyz`: structure from TIFF headers via strict range reads; coordinates with `--content`. All 1,539 public S3 surfaces surveyed ([`2026-10-01-s3-tifxyz`](../artifacts/2026-10-01-s3-tifxyz/)); `zpa-discover` lists them in `discover_zarr.surfaces.jsonl` |
-| Triangular meshes | **not audited by ZPA.** Mesh and winding audits live in the companion [ScrolIQ](https://github.com/Svyable/scrollq) |
+| Triangular meshes | **intentionally delegated to ScrolIQ, not duplicated in ZPA.** The formal [triangular-mesh handoff contract](TRIANGULAR_MESH_HANDOFF.md) binds the exact OBJ hash, upstream ZPA input report and ScrolIQ `obj-mesh-audit` report while keeping geometry findings out of ZPA's integrity code system |
 
 ### Maintains consistent output formats
 
@@ -146,11 +147,13 @@ Other advantages, each backed by an artifact or a test:
 
 ## Known gaps (stated, not hidden)
 
-- `dl.ash2txt.org` was unreachable from the environment that produced the
-  2026-10-01 runs. The dl campaigns are dated 2026-09-09 to 2026-09-30, and
-  the volcomp CRC32C check has not been run on live shards.
-- Triangular meshes are not audited by ZPA (see the table above). The tifxyz
-  content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
+- Live-state evidence is dated rather than assumed permanent. S3 was re-run on
+  2026-10-01 and the exact 241-root dl corpus on 2026-10-03. The volcomp
+  CRC32C check has also been run over 2,008 live shards and independently
+  byte-verified; future changes on either host still require a fresh campaign.
+- Triangular meshes are intentionally audited in ScrolIQ under the documented
+  [handoff contract](TRIANGULAR_MESH_HANDOFF.md), rather than duplicated here.
+  The tifxyz content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
   1,539); the other 148 have header-tier evidence only, reported as a
   coverage gap. `TIFXYZ_NEGATIVE_COORDINATE` catches geometry below a
   volume's grid; overruns past its top need the target volume's shape and
