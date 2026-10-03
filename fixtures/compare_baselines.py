@@ -1,8 +1,8 @@
 """
 compare_baselines.py -- what do existing tools say about each fixture?
 
-Runs four readers over every on-disk case in fixtures/zarr/ and records
-what each one *tells its user*:
+Runs independent readers / validators over every on-disk case in fixtures/zarr/
+and records what each one *tells its user*:
 
   zarr-python      open the group and read every declared level in full,
                    the way a training/data loader would. Outcome: "raises"
@@ -31,8 +31,9 @@ Ground truth is assigned per fixture by what it was *built* to contain
                 one is correct, so it never counts as a false alarm
 
 A tool "flags" a fixture when it gives its user any signal: zarr-python
-raises, ome-zarr-models rejects, ZPA reports a non-info code or a non-PASS
-integrity (the chunk-probe column also counts non-info probe codes).
+raises; ome-zarr-models or yaozarrs rejects; zarr-lint emits a diagnostic; or
+ZPA reports a non-info code or a non-PASS integrity (the chunk-probe column
+also counts non-info probe codes).
 
     pip install -r fixtures/requirements-baselines.txt   # not package dependencies
     python fixtures/compare_baselines.py --out-dir artifacts/<date>-baseline-comparison
