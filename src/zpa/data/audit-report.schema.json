@@ -13,6 +13,7 @@
     "kind",
     "zarr_format",
     "evidence",
+    "source_attestation",
     "integrity",
     "max_severity",
     "coverage",
@@ -22,7 +23,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.2.0"
+      "const": "1.3.0"
     },
     "tool": {
       "type": "string",
@@ -135,6 +136,87 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/finding"
+      }
+    },
+    "source_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "state",
+        "metadata_semantics_sha256",
+        "axes",
+        "base_declared_scale",
+        "absolute_scale_state",
+        "spatial_axes"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "const": "zpa-metadata-semantics-v1"
+        },
+        "state": {
+          "$ref": "#/$defs/evidence_state"
+        },
+        "metadata_semantics_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "SHA-256 of canonical parsed metadata semantics used by the audit; null when readable Zarr metadata was not available."
+        },
+        "axes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "base_declared_scale": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          }
+        },
+        "absolute_scale_state": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "explicitly_unknown",
+            "unspecified",
+            null
+          ]
+        },
+        "spatial_axes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "index",
+              "name",
+              "unit"
+            ],
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
       }
     }
   },

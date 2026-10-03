@@ -66,6 +66,24 @@ with a per-level `chunk_evidence_reason`). A coverage gap does not change
 "checked and fine". `has_chunks` is tri-state: `null` means "not observable",
 never "no chunks".
 
+### Source attestation
+
+Every pyramid report in schema 1.3.0 carries a `source_attestation` block.
+Its `metadata_semantics_sha256` hashes the canonical parsed metadata ZPA
+actually audited: root attributes plus the level-header fields used by the
+checks. The hash is stable across equivalent HTTP, S3 and local mirrors whose
+JSON formatting may differ.
+
+The attestation also exposes `axes`, `base_declared_scale`,
+`absolute_scale_state`, and the declared spatial-axis units. This lets an
+inference pipeline bind a checkpoint's physical input contract to the same
+metadata evidence that passed ZPA instead of re-parsing a second copy.
+
+This is deliberately **not** a raw-byte content hash, ETag, or payload census.
+When the metadata could not be read, `metadata_semantics_sha256` is `null`
+and the attestation records `PRESENT`, `ABSENT`, or `UNKNOWN` rather than
+inventing a fingerprint.
+
 The sampled chunk-content probe (`zpa-scan-chunks`) is separate evidence with
 its own codes. Its only non-informational flag, `CHUNK_SAMPLE_ALL_EMPTY`, is
 `medium` (a review flag). It reports a sample and does not prove the whole

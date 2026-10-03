@@ -86,9 +86,14 @@ def test_high_severity_always_means_do_not_train():
 def test_schema_version_and_codes_match_the_code():
     schema = rpt.load_schema()
     assert schema["properties"]["schema_version"]["const"] == rpt.SCHEMA_VERSION
+    assert "source_attestation" in schema["required"]
     assert set(schema["$defs"]["check_code"]["enum"]) == (
         set(SEVERITY) | set(rpt.GATE_SEVERITY))
     assert schema["properties"]["integrity"]["enum"] == list(rpt.INTEGRITY_STATES)
+    assert (
+        rpt.load_schema("tifxyz")["properties"]["schema_version"]["const"]
+        == rpt.SCHEMA_VERSION
+    )
 
 
 def test_schema_is_shipped_with_the_package():
@@ -125,6 +130,37 @@ def test_finding_fields_scroliq_reads_are_stable():
     for finding in findings:
         assert {"code", "severity", "level", "detail"} <= set(finding)
     assert "n_levels" in record
+
+
+def test_source_attestation_is_stable_and_sensitive():
+    store = open_store(os.path.join(REPO, "fixtures", "zarr"))
+    first = rpt.audit_root(store, "clean_v2.zarr")
+    second = rpt.audit_root(store, "clean_v2.zarr")
+    changed = rpt.audit_root(store, "fill_drift.zarr")
+
+    a = first["source_attestation"]
+    assert a["algorithm"] == "zpa-metadata-semantics-v1"
+    assert a["state"] == "PRESENT"
+    assert a["axes"] == ["z", "y", "x"]
+    assert a["base_declared_scale"] == [1.0, 1.0, 1.0]
+    assert a["absolute_scale_state"] == "unspecified"
+    assert len(a["metadata_semantics_sha256"]) == 64
+    int(a["metadata_semantics_sha256"], 16)
+    assert a["metadata_semantics_sha256"] == (
+        second["source_attestation"]["metadata_semantics_sha256"]
+    )
+    assert a["metadata_semantics_sha256"] != (
+        changed["source_attestation"]["metadata_semantics_sha256"]
+    )
+
+
+def test_source_attestation_does_not_invent_missing_metadata():
+    store = open_store(os.path.join(REPO, "fixtures", "zarr"))
+    report = rpt.audit_root(store, "root_absent.zarr")
+    attestation = report["source_attestation"]
+    assert attestation["state"] == "ABSENT"
+    assert attestation["metadata_semantics_sha256"] is None
+    assert attestation["base_declared_scale"] is None
 
 
 def test_audit_root_never_reports_a_crash_as_clean():
