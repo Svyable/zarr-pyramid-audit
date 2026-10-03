@@ -5,7 +5,7 @@ with the expected structured output committed next to it. They pin the
 evidence contract (missing ≠ empty ≠ zero-filled; UNKNOWN is never clean)
 and make any behaviour change show up as a reviewable diff.
 
-Corpus version: **1** · report schema: **1.2.0** ·
+Corpus version: **1** · report schema: **1.3.0** ·
 43 on-disk cases, 8 replayed-HTTP cases, 16 tifxyz surface cases,
 19 byte-range cases.
 
