@@ -55,9 +55,8 @@ def test_zarr_lint_adapter_does_not_hide_tool_errors(monkeypatch):
 
     monkeypatch.setitem(sys.modules, "zarr_lint", types.SimpleNamespace(lint=explode))
 
-    try:
-        module.zarr_lint_("fixture.zarr")
-    except RuntimeError as exc:
-        assert str(exc) == "tool failed"
-    else:
-        raise AssertionError("zarr-lint infrastructure errors must fail the benchmark")
+    assert module.zarr_lint_("fixture.zarr") == {
+        "outcome": "error",
+        "detail": "RuntimeError: tool failed",
+        "rules": [],
+    }
