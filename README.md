@@ -600,6 +600,12 @@ order-of-magnitude with their sample size, not to spurious precision.
 See [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md). Dev setup is `pip install -e '.[dev]'`
 then `python -m pytest tests/ -q`. AI coding agents: [`AGENTS.md`](AGENTS.md).
 
+## Fork provenance
+
+This repository is a fork of [sgsllc-jr/zarr-pyramid-audit](https://github.com/sgsllc-jr/zarr-pyramid-audit), the upstream project maintained by James Ryan and released under the MIT license. Code and documentation inherited from upstream retain their original attribution and copyright; changes made in this fork are traceable in this repository's commit history. See [AGENTS.md](AGENTS.md) for the explicit upstream/downstream relationship and contribution rules.
+
+The disclosure retained below is inherited from that upstream work. It should not be read as a claim that the upstream copied material from this fork.
+
 ## Data attribution and license
 
 Every finding in this repository was derived from metadata (`.zattrs`, `.zarray`, `.zgroup`, and
