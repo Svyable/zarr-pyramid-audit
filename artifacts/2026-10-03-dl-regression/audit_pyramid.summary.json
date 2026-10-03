@@ -1,0 +1,28 @@
+{
+  "base": "https://dl.ash2txt.org/",
+  "roots_requested": 241,
+  "pyramids_audited": 241,
+  "pyramids_with_findings": 130,
+  "pyramids_clean": 111,
+  "findings_total": 175,
+  "findings_actionable": 50,
+  "findings_informational": 125,
+  "pyramids_with_defects": 18,
+  "by_code": {
+    "CHUNK_EXCEEDS_SHAPE": 78,
+    "BARE_ARRAY": 40,
+    "SCALE_SHAPE_MISMATCH": 15,
+    "LEVEL_MISSING": 13,
+    "LEVEL_NO_CHUNKS": 11,
+    "COMPRESSOR_DRIFT": 9,
+    "NOT_MULTISCALE": 6,
+    "NOT_A_ZARR_GROUP": 1,
+    "CONTAINER_NO_GROUP_HEADER": 1,
+    "HEADERLESS_CHUNK_STORE": 1
+  },
+  "by_severity": {
+    "info": 125,
+    "high": 40,
+    "low": 10
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "run_name": "audit_pyramid",
+  "started_utc": "2026-10-03T16:22:32.006511+00:00",
+  "argv": [
+    ".venv/bin/zpa-audit",
+    "--base",
+    "https://dl.ash2txt.org/",
+    "--roots",
+    "artifacts/2026-09-09/discover_zarr.roots.jsonl",
+    "--workers",
+    "6",
+    "--out-dir",
+    "artifacts/2026-10-03-dl-regression"
+  ],
+  "cwd": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit",
+  "host": "htch-runtime",
+  "platform": "Linux-7.0.0-39-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "python_exe": "/home/hatch/workspace/vesuvius-sprint/zarr-pyramid-audit/.venv/bin/python3",
+  "packages": {
+    "numpy": "2.5.3",
+    "zarr": "3.4.0",
+    "s3fs": "2026.9.0",
+    "fsspec": "2026.9.0",
+    "tifffile": "<not installed>",
+    "requests": "2.34.2",
+    "botocore": "1.43.75"
+  },
+  "counters": {},
+  "outputs": [
+    {
+      "path": "artifacts/2026-10-03-dl-regression/audit_pyramid.levels.jsonl",
+      "exists": true,
+      "bytes": 651586,
+      "desc": "per-level records"
+    },
+    {
+      "path": "artifacts/2026-10-03-dl-regression/audit_pyramid.pyramids.jsonl",
+      "exists": true,
+      "bytes": 170201,
+      "desc": "per-pyramid records"
+    },
+    {
+      "path": "artifacts/2026-10-03-dl-regression/audit_pyramid.findings.csv",
+      "exists": true,
+      "bytes": 36960,
+      "desc": "findings"
+    },
+    {
+      "path": "artifacts/2026-10-03-dl-regression/audit_pyramid.summary.json",
+      "exists": true,
+      "bytes": 644,
+      "desc": "summary"
+    }
+  ],
+  "notes": [],
+  "base": "https://dl.ash2txt.org/",
+  "n_roots": 241,
+  "chunk_presence_check": true,
+  "max_flat_keys": 250000,
+  "summary": {
+    "base": "https://dl.ash2txt.org/",
+    "roots_requested": 241,
+    "pyramids_audited": 241,
+    "pyramids_with_findings": 130,
+    "pyramids_clean": 111,
+    "findings_total": 175,
+    "findings_actionable": 50,
+    "findings_informational": 125,
+    "pyramids_with_defects": 18,
+    "by_code": {
+      "CHUNK_EXCEEDS_SHAPE": 78,
+      "BARE_ARRAY": 40,
+      "SCALE_SHAPE_MISMATCH": 15,
+      "LEVEL_MISSING": 13,
+      "LEVEL_NO_CHUNKS": 11,
+      "COMPRESSOR_DRIFT": 9,
+      "NOT_MULTISCALE": 6,
+      "NOT_A_ZARR_GROUP": 1,
+      "CONTAINER_NO_GROUP_HEADER": 1,
+      "HEADERLESS_CHUNK_STORE": 1
+    },
+    "by_severity": {
+      "info": 125,
+      "high": 40,
+      "low": 10
+    }
+  },
+  "ended_utc": "2026-10-03T16:26:29.781681+00:00",
+  "wall_seconds": 237.775
+}
