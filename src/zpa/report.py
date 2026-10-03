@@ -53,7 +53,7 @@ __all__ = [
     "load_schema", "validate_report", "contract", "contract_fingerprint",
 ]
 
-SCHEMA_VERSION = "1.2.0"
+SCHEMA_VERSION = "1.3.0"
 TOOL = "zarr-pyramid-audit"
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}
@@ -134,6 +134,81 @@ def _max_severity(findings: list[dict]) -> str:
     return max((f["severity"] for f in findings), key=SEVERITY_ORDER.__getitem__)
 
 
+def _source_attestation(pm, pyramid_record: dict) -> dict:
+    """Bind a report to the metadata semantics that were actually audited.
+
+    This is intentionally a semantic digest, not a byte hash or object-store
+    ETag. ZPA may read the same public dataset through HTTP, S3, or a local
+    mirror, and those transports need not preserve byte-for-byte JSON
+    formatting. The digest canonicalizes the parsed root attributes and the
+    parsed level-header fields ZPA used for its findings.
+    """
+    state = getattr(pm, "evidence_state", "UNKNOWN")
+    has_readable_metadata = bool(pm.attrs_raw) or bool(pm.levels)
+    metadata_sha = None
+    if state == "PRESENT" and has_readable_metadata:
+        payload = {
+            "zarr_format": pm.zarr_format,
+            "is_group": bool(pm.is_group),
+            "node_kind": pm.node_kind,
+            "attrs": pm.attrs_raw,
+            "levels": [
+                {
+                    "path": lv.path,
+                    "index": lv.index,
+                    "declared_scale": lv.declared_scale,
+                    "shape": lv.shape,
+                    "chunks": lv.chunks,
+                    "dtype": lv.dtype,
+                    "fill_value": lv.fill_value,
+                    "compressor": lv.compressor,
+                    "dimension_separator": lv.dimension_separator,
+                    "zarr_format": lv.zarr_format,
+                    "order": lv.order,
+                    "dimension_names": lv.dimension_names,
+                    "present": bool(lv.present),
+                }
+                for lv in pm.levels
+            ],
+        }
+        blob = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        metadata_sha = hashlib.sha256(blob).hexdigest()
+
+    physical = pyramid_record.get("physical_scale")
+    if not isinstance(physical, dict):
+        physical = {}
+    spatial_axes = []
+    for axis in physical.get("spatial_axes") or []:
+        if not isinstance(axis, dict):
+            continue
+        unit = axis.get("unit")
+        spatial_axes.append(
+            {
+                "index": int(axis.get("index", 0)),
+                "name": str(axis.get("name", "?")),
+                "unit": None if unit is None else str(unit),
+            }
+        )
+
+    base = pm.base
+    return {
+        "algorithm": "zpa-metadata-semantics-v1",
+        "state": state,
+        "metadata_semantics_sha256": metadata_sha,
+        "axes": list(pm.axes),
+        "base_declared_scale": (
+            list(base.declared_scale) if base and base.declared_scale else None
+        ),
+        "absolute_scale_state": physical.get("absolute_scale_state"),
+        "spatial_axes": spatial_axes,
+    }
+
+
 def build_report(pm, *, findings=None, pyramid_record=None) -> dict:
     """Build the schema-versioned report for one ``PyramidMeta``.
 
@@ -191,6 +266,7 @@ def build_report(pm, *, findings=None, pyramid_record=None) -> dict:
         "evidence": {"state": pm.evidence_state, "reason": pm.evidence_reason},
         "integrity": integrity,
         "max_severity": _max_severity(out_findings),
+        "source_attestation": _source_attestation(pm, pyramid_record),
         "coverage": {
             "levels_declared": len(pm.levels),
             "levels_present": sum(1 for lv in pm.levels if lv.present),
@@ -225,6 +301,15 @@ def audit_root(store, root: str, **read_kw) -> dict:
             "tool_version": _tool_version(), "root": root.rstrip("/"),
             "kind": "audit_error", "zarr_format": None,
             "evidence": {"state": "UNKNOWN", "reason": "AUDIT_ERROR"},
+            "source_attestation": {
+                "algorithm": "zpa-metadata-semantics-v1",
+                "state": "UNKNOWN",
+                "metadata_semantics_sha256": None,
+                "axes": [],
+                "base_declared_scale": None,
+                "absolute_scale_state": None,
+                "spatial_axes": [],
+            },
             "integrity": "FAIL", "max_severity": "high",
             "coverage": {"levels_declared": 0, "levels_present": 0,
                          "levels_unknown": 0,
