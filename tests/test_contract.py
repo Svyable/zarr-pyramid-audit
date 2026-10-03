@@ -86,9 +86,14 @@ def test_high_severity_always_means_do_not_train():
 def test_schema_version_and_codes_match_the_code():
     schema = rpt.load_schema()
     assert schema["properties"]["schema_version"]["const"] == rpt.SCHEMA_VERSION
+    assert "source_attestation" in schema["required"]
     assert set(schema["$defs"]["check_code"]["enum"]) == (
         set(SEVERITY) | set(rpt.GATE_SEVERITY))
     assert schema["properties"]["integrity"]["enum"] == list(rpt.INTEGRITY_STATES)
+    assert (
+        rpt.load_schema("tifxyz")["properties"]["schema_version"]["const"]
+        == rpt.SCHEMA_VERSION
+    )
 
 
 def test_schema_is_shipped_with_the_package():
