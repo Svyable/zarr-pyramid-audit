@@ -8,7 +8,12 @@
 <meta property="og:description" content="957 S3 Zarr roots audited. Silent-zero corruption proved live. A publish-time gate rejects it before training.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://svyable.github.io/zarr-pyramid-audit/september-2026.html">
+<meta name="theme-color" content="#0d0b08">
+<meta name="color-scheme" content="dark">
+<meta property="og:image" content="https://svyable.github.io/zarr-pyramid-audit/favicon.svg">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="zarr-pyramid-audit — September 2026 Vesuvius Progress Prize">
+<meta name="twitter:description" content="Frozen September evidence for live silent-zero corruption detection and a fail-closed publish-time gate.">
 <style>
 :root{--bg:#0d0b08;--panel:#161310;--panel2:#1c1813;--line:#2c251b;
 --ink:#ece3d2;--muted:#a89880;--dim:#6f6350;
@@ -75,7 +80,30 @@ footer a{color:var(--muted)}
 .rubric td:first-child{width:26%;color:var(--ink);font-weight:700}
 .smalllink{font-size:.8rem}
 .status-ready{color:var(--good);font-weight:800}
+
+.topnav{position:sticky;top:0;z-index:20;background:rgba(13,11,8,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topnav .wrap{display:flex;gap:.35rem;align-items:center;overflow-x:auto;padding-top:.55rem;padding-bottom:.55rem;scrollbar-width:none}
+.topnav .wrap::-webkit-scrollbar{display:none}
+.topnav a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.78rem;border:1px solid transparent;border-radius:999px;padding:.32rem .62rem}
+.topnav a:hover,.topnav a:focus-visible{color:var(--ink);border-color:var(--line);outline:none}
+.review-panel{border-color:#4c3a24;background:linear-gradient(135deg,rgba(255,122,26,.07),rgba(255,209,102,.025))}
+.review-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.7rem;margin-top:1rem}
+.review-card{display:block;text-decoration:none;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:1rem;min-height:112px}
+.review-card:hover,.review-card:focus-visible{border-color:#5b4934;outline:none;transform:translateY(-1px)}
+.review-card b{display:block;color:var(--ink);margin-bottom:.28rem}
+.review-card span{display:block;color:var(--muted);font-size:.85rem;line-height:1.45}
+.panel[id]{scroll-margin-top:4rem}
+@media (max-width:620px){.hero{padding-top:2.6rem}.panel{padding:1.15rem}table{display:block;overflow-x:auto}}
 </style></head><body>
+<nav class="topnav" aria-label="Progress pages"><div class="wrap">
+<a href="./">Dashboard</a>
+<a href="#case">60-second case</a>
+<a href="#update">October evidence</a>
+<a href="./october-2026.html">October plan</a>
+<a href="./grand-prize-readiness.html">2027 readiness</a>
+<a href="https://svyable.github.io/scrollq/october-2026-update.html">ScrolIQ update</a>
+<a href="https://github.com/Svyable/zarr-pyramid-audit">Source</a>
+</div></nav>
 
 <header class="hero"><div class="wrap">
 <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER 2026 PROGRESS PRIZE</div>
@@ -111,6 +139,18 @@ Latest awarded work: <a href="https://scrollprize.org/winners">scrollprize.org/w
 </div></header>
 
 <div class="wrap" style="margin-top:2.5rem">
+<div class="panel review-panel" aria-labelledby="reviewer-path-title">
+<div class="kicker">Reviewer path · navigation layer added 2026-10-03</div>
+<h2 id="reviewer-path-title">The September finding stays frozen; October hardens the proof.</h2>
+<p>This page preserves the September submission and dated corrections. The navigation below changes no September result. It simply puts the live defect, the gate proof, the October hardening work, and the companion diagnostic layer into one review path.</p>
+<div class="review-grid">
+<a class="review-card" href="#case"><b>1 · See the failure mode</b><span>Why a valid-looking Zarr can silently return zeros and why that matters downstream.</span></a>
+<a class="review-card" href="#evidence"><b>2 · Verify the evidence</b><span>Trace every headline claim to a committed artifact and reproducible command.</span></a>
+<a class="review-card" href="#update"><b>3 · Follow October hardening</b><span>TIFXYZ coverage, validator comparison, fail-closed integration, and the versioned report contract.</span></a>
+<a class="review-card" href="./grand-prize-readiness.html"><b>4 · Check the 2027 role</b><span>See exactly where integrity evidence supports a qualifying full-scroll submission—and where it does not.</span></a>
+</div>
+</div>
+
 
 <div class="panel" id="case"><h2>The 60-second case</h2>
 <div class="callout"><p><span class="kicker">A valid Zarr header can still be a lie.</span>
@@ -356,7 +396,7 @@ Additions made after the deadline are confined to dated corrections and the clea
 </div>
 
 <footer><div class="wrap">
-<a href="./">← back to the data-health dashboard</a><br><br>
+<a href="./">← back to the data-health dashboard</a> · <a href="./october-2026.html">October 2026 plan</a> · <a href="./grand-prize-readiness.html">2027 readiness</a><br><br>
 Built by Sven + Muse · September 2026
 </div></footer>
 </body></html>
