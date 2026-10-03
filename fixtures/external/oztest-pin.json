@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "source": {
+    "repository": "https://github.com/German-BioImaging/oztest",
+    "commit": "aebc2384edc3dc4c88aa68e02c585fa663b95752",
+    "project_version": "0.1.0",
+    "checked_utc": "2026-10-02",
+    "status": "reference-only",
+    "licensing": "blocked",
+    "licensing_note": "At the pinned commit, the repository root has no LICENSE file and pyproject.toml declares no license. Do not vendor case contents or use these cases as Scroll Prize evidence until reuse terms are verified.",
+    "maturity_note": "Upstream README describes oztest as alpha/work in progress and says cases may need correction."
+  },
+  "scope": {
+    "kind": "parse_attributes",
+    "ome_zarr_version": "0.5",
+    "profile": "core",
+    "object_type": "image",
+    "limitation": "These are attribute-level cases, not complete Zarr hierarchies. Any future ZPA comparison needs a documented adapter and must report adapter semantics separately."
+  },
+  "cases": [
+    {
+      "slug": "parse_attributes/v0.5/core/valid/image/custom_type_axes",
+      "expected": "valid",
+      "blob_sha": "1a6a3f75d3a993cbb3fa3234deb42943853d6eea"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/valid/image/invalid_axis_units",
+      "expected": "valid",
+      "blob_sha": "628e8a3f9c1ec555f2b397aed6142b81ed106ed4"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/valid/image/mismatch_axes_units",
+      "expected": "valid",
+      "blob_sha": "9fd2cdd21dc5fd989942b625c6bf93414d474ef3"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/valid/image/missing_name",
+      "expected": "valid",
+      "blob_sha": "4ac229ade2e653576c48385ac49f6d056a1e7f0b"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/valid/image/untyped_axes",
+      "expected": "valid",
+      "blob_sha": "c55cc4c0fb775cd890d5ea2fc88f4e4e6ac0ecd2"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/duplicate_axes",
+      "expected": "invalid",
+      "blob_sha": "1a13a03f541b334c2132334fe050609ff7c2c879"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/duplicate_scale",
+      "expected": "invalid",
+      "blob_sha": "84c5e2bb3924551937ce2c6699bec74ecf892950"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/empty_transformations",
+      "expected": "invalid",
+      "blob_sha": "229427c58575d473aa59a437694adb81488bfc6a"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/invalid_axes_count",
+      "expected": "invalid",
+      "blob_sha": "97973ebc9f4f465854b1796aee8798e2d20e635e"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/invalid_axis_type",
+      "expected": "invalid",
+      "blob_sha": "306be0822b6383972ff88300744a583ea159d9fa"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/invalid_path",
+      "expected": "invalid",
+      "blob_sha": "e92106af8dc9e2d24b8b73be42203fddc7b4181e"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/missing_axes",
+      "expected": "invalid",
+      "blob_sha": "50b2e9e62e3cde50a900f0abf2ee756b70e59bca"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/missing_scale",
+      "expected": "invalid",
+      "blob_sha": "dc525eed8bbe45e7b4dd9bfb8f613482240c0d7e"
+    },
+    {
+      "slug": "parse_attributes/v0.5/core/invalid/image/too_many_axes",
+      "expected": "invalid",
+      "blob_sha": "4fcee2887df1b44459269c6caeee981942ecc6b6"
+    }
+  ]
+}
