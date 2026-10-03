@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 
@@ -55,6 +56,186 @@ from zpa.report import NOTHING_TO_AUDIT, SCHEMA_VERSION, build_report      # noq
 from zpa.zarrmeta import read_pyramid                                      # noqa: E402
 
 SEV_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}
+
+
+_MICROMETER_FACTORS = {
+    "um": 1.0,
+    "µm": 1.0,
+    "μm": 1.0,
+    "micron": 1.0,
+    "microns": 1.0,
+    "micrometer": 1.0,
+    "micrometers": 1.0,
+    "micrometre": 1.0,
+    "micrometres": 1.0,
+    "nm": 1e-3,
+    "nanometer": 1e-3,
+    "nanometers": 1e-3,
+    "nanometre": 1e-3,
+    "nanometres": 1e-3,
+    "mm": 1e3,
+    "millimeter": 1e3,
+    "millimeters": 1e3,
+    "millimetre": 1e3,
+    "millimetres": 1e3,
+    "m": 1e6,
+    "meter": 1e6,
+    "meters": 1e6,
+    "metre": 1e6,
+    "metres": 1e6,
+}
+
+
+def _check_expected_voxel_size(
+    pyramid_record: dict,
+    expected_um: float | None,
+    tolerance_um: float,
+) -> tuple[dict | None, dict | None]:
+    """Fail-closed physical voxel-size check for an explicitly requested source.
+
+    The ordinary audit deliberately avoids plausibility thresholds. This opt-in
+    gate is different: the caller supplies the exact voxel size expected for a
+    known eligible source, and every declared spatial axis must prove that size.
+    """
+    if expected_um is None:
+        return None, None
+
+    evidence = {
+        "expected_um": expected_um,
+        "tolerance_um": tolerance_um,
+        "status": "unknown",
+        "axes": [],
+    }
+    physical = pyramid_record.get("physical_scale")
+    if not isinstance(physical, dict):
+        detail = "audit report carries no physical-scale evidence"
+        return evidence, {
+            "code": "GATE_VOXEL_SIZE_UNKNOWN",
+            "severity": "high",
+            "level": "",
+            "detail": detail,
+        }
+
+    if physical.get("physical_size_marker") == "unknown":
+        detail = (
+            "metadata explicitly marks absolute physical size unknown; "
+            f"cannot prove requested {expected_um:g} µm voxel size"
+        )
+        return evidence, {
+            "code": "GATE_VOXEL_SIZE_UNKNOWN",
+            "severity": "high",
+            "level": "",
+            "detail": detail,
+        }
+
+    scale = physical.get("base_declared_scale")
+    axes = physical.get("spatial_axes")
+    if not isinstance(scale, list) or not isinstance(axes, list) or not axes:
+        detail = (
+            "base declared scale and spatial-axis unit evidence are required "
+            "to verify voxel size"
+        )
+        return evidence, {
+            "code": "GATE_VOXEL_SIZE_UNKNOWN",
+            "severity": "high",
+            "level": "",
+            "detail": detail,
+        }
+
+    observed: list[tuple[str, float]] = []
+    for axis in axes:
+        if not isinstance(axis, dict):
+            continue
+        index = axis.get("index")
+        name = str(axis.get("name", "?"))
+        unit_raw = axis.get("unit")
+        if (
+            not isinstance(index, int)
+            or isinstance(index, bool)
+            or index < 0
+            or index >= len(scale)
+            or not isinstance(unit_raw, str)
+        ):
+            detail = f"spatial axis {name!r} lacks a usable index/unit"
+            return evidence, {
+                "code": "GATE_VOXEL_SIZE_UNKNOWN",
+                "severity": "high",
+                "level": "",
+                "detail": detail,
+            }
+
+        unit = unit_raw.strip().lower()
+        factor = _MICROMETER_FACTORS.get(unit)
+        value = scale[index]
+        if factor is None:
+            detail = f"unsupported spatial unit {unit_raw!r} on axis {name!r}"
+            return evidence, {
+                "code": "GATE_VOXEL_SIZE_UNKNOWN",
+                "severity": "high",
+                "level": "",
+                "detail": detail,
+            }
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(float(value))
+            or float(value) <= 0
+        ):
+            detail = f"invalid declared spatial scale {value!r} on axis {name!r}"
+            return evidence, {
+                "code": "GATE_VOXEL_SIZE_UNKNOWN",
+                "severity": "high",
+                "level": "",
+                "detail": detail,
+            }
+
+        value_um = float(value) * factor
+        observed.append((name, value_um))
+        evidence["axes"].append({
+            "name": name,
+            "declared": float(value),
+            "unit": unit_raw,
+            "micrometers": value_um,
+        })
+
+    if not observed:
+        detail = "no spatial axes were available to verify voxel size"
+        return evidence, {
+            "code": "GATE_VOXEL_SIZE_UNKNOWN",
+            "severity": "high",
+            "level": "",
+            "detail": detail,
+        }
+
+    mismatches = [
+        (name, value_um)
+        for name, value_um in observed
+        if not math.isclose(
+            value_um,
+            expected_um,
+            rel_tol=0.0,
+            abs_tol=tolerance_um,
+        )
+    ]
+    if mismatches:
+        evidence["status"] = "mismatch"
+        observed_text = ", ".join(
+            f"{name}={value_um:.9g} µm" for name, value_um in observed
+        )
+        detail = (
+            f"expected every spatial axis to be {expected_um:g} ± "
+            f"{tolerance_um:g} µm; observed {observed_text}"
+        )
+        return evidence, {
+            "code": "GATE_VOXEL_SIZE_MISMATCH",
+            "severity": "high",
+            "level": "",
+            "detail": detail,
+        }
+
+    evidence["status"] = "match"
+    return evidence, None
+
 
 
 def parse_args(argv=None):
@@ -85,7 +266,26 @@ def parse_args(argv=None):
     ap.add_argument("--max-rps", type=float, default=None)
     ap.add_argument("--no-chunk-presence", action="store_true",
                     help="skip the one-listing-per-level LEVEL_NO_CHUNKS probe")
+    ap.add_argument(
+        "--expected-voxel-size-um",
+        type=float,
+        default=None,
+        help=(
+            "opt-in source-eligibility fence: require every declared spatial "
+            "axis at level 0 to match this physical voxel size in micrometers"
+        ),
+    )
+    ap.add_argument(
+        "--voxel-size-tolerance-um",
+        type=float,
+        default=0.001,
+        help="absolute tolerance for --expected-voxel-size-um (default: 0.001)",
+    )
     args = ap.parse_args(argv)
+    if args.expected_voxel_size_um is not None and args.expected_voxel_size_um <= 0:
+        ap.error("--expected-voxel-size-um must be > 0")
+    if args.voxel_size_tolerance_um < 0:
+        ap.error("--voxel-size-tolerance-um must be >= 0")
     if not args.roots and not args.root:
         ap.error("need --roots <jsonl> or at least one --root <path>")
     return args
@@ -146,9 +346,17 @@ def check_one(store, root: str, args) -> dict:
             "informational": [],
         }
 
+    voxel_size_check, voxel_size_finding = _check_expected_voxel_size(
+        pyr_rec,
+        getattr(args, "expected_voxel_size_um", None),
+        getattr(args, "voxel_size_tolerance_um", 0.001),
+    )
+
     threshold = SEV_ORDER[args.fail_on]
     failing = [f for f in findings
                if SEV_ORDER.get(f["severity"], 0) >= threshold]
+    if voxel_size_finding is not None:
+        failing.insert(0, voxel_size_finding)
     info = [f for f in findings if f["code"] in INFO_CODES]
     below = [f for f in findings
              if f not in failing and f["code"] not in INFO_CODES]
@@ -162,6 +370,7 @@ def check_one(store, root: str, args) -> dict:
                                 for f in below],
             "informational": [{"code": f["code"], "detail": f["detail"]}
                               for f in info],
+            "voxel_size_check": voxel_size_check,
             "report": report}
 
 
@@ -235,6 +444,8 @@ def main(argv=None) -> int:
         with open(args.out, "w", encoding="utf-8") as fh:
             json.dump({"schema_version": SCHEMA_VERSION,
                        "base": args.base, "fail_on": args.fail_on,
+                       "expected_voxel_size_um": args.expected_voxel_size_um,
+                       "voxel_size_tolerance_um": args.voxel_size_tolerance_um,
                        "n_roots": len(results), "n_pass": n_pass,
                        "n_fail": n_fail, "results": results},
                       fh, indent=2)
