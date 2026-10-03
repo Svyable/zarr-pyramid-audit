@@ -87,6 +87,7 @@ Other advantages, each backed by an artifact or a test:
 | Every check code and its severity | README "Check codes" (test-enforced equal to the code) |
 | Surface-evidence protocol | [`docs/surface-depth-profile.md`](surface-depth-profile.md) |
 | What each fixture isolates, with expected results | [`fixtures/README.md`](../fixtures/README.md) (table generated from the goldens) |
+| Independent benchmark protocol, applicability and third-party provenance | [`docs/EXTERNAL_VALIDATION.md`](EXTERNAL_VALIDATION.md) |
 | How results are produced | a README in every `artifacts/<date>-*/` giving the exact command |
 | Contract changes and migration notes | [`CHANGELOG.md`](../CHANGELOG.md) |
 | Contributing and accuracy policy | [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md), README "Accuracy policy" |
