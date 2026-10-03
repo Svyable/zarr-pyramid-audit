@@ -9,7 +9,7 @@ scales, dtype/fill/codec/separator consistent across levels, chunk keys actually
 claims not self-contradictory. A sampled probe also checks whether stored chunks hold data. It emits
 evidence, not verdicts: a [versioned JSON report](docs/INTEGRATION.md#the-report-schema-1x) per
 root, with every finding's code, severity and the evidence state it rests on (`PRESENT` / `ABSENT` /
-`UNKNOWN`), an integrity summary (`PASS` / `WARN` / `UNKNOWN` / `FAIL`), and a fail-closed CI gate.
+`UNKNOWN`), an integrity summary (`PASS` / `WARN` / `UNKNOWN` / `FAIL`), a canonical source-attestation hash of the metadata semantics actually audited, and a fail-closed CI gate.
 It **cannot** certify that voxels are semantically correct, that a sampled probe saw every chunk, or
 that data it could not read is fine. Unreadable evidence stays `UNKNOWN` and is never reported as
 clean. See [Limitations](#limitations).
