@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>zarr-pyramid-audit — Don't train on lies</title>
-<meta name="description" content="Independent integrity audit of the Vesuvius open-data Zarr stores. 957 S3 roots audited, one defective pyramid found. The integrity half of the ScrolIQ data-quality suite.">
+<meta name="description" content="Svyable's fork of zarr-pyramid-audit: extended OME-Zarr integrity, chunk-content and TIFXYZ evidence for Vesuvius pipelines, with explicit upstream attribution.">
 <meta name="theme-color" content="#0d0b08">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -157,14 +157,8 @@ footer{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
   <div class="eyebrow">VESUVIUS CHALLENGE · SEPTEMBER – OCTOBER 2026</div>
   <h1>zarr-pyramid-audit</h1>
   <p class="tagline">Corruption detection for OME-Zarr pyramids. <em>Don't train on lies.</em></p>
-  <p class="lede">An independent integrity audit of the public Vesuvius Challenge
-  data stores. Every pyramid is judged from its headers — a few KB per pyramid,
-  no full downloads — plus sampled chunk-content probes that decode real voxels.
-  Every number below is read from committed audit artifacts; nothing is hand-typed.
-  <a href="#verify">Verify it in 60 seconds →</a> · <a href="https://github.com/Svyable/zarr-pyramid-audit">Repo (MIT)</a> ·
-  <a href="./september-2026.html">September 2026 writeup →</a> ·
-  <a href="./october-2026.html">October 2026 goals →</a></p>
-  <p class="suitechip"><a href="#scroliq">The integrity half of the ScrolIQ data-quality suite — how the two fit together →</a></p>
+  <p class="lede">An integrity audit of the public Vesuvius Challenge data stores: header-first pyramid checks plus sampled chunk-content and TIFXYZ surface evidence. <b>This is a fork of <a href="https://github.com/sgsllc-jr/zarr-pyramid-audit">sgsllc-jr/zarr-pyramid-audit</a></b>; the original established the read-only header auditor and initial corpus campaign. This fork extends that foundation with versioned evidence contracts and gating, content/volcomp probes, TIFXYZ coverage, exact-volume Grand Prize preflight, validator comparisons and ScrolIQ integration. <a href="https://github.com/Svyable/zarr-pyramid-audit/blob/main/docs/FORK_SCOPE.md">Fork scope →</a></p>
+  <p class="suitechip"><a href="#verify">Verify the fork's current evidence in 60 seconds →</a> · <a href="#scroliq">How ZPA fits with ScrolIQ →</a></p>
   <div class="stats">
     <div class="stat"><div class="n">957</div><div class="l">S3 Zarr roots audited<br>2026-09-29 · header-only · ~5 min</div></div>
     <div class="stat"><div class="n good">956</div><div class="l">clean</div></div>
