@@ -214,7 +214,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
 <nav class="topbar" aria-label="Primary"><div class="navinner">
   <a class="brand" href="./"><span class="brandmark">Z</span><span>zarr-pyramid-audit</span></a>
   <div class="navlinks">
-    <a href="#overview">Overview</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
+    <a href="#overview">Overview</a><a href="#surfaces">Surfaces</a><a href="#verify">Verify</a><a href="#findings">Findings</a>
     <a href="#probe">Chunk probe</a><a href="#method">Method</a><a href="#scroliq">ScrolIQ</a><a href="./september-2026.html">Writeup</a><a href="./october-2026.html">October plan</a>
     <a href="{repo}">GitHub</a>
   </div>
@@ -266,7 +266,7 @@ footer{{border-top:1px solid var(--line);margin-top:1rem;padding:1.6rem 0 3rem;
     <p><code>zpa-surface-depth-profile</code> checks the rendered ink-model input stack itself: expected slice count, deterministic per-depth signal/texture, sampled all-zero layers, duplicate sampled-layer digests, and exact source-volume lineage. It reports evidence rather than pretending these observations prove ink.</p></div>
 </section>
 
-<div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
+{tifxyz_panel}<div class="panel" id="verify"><h2>60-second evaluator path<span class="sub">Evidence first: inspect it, reproduce it, then watch it test live data.</span></h2>
   <div class="actiongrid">
     <div><h3>1 · Inspect frozen evidence</h3>
       <p>Every headline number on this page is generated from committed run artifacts. Pages CI regenerates the dashboard and rejects drift from the evidence.</p>
@@ -434,7 +434,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
   The tool is published for anyone to rerun at larger sample sizes.</p>
 </div>
 
-{tifxyz_panel}<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
+<div class="panel"><h2>Mirror fidelity: S3 vs dl.ash2txt.org<span class="sub">same names, not copies</span></h2>
   <p>64 same-named volumes exist in both stores. They are <b>format migrations</b> of
   identical voxel grids at all six levels:</p>
   <div style="overflow-x:auto"><table><thead><tr><th></th><th>dl.ash2txt.org</th><th>S3 open-data</th></tr></thead><tbody>
