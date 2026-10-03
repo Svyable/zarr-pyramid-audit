@@ -27,6 +27,35 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Contract 1.3.0 — optional OME-NGFF conformance (yaozarrs)
+
+`contract-fingerprint: 540a401a469f`
+
+Minor schema bump (`schema_version` `1.3.0`): one added field, nothing
+removed or renamed, no check code or severity changed. Migration notes for
+consumers:
+
+- **New report field `ngff_conformance`** on every pyramid report:
+  `{validator: "yaozarrs", validator_version, state, detail}`, with `state`
+  in `contract()["ngff_conformance_states"]`: `conforms`, `nonconformant`,
+  `unknown`, `not_checked`. It is filled only when requested
+  (`zpa-gate --ngff`, `audit_root(..., ngff=True)`, or
+  `build_report(..., ngff=zpa.ngff.check_ngff(uri))`) and when the optional
+  extra is installed (`pip install 'zarr-pyramid-audit[ngff]'`); otherwise
+  it reads `not_checked`.
+- **It never changes `integrity`, `max_severity` or the gate verdict.** A
+  consumer policy keyed on `integrity` needs no change. Spec conformance and
+  structural integrity are independent: the live PHerc0814 `-L1` pyramid
+  `conforms` and still fails the gate with 6 × `LEVEL_NO_CHUNKS`
+  (`artifacts/2026-10-03-baseline-yaozarrs/`).
+- `not_checked` and `unknown` are not `conforms`. Treat them as "no NGFF
+  evidence", never as a pass.
+- The tifxyz report shares `schema_version`, so its schema's const moves to
+  `1.3.0` too; its shape is unchanged. Fixture goldens are unchanged
+  (`python fixtures/corpus.py expected` produces no diff): the field is
+  exercised by `tests/test_ngff.py`, with the real validator when the extra
+  is installed and a stub otherwise.
+
 ### Contract 1.2.0 — tifxyz surfaces; OME 0.5 dimension_names
 
 `contract-fingerprint: 08f47eac96db`

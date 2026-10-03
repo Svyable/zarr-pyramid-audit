@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.3.0",
+  "base": "s3://vesuvius-challenge-open-data",
+  "fail_on": "high",
+  "n_roots": 1,
+  "n_pass": 0,
+  "n_fail": 1,
+  "results": [
+    {
+      "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/does-not-exist.zarr",
+      "verdict": "absent",
+      "fail": true,
+      "integrity": "UNKNOWN",
+      "report": {
+        "schema_version": "1.3.0",
+        "tool": "zarr-pyramid-audit",
+        "tool_version": "0.4.0",
+        "root": "PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/does-not-exist.zarr",
+        "kind": "absent",
+        "zarr_format": null,
+        "evidence": {
+          "state": "ABSENT",
+          "reason": "NOT_FOUND"
+        },
+        "integrity": "UNKNOWN",
+        "max_severity": "low",
+        "coverage": {
+          "levels_declared": 0,
+          "levels_present": 0,
+          "levels_unknown": 0,
+          "chunk_presence": {
+            "PRESENT": 0,
+            "ABSENT": 0,
+            "UNKNOWN": 0
+          }
+        },
+        "ngff_conformance": {
+          "validator": "yaozarrs",
+          "validator_version": "0.3.2",
+          "state": "nonconformant",
+          "detail": "FileNotFoundError: no OME-Zarr group metadata found (No zarr metadata found at '' (tried zarr.json, .zgroup, .zarray))"
+        },
+        "levels": [],
+        "findings": [
+          {
+            "code": "ROOT_ABSENT",
+            "severity": "low",
+            "level": "",
+            "detail": "metadata probes and root listing confirm absence",
+            "observed": "",
+            "expected": "",
+            "evidence_state": "ABSENT",
+            "actionable": true
+          }
+        ]
+      },
+      "findings": [
+        {
+          "code": "GATE_ROOT_ABSENT",
+          "severity": "high",
+          "level": "",
+          "detail": "nothing to audit (ROOT_ABSENT): metadata probes and root listing confirm absence"
+        }
+      ],
+      "informational": []
+    }
+  ]
+}

@@ -22,6 +22,9 @@ The contract, in one paragraph:
   * ``coverage`` says which optional evidence (chunk-presence listings)
     was not observed. Those gaps do not change ``integrity``; they are
     reported so nobody mistakes "not checked" for "checked and fine".
+  * ``ngff_conformance`` is an optional OME-NGFF spec check delegated to
+    yaozarrs (``zpa.ngff``). It is reported alongside, never folded into
+    ``integrity``: ``not_checked`` unless requested and installed.
   * Every finding carries the ``evidence_state`` it rests on:
       PRESENT -- derived from metadata that was read successfully
       ABSENT  -- derived from confirmed absence (404, empty listing that
@@ -45,6 +48,7 @@ from typing import Any
 
 from .audit_pyramid import INFO_CODES, SEVERITY, audit_one
 from .chunkscan import SCAN_SEVERITY
+from .ngff import NGFF_STATES, check_ngff, ngff_uri, not_checked
 
 __all__ = [
     "SCHEMA_VERSION", "SEVERITY_ORDER", "INTEGRITY_STATES",
@@ -53,7 +57,7 @@ __all__ = [
     "load_schema", "validate_report", "contract", "contract_fingerprint",
 ]
 
-SCHEMA_VERSION = "1.2.0"
+SCHEMA_VERSION = "1.3.0"
 TOOL = "zarr-pyramid-audit"
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3}
@@ -134,10 +138,13 @@ def _max_severity(findings: list[dict]) -> str:
     return max((f["severity"] for f in findings), key=SEVERITY_ORDER.__getitem__)
 
 
-def build_report(pm, *, findings=None, pyramid_record=None) -> dict:
+def build_report(pm, *, findings=None, pyramid_record=None,
+                 ngff=None) -> dict:
     """Build the schema-versioned report for one ``PyramidMeta``.
 
-    Pass ``findings``/``pyramid_record`` if ``audit_one(pm)`` already ran.
+    Pass ``findings``/``pyramid_record`` if ``audit_one(pm)`` already ran,
+    and ``ngff`` (a ``zpa.ngff.check_ngff`` result) to record OME-NGFF
+    conformance; without it the report says ``not_checked``.
     """
     if findings is None or pyramid_record is None:
         findings, _, pyramid_record = audit_one(pm)
@@ -198,13 +205,16 @@ def build_report(pm, *, findings=None, pyramid_record=None) -> dict:
                                   if lv.evidence_state == "UNKNOWN"),
             "chunk_presence": chunk_states,
         },
+        "ngff_conformance": ngff or not_checked(),
         "levels": levels,
         "findings": out_findings,
     }
 
 
-def audit_root(store, root: str, **read_kw) -> dict:
+def audit_root(store, root: str, *, ngff: bool = False, **read_kw) -> dict:
     """Read one root from ``store`` and return its report.
+
+    ``ngff=True`` also runs the optional yaozarrs conformance check.
 
     Never raises for transport failures: those surface as UNKNOWN evidence.
     An unexpected exception becomes a ``high`` AUDIT_ERROR finding, so a
@@ -213,7 +223,8 @@ def audit_root(store, root: str, **read_kw) -> dict:
     from .zarrmeta import read_pyramid
     try:
         pm = read_pyramid(store, root, **read_kw)
-        return build_report(pm)
+        return build_report(
+            pm, ngff=check_ngff(ngff_uri(store, root)) if ngff else None)
     except Exception as exc:  # noqa: BLE001 -- report, never crash clean
         finding = {
             "code": "AUDIT_ERROR", "severity": "high", "level": "",
@@ -230,6 +241,7 @@ def audit_root(store, root: str, **read_kw) -> dict:
                          "levels_unknown": 0,
                          "chunk_presence": {"PRESENT": 0, "ABSENT": 0,
                                             "UNKNOWN": 0}},
+            "ngff_conformance": not_checked("audit error"),
             "levels": [], "findings": [finding],
         }
 
@@ -328,6 +340,7 @@ def contract() -> dict:
         "info_codes": sorted(INFO_CODES),
         "nothing_to_audit_codes": sorted(NOTHING_TO_AUDIT),
         "integrity_states": list(INTEGRITY_STATES),
+        "ngff_conformance_states": list(NGFF_STATES),
         "recommended_consumer_verdict": dict(RECOMMENDED_CONSUMER_VERDICT),
     }
 

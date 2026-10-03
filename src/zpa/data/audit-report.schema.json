@@ -22,7 +22,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.2.0"
+      "const": "1.3.0"
     },
     "tool": {
       "type": "string",
@@ -122,6 +122,41 @@
               "type": "integer"
             }
           }
+        }
+      }
+    },
+    "ngff_conformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional OME-NGFF spec check delegated to yaozarrs (zpa.ngff). Reported alongside integrity, never folded into it or into the gate verdict. not_checked = not requested or yaozarrs not installed; unknown = the validator ran but could not decide. Neither means conforms.",
+      "required": [
+        "validator",
+        "validator_version",
+        "state",
+        "detail"
+      ],
+      "properties": {
+        "validator": {
+          "type": "string",
+          "const": "yaozarrs"
+        },
+        "validator_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "conforms",
+            "nonconformant",
+            "unknown",
+            "not_checked"
+          ]
+        },
+        "detail": {
+          "type": "string"
         }
       }
     },

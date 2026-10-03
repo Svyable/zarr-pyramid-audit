@@ -99,6 +99,7 @@ may rely on:
 | `zpa.report.audit_root`, `build_report`, `integrity_of`, `consumer_verdict`, `SCHEMA_VERSION`, `contract()` | **new in contract 1.0.0**; versioned by `schema_version` |
 | `src/zpa/data/audit-report.schema.json` | versioned by `schema_version` (semver) |
 | `zpa.tifxyz.audit_surface`, `src/zpa/data/tifxyz-report.schema.json` | **new in contract 1.2.0**; same `schema_version` |
+| `zpa.ngff.check_ngff`, report field `ngff_conformance`, `zpa-gate --ngff` | **new in contract 1.3.0**; optional `[ngff]` extra (yaozarrs); reported only, never changes `integrity` or the gate verdict |
 
 `tests/test_contract.py` pins the signatures and finding fields above.
 

@@ -116,7 +116,7 @@ Other advantages, each backed by an artifact or a test:
 
 ### Maintains consistent output formats
 
-- One versioned JSON report per root or surface (`schema_version` 1.2.0),
+- One versioned JSON report per root or surface (`schema_version` 1.3.0),
   validated by
   [`audit-report.schema.json`](../src/zpa/data/audit-report.schema.json) (Zarr
   roots) or [`tifxyz-report.schema.json`](../src/zpa/data/tifxyz-report.schema.json)

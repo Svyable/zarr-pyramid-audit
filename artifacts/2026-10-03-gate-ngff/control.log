@@ -1,0 +1,4 @@
+ABSENT PHerc0814/segments/20260226123353-auto_grown_20260226123353106/surface-volumes/does-not-exist.zarr: nothing to audit (ROOT_ABSENT): metadata probes and root listing confirm absence
+      ngff: nonconformant (FileNotFoundError: no OME-Zarr group metadata found (No zarr metadata found at '' (tried zarr.json, .zgroup, .zarray)))
+
+gate: 0 pass, 1 fail out of 1 roots (threshold: high+)

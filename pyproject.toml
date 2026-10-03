@@ -32,6 +32,11 @@ tifxyz = [
     "imagecodecs>=2023.1",
 ]
 
+# Optional OME-NGFF conformance field (zpa.ngff, `zpa-gate --ngff`).
+ngff = [
+    "yaozarrs[io]>=0.3.2",
+]
+
 [project.urls]
 Homepage = "https://github.com/Svyable/zarr-pyramid-audit"
 Repository = "https://github.com/Svyable/zarr-pyramid-audit"

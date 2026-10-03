@@ -50,6 +50,7 @@ INFO_CODES, SEVERITY, audit_one, load_roots = (
     _ap.INFO_CODES, _ap.SEVERITY, _ap.audit_one, _ap.load_roots)
 
 from zpa.httpstore import open_store                                       # noqa: E402
+from zpa.ngff import check_ngff, ngff_uri                                  # noqa: E402
 from zpa.pool import parallel_map                                          # noqa: E402
 from zpa.report import NOTHING_TO_AUDIT, SCHEMA_VERSION, build_report      # noqa: E402
 from zpa.zarrmeta import read_pyramid                                      # noqa: E402
@@ -85,6 +86,11 @@ def parse_args(argv=None):
     ap.add_argument("--max-rps", type=float, default=None)
     ap.add_argument("--no-chunk-presence", action="store_true",
                     help="skip the one-listing-per-level LEVEL_NO_CHUNKS probe")
+    ap.add_argument("--ngff", action="store_true",
+                    help="also record OME-NGFF conformance via yaozarrs "
+                         "(optional extra: pip install "
+                         "'zarr-pyramid-audit[ngff]'); reported only, never "
+                         "changes the verdict")
     args = ap.parse_args(argv)
     if not args.roots and not args.root:
         ap.error("need --roots <jsonl> or at least one --root <path>")
@@ -96,7 +102,10 @@ def check_one(store, root: str, args) -> dict:
     try:
         pm = read_pyramid(store, root, check_chunks=not args.no_chunk_presence)
         findings, _, pyr_rec = audit_one(pm)
-        report = build_report(pm, findings=findings, pyramid_record=pyr_rec)
+        ngff = (check_ngff(ngff_uri(store, root))
+                if getattr(args, "ngff", False) else None)
+        report = build_report(pm, findings=findings, pyramid_record=pyr_rec,
+                              ngff=ngff)
     except Exception as e:  # noqa: BLE001 -- a gate must report, not crash
         return {"root": root, "verdict": "unreadable",
                 "fail": not args.ignore_unreadable, "integrity": "UNKNOWN",
@@ -165,6 +174,13 @@ def check_one(store, root: str, args) -> dict:
             "report": report}
 
 
+def _ngff_note(r: dict) -> str:
+    ng = (r.get("report") or {}).get("ngff_conformance") or {}
+    if ng.get("state", "not_checked") == "not_checked":
+        return ""
+    return f"      ngff: {ng['state']} ({ng['detail']})"
+
+
 def emit_text(results: list[dict]) -> None:
     for r in results:
         if r["verdict"] == "pass":
@@ -184,6 +200,9 @@ def emit_text(results: list[dict]) -> None:
             for f in r["findings"]:
                 lvl = f" level={f['level']}" if f["level"] else ""
                 print(f"      [{f['severity']}] {f['code']}{lvl}: {f['detail']}")
+        note = _ngff_note(r)
+        if note:
+            print(note)
 
 
 def emit_github(results: list[dict]) -> None:
