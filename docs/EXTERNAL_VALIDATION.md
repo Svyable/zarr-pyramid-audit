@@ -18,9 +18,10 @@ Run these through `fixtures/compare_baselines.py` using
 `fixtures/requirements-baselines.txt`. New results go in a new dated artifact
 directory. Do not rewrite the 2026-10-01 baseline artifact.
 
-For zarr-lint, preserve rule IDs in the machine-readable output. A tool
-execution error must fail the benchmark; it must never be converted to a clean
-result. For remote tests, record discovery coverage separately from diagnostics.
+For zarr-lint, preserve rule IDs in the machine-readable output. Store-access
+or internal tool errors are recorded separately and are neither counted as
+findings nor converted to clean results. For remote tests, record discovery
+coverage separately from diagnostics.
 
 ## Oztest: independent cases, not yet admissible evidence
 
