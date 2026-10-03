@@ -20,6 +20,7 @@ Corpus version: **1** · report schema: **1.3.0** ·
 | `expected/<case>.json` | golden output per case: every finding's code, severity, level and evidence state; per-level evidence; integrity and coverage; gate verdict; recommended consumer verdict; chunk-probe statuses (on-disk cases) |
 | `corpus.py` | case definitions, builder, runner and golden projection |
 | `compare_baselines.py` | runs zarr-python, ome-zarr-models, yaozarrs and zarr-lint over the same trees and records what each tells its user. External versions are pinned in `requirements-baselines.txt`; published result artifacts record the versions actually run. |
+| `compare_xzarrguard.py` | Python 3.12+ v3-only completeness comparison. Reports raw expected/missing/allowed chunk counts and manifest issues beside ZPA; deliberately has no aggregate winner score. |
 
 The golden files leave out free-text `detail` strings and environment-specific
 values (absolute paths, tool version); everything a consumer branches on is in.
@@ -62,6 +63,17 @@ stores, its documented discovery model uses consolidated metadata when present
 and otherwise inspects only the root node. Any remote comparison must therefore
 record discovery coverage separately from diagnostic results; a clean root-only
 inspection is not evidence that child arrays were checked.
+
+For the narrower Zarr v3 completeness question, run:
+
+```bash
+# Python 3.12+
+pip install -r fixtures/requirements-completeness.txt
+python fixtures/compare_xzarrguard.py --out-dir artifacts/YYYY-MM-DD-xzarrguard-comparison
+```
+
+The xzarrguard table is per-fixture evidence only. Its v3-only applicability
+must not be folded into the all-fixture denominator.
 
 The previously committed 2026-10-01 artifact predates the current harness and
 must remain frozen evidence. Re-run into a new dated directory to add yaozarrs
