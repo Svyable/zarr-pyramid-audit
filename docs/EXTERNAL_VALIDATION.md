@@ -63,9 +63,18 @@ Its scope is narrower:
 - Its core question is completeness under its no-data policy, not OME-NGFF
   conformance, tri-state transport evidence, or sampled content semantics.
 
-The fair next experiment is therefore a **separate v3 completeness table**, not
-adding xzarrguard to the all-fixture aggregate denominator. Record each store's
-applicability, expected-chunk count, missing-unexpected count, and tool errors.
+The fair comparison is therefore a **separate v3 completeness table**, not
+adding xzarrguard to the all-fixture aggregate denominator. That harness is
+`fixtures/compare_xzarrguard.py`; it records each applicable store's expected
+chunk count, missing-unexpected count, allowed-missing count, manifest issues,
+tool errors, and the corresponding ZPA integrity/codes.
+
+```bash
+# Python 3.12+
+pip install -e .
+pip install -r fixtures/requirements-completeness.txt
+python fixtures/compare_xzarrguard.py --out-dir artifacts/YYYY-MM-DD-xzarrguard-comparison
+```
 
 ## clearscale: compatibility baseline, not a defect detector
 
