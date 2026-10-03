@@ -1,0 +1,4 @@
+# Convenience contributor environment.
+# pyproject.toml remains authoritative for dependency metadata.
+# Installs runtime dependencies, development tools, and optional TIFXYZ codecs.
+-e .[dev,tifxyz]

@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use zarr-pyramid-audit in research, validation, or a Vesuvius Challenge submission, please cite this software and the upstream project."
+title: "zarr-pyramid-audit"
+type: software
+authors:
+  - family-names: Ryan
+    given-names: James
+  - family-names: Benson
+    given-names: Sven Hardy
+version: 0.4.0
+license: MIT
+repository-code: "https://github.com/Svyable/zarr-pyramid-audit"
+url: "https://svyable.github.io/zarr-pyramid-audit/"
+keywords:
+  - Vesuvius Challenge
+  - OME-Zarr
+  - Zarr
+  - data integrity
+  - tifxyz
+  - virtual unwrapping
