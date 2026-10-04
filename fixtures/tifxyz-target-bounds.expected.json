@@ -1,0 +1,14 @@
+{
+  "target_shape_zyx": [
+    400,
+    400,
+    112
+  ],
+  "target_overrun_points": 11,
+  "finding": {
+    "code": "TIFXYZ_TARGET_VOLUME_OVERRUN",
+    "severity": "low",
+    "evidence_state": "PRESENT",
+    "actionable": true
+  }
+}

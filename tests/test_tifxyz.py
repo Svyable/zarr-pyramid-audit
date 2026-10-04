@@ -363,3 +363,70 @@ def test_size_cap_is_checked_before_any_channel_is_downloaded():
                               max_content_bytes=10)
     assert codes(report) == ["TIFXYZ_CONTENT_UNDECODED"]
     assert report["surface"]["content_checked"] is False
+
+
+def test_exact_target_shape_flags_upper_bound_overrun_from_clean_fixture():
+    """Existing clean TIFXYZ becomes an overrun under a smaller exact CT grid."""
+    report = tx.audit_surface(
+        LocalStore(SURF),
+        "tifxyz_clean.tifxyz",
+        content=True,
+        target_shape_zyx=(400, 400, 112),
+    )
+
+    assert report["surface"]["target_shape_zyx"] == [400, 400, 112]
+    assert report["surface"]["target_overrun_points"] == 11
+    finding = next(
+        f for f in report["findings"]
+        if f["code"] == "TIFXYZ_TARGET_VOLUME_OVERRUN"
+    )
+    assert finding["severity"] == "low"
+    assert finding["observed"] == "11"
+    assert finding["expected"] == "0"
+    assert "x" in finding["detail"]
+    assert validate_report(report) == []
+
+    golden_path = os.path.join(REPO, "fixtures", "tifxyz-target-bounds.expected.json")
+    with open(golden_path, encoding="utf-8") as handle:
+        golden = json.load(handle)
+    assert {
+        "target_shape_zyx": report["surface"]["target_shape_zyx"],
+        "target_overrun_points": report["surface"]["target_overrun_points"],
+        "finding": {
+            key: finding[key]
+            for key in ("code", "severity", "evidence_state", "actionable")
+        },
+    } == golden
+
+
+def test_exact_target_shape_clean_when_all_points_fit():
+    report = tx.audit_surface(
+        LocalStore(SURF),
+        "tifxyz_clean.tifxyz",
+        content=True,
+        target_shape_zyx=(400, 400, 400),
+    )
+    assert report["surface"]["target_overrun_points"] == 0
+    assert "TIFXYZ_TARGET_VOLUME_OVERRUN" not in codes(report)
+
+
+def test_target_shape_validation_is_fail_closed():
+    with pytest.raises(ValueError, match="three positive integers"):
+        tx.audit_surface(
+            LocalStore(SURF),
+            "tifxyz_clean.tifxyz",
+            content=True,
+            target_shape_zyx=(400, 0, 400),
+        )
+
+
+def test_cli_requires_target_volume_identity_when_shape_is_supplied(tmp_path, capsys):
+    rc = tx.main([
+        "--base", SURF,
+        "--root", "tifxyz_clean.tifxyz",
+        "--content",
+        "--target-shape-zyx", "400", "400", "112",
+        "--out-dir", str(tmp_path / "out"),
+    ])
+    assert rc == 2
+    assert "--target-shape-zyx requires --expected-target-volume" in capsys.readouterr().err
