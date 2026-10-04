@@ -68,7 +68,7 @@ never "no chunks".
 
 ### Source attestation
 
-Every pyramid report in schema 1.3.0 carries a `source_attestation` block.
+Every pyramid report in schema 1.4.0 carries a `source_attestation` block.
 Its `metadata_semantics_sha256` hashes the canonical parsed metadata ZPA
 actually audited: root attributes plus the level-header fields used by the
 checks. The hash is stable across equivalent HTTP, S3 and local mirrors whose
@@ -100,7 +100,12 @@ It shares `schema_version`, the finding fields, the evidence states and the
 applies unchanged. `zpa.report.validate_report(report)` picks the schema by
 `kind`. The `surface` block records the grid, the declared metadata, the
 valid-point fraction, the stored-coordinate bbox, whether the content tier
-actually ran (`content_checked`), and which decoder produced it.
+actually ran (`content_checked`), and which decoder produced it. When an exact
+CT identity is guarded with `--expected-target-volume` and its level-0 shape is
+supplied with `--target-shape-zyx Z Y X`, the report also records
+`target_shape_zyx` / `target_overrun_points` and emits the low-severity
+`TIFXYZ_TARGET_VOLUME_OVERRUN` review finding for coordinates outside the upper
+grid bound.
 
 ## ScrolIQ integration surface
 
