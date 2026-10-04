@@ -27,6 +27,28 @@ needs, in the same PR:
 
 ## Unreleased
 
+### Contract 1.4.0 — exact target-volume bounds for TIFXYZ
+
+`contract-fingerprint: 8d8b4f50cb4a`
+
+Minor schema bump (`schema_version` `1.4.0`): TIFXYZ reports may now carry
+`surface.target_shape_zyx` and `surface.target_overrun_points`, and the content
+tier can emit `TIFXYZ_TARGET_VOLUME_OVERRUN` (`low`) when a valid stored
+coordinate reaches or exceeds the corresponding exact level-0 CT dimension.
+
+The check is deliberately opt-in. CLI callers must supply both
+`--expected-target-volume <ID>` and `--target-shape-zyx Z Y X`; the existing
+target-volume metadata guard runs before outputs are written, so a shape cannot
+silently be applied to a surface declared for another CT. Coordinates remain
+interpreted as `x/y/z` against shape `[z,y,x]`, with valid upper bounds
+`x < X`, `y < Y`, `z < Z`.
+
+Consumer action: accept schema 1.4.0 and the new low-severity review finding.
+Integrity/verdict policy is unchanged: this finding alone remains `PASS`, not
+`WARN` or `FAIL`. The deterministic control reuses the committed clean
+TIFXYZ fixture under an exact smaller target grid and pins 11 upper-bound
+overrun points in `fixtures/tifxyz-target-bounds.expected.json`.
+
 ### Contract 1.3.1 — SHARD_INDEX_CHECKSUM_MISMATCH severity low → medium
 
 `contract-fingerprint: 854ed060f90f`
