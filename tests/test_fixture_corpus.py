@@ -209,6 +209,15 @@ def test_every_check_code_is_exercised_by_a_fixture():
         for lvl in g.get("chunk_scan", []):
             seen.update(lvl["level_codes"])
             seen.update(_STATUS_CODE[s] for s in lvl["samples"])
+    # The exact-target-bounds control reuses the committed clean TIFXYZ bytes
+    # under a deliberately smaller CT grid, so its golden lives outside
+    # expected/ rather than duplicating binary fixture files.
+    with open(
+        os.path.join(corpus.HERE, "tifxyz-target-bounds.expected.json"),
+        encoding="utf-8",
+    ) as fh:
+        seen.add(json.load(fh)["finding"]["code"])
+
     from zpa.tifxyz import TIFXYZ_SEVERITY
     wanted = (set(SEVERITY) | set(SCAN_SEVERITY) | set(TIFXYZ_SEVERITY)
               | {"GATE_UNREADABLE"})
