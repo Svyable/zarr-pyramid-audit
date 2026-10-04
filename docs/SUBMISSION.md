@@ -117,7 +117,7 @@ Other advantages, each backed by an artifact or a test:
 
 ### Maintains consistent output formats
 
-- One versioned JSON report per root or surface (`schema_version` 1.2.0),
+- One versioned JSON report per root or surface (`schema_version` 1.4.0),
   validated by
   [`audit-report.schema.json`](../src/zpa/data/audit-report.schema.json) (Zarr
   roots) or [`tifxyz-report.schema.json`](../src/zpa/data/tifxyz-report.schema.json)
@@ -154,10 +154,13 @@ Other advantages, each backed by an artifact or a test:
 - Triangular meshes are intentionally audited in ScrolIQ under the documented
   [handoff contract](TRIANGULAR_MESH_HANDOFF.md), rather than duplicated here.
   The tifxyz content tier was run on surfaces whose channels are ≤ 32 MiB (1,391 of
-  1,539); the other 148 have header-tier evidence only, reported as a
-  coverage gap. `TIFXYZ_NEGATIVE_COORDINATE` catches geometry below a
-  volume's grid; overruns past its top need the target volume's shape and
-  are not checked yet.
+  1,539); the other 148 have header-tier evidence only. Their exact names and
+  byte sizes are frozen in `artifacts/2026-10-03-tifxyz-content-gaps/` rather
+  than being counted as clean. `TIFXYZ_NEGATIVE_COORDINATE` catches geometry
+  below any CT grid. Contract 1.4.0 adds the opt-in exact-volume upper-bound
+  check (`TIFXYZ_TARGET_VOLUME_OVERRUN`) when the caller binds both the target
+  volume ID and its level-0 `[z,y,x]` shape; a corpus-wide live shape-resolved
+  rerun is still pending.
 - The sampled probe is evidence, not exhaustive validation (README
   Limitations).
 - ScrolIQ adopted the fail-closed verdict mapping
