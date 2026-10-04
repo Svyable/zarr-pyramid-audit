@@ -85,6 +85,7 @@ TIFXYZ_SEVERITY = {
     "TIFXYZ_NONFINITE": "low",                # content: NaN/inf at valid points
     "TIFXYZ_NEGATIVE_COORDINATE": "low",      # content: valid point outside any volume
     "TIFXYZ_BBOX_MISMATCH": "low",            # content: meta bbox != data extent
+    "TIFXYZ_TARGET_VOLUME_OVERRUN": "low",     # content: point >= exact CT upper bound
     "TIFXYZ_CONTENT_UNDECODED": "info",       # content tier skipped: coverage gap
     "ACCESS_UNKNOWN": "info",                 # a read could not be completed
 }
@@ -270,6 +271,19 @@ def _canonical_volume_id(value) -> str | None:
     return name or None
 
 
+def _normalize_target_shape_zyx(value) -> tuple[int, int, int] | None:
+    """Validate an exact level-0 CT shape supplied for upper-bound checks."""
+    if value is None:
+        return None
+    if (
+        not isinstance(value, (list, tuple))
+        or len(value) != 3
+        or any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in value)
+    ):
+        raise ValueError("target shape must be three positive integers: Z Y X")
+    return tuple(int(v) for v in value)
+
+
 def validate_expected_target_volume(store, roots: list[str], expected: str) -> None:
     """Fail closed unless every surface declares the exact expected CT target.
 
@@ -311,9 +325,11 @@ def validate_expected_target_volume(store, roots: list[str], expected: str) -> N
 
 
 def audit_surface(store, root: str, *, content: bool = False,
-                  max_content_bytes: int = 256 * 1024 * 1024) -> dict:
+                  max_content_bytes: int = 256 * 1024 * 1024,
+                  target_shape_zyx: tuple[int, int, int] | list[int] | None = None) -> dict:
     """Audit one tifxyz surface; return its schema-versioned report."""
     root = root.rstrip("/")
+    target_shape_zyx = _normalize_target_shape_zyx(target_shape_zyx)
     findings: list[dict] = []
 
     def add(code, level, detail, evidence="PRESENT", observed="", expected=""):
@@ -474,7 +490,8 @@ def audit_surface(store, root: str, *, content: bool = False,
             arrays[ch] = arr
             surface.setdefault("decoders", {})[ch] = how
         if len(arrays) == 3:
-            _content_checks(arrays, meta, surface, add)
+            _content_checks(arrays, meta, surface, add,
+                            target_shape_zyx=target_shape_zyx)
 
     if (meta is None and not headers and findings
             and all(f["evidence_state"] == "ABSENT" for f in findings)):
@@ -503,7 +520,7 @@ def audit_surface(store, root: str, *, content: bool = False,
     }
 
 
-def _content_checks(arrays, meta, surface, add) -> None:
+def _content_checks(arrays, meta, surface, add, *, target_shape_zyx=None) -> None:
     # Native dtype on purpose: -1 equality, finiteness and min/max are exact
     # in float32, and a float64 copy would triple peak memory per worker.
     x, y, z = (arrays[c] for c in CHANNELS)
@@ -545,6 +562,27 @@ def _content_checks(arrays, meta, surface, add) -> None:
     lo = [float(a[valid].min()) for a in (x, y, z)]
     hi = [float(a[valid].max()) for a in (x, y, z)]
     surface["data_bbox"] = [lo, hi]
+    if target_shape_zyx is not None:
+        z_size, y_size, x_size = target_shape_zyx
+        upper = valid & ((x >= x_size) | (y >= y_size) | (z >= z_size))
+        n_upper = int(upper.sum())
+        surface["target_shape_zyx"] = [z_size, y_size, x_size]
+        surface["target_overrun_points"] = n_upper
+        if n_upper:
+            axes = [
+                axis
+                for axis, arr, size in zip("xyz", (x, y, z), (x_size, y_size, z_size))
+                if bool((valid & (arr >= size)).any())
+            ]
+            add(
+                "TIFXYZ_TARGET_VOLUME_OVERRUN",
+                "",
+                f"{n_upper} of {n_valid} valid points reach or exceed the exact "
+                f"target CT upper bound on {'/'.join(axes)}; valid voxel "
+                "coordinates must be strictly below the corresponding shape",
+                observed=n_upper,
+                expected=0,
+            )
     declared = _bbox_of(meta) if isinstance(meta, dict) else None
     if declared is not None:
         dlo, dhi = declared
@@ -611,6 +649,17 @@ def main(argv=None) -> int:
             "any audit outputs are written"
         ),
     )
+    ap.add_argument(
+        "--target-shape-zyx",
+        nargs=3,
+        type=int,
+        metavar=("Z", "Y", "X"),
+        help=(
+            "optional exact level-0 CT shape for content-tier upper-bound "
+            "checks; requires --expected-target-volume so the shape cannot "
+            "silently be applied to the wrong CT"
+        ),
+    )
     ap.add_argument("--max-content-bytes", type=int, default=256 * 1024 * 1024)
     ap.add_argument("--fail-on", default=None,
                     choices=["high", "medium", "low", "info"],
@@ -622,6 +671,18 @@ def main(argv=None) -> int:
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--out-dir", default="tmp/tifxyz")
     args = ap.parse_args(argv)
+
+    if args.target_shape_zyx and not args.expected_target_volume:
+        print(
+            "zpa-tifxyz: --target-shape-zyx requires --expected-target-volume",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        target_shape_zyx = _normalize_target_shape_zyx(args.target_shape_zyx)
+    except ValueError as exc:
+        print(f"zpa-tifxyz: {exc}", file=sys.stderr)
+        return 2
 
     roots = load_roots(args)
     if args.limit:
@@ -655,9 +716,11 @@ def main(argv=None) -> int:
         man.set("n_roots", len(roots))
         man.set("content", bool(args.content))
         man.set("expected_target_volume", args.expected_target_volume)
+        man.set("target_shape_zyx", list(target_shape_zyx) if target_shape_zyx else None)
         for res in parallel_map(
                 lambda r: audit_surface(store, r, content=args.content,
-                                        max_content_bytes=args.max_content_bytes),
+                                        max_content_bytes=args.max_content_bytes,
+                                        target_shape_zyx=target_shape_zyx),
                 roots, workers=args.workers, label="tifxyz"):
             if not res.ok:
                 rep = {"root": res.item, "integrity": "FAIL", "findings": [{
@@ -682,6 +745,7 @@ def main(argv=None) -> int:
         summary = {"base": args.base, "surfaces": len(roots),
                    "content_tier": bool(args.content),
                    "expected_target_volume": args.expected_target_volume,
+                   "target_shape_zyx": (list(target_shape_zyx) if target_shape_zyx else None),
                    "content_checked": content_checked,
                    "by_integrity": dict(integ.most_common()),
                    "by_code": dict(codes.most_common()),
