@@ -21,7 +21,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.3.0"
+      "const": "1.4.0"
     },
     "tool": {
       "type": "string",
@@ -199,6 +199,17 @@
         "bbox_points_outside": {
           "type": "integer",
           "description": "valid stored points outside the declared bbox (present only when the bbox mismatches)"
+        },
+        "target_shape_zyx": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "exact level-0 target CT shape [z,y,x] used for the opt-in upper-bound check"
+        },
+        "target_overrun_points": {
+          "type": "integer",
+          "description": "valid stored points whose x/y/z coordinate reaches or exceeds the corresponding exact target CT dimension"
         }
       }
     },
@@ -244,6 +255,7 @@
         "TIFXYZ_NEGATIVE_COORDINATE",
         "TIFXYZ_NONFINITE",
         "TIFXYZ_SAMPLE_FORMAT",
+        "TIFXYZ_TARGET_VOLUME_OVERRUN",
         "TIFXYZ_TIFF_UNREADABLE"
       ]
     },
