@@ -403,6 +403,7 @@ scrollq-health --root &lt;volume&gt;</code></div>
     <button type="button" class="sevbtn" data-s="info">info</button>
     <label class="search"><span class="sr-only">Filter finding codes</span>
       <input id="codeSearch" type="search" placeholder="Filter codes or meanings…" autocomplete="off"></label>
+    <button type="button" class="sevbtn" id="resetCodes">reset view</button>
     <span class="resultcount" id="resultCount" aria-live="polite"></span>
   </div>
   <div style="overflow-x:auto"><table id="codes"><thead><tr>
@@ -470,18 +471,44 @@ scrollq-health --root &lt;volume&gt;</code></div>
 (function(){{
   const tb = document.querySelector("#codes tbody");
   const rows = Array.from(tb.querySelectorAll("tr"));
-  let sortK = "total", asc = false, sevF = "", query = "";
+  const search = document.getElementById("codeSearch");
+  const DEFAULT = Object.freeze({{sortKey:"total", ascending:false, severity:"", query:""}});
+  const view = {{...DEFAULT}};
+  const SORT_KEYS = new Set(Array.from(document.querySelectorAll("#codes thead th[data-k]"), th => th.dataset.k));
+  const SEVERITIES = new Set(Array.from(document.querySelectorAll(".sevbtn[data-s]"), b => b.dataset.s));
+
+  function updateControls(){{
+    document.querySelectorAll(".sevbtn[data-s]").forEach(b => {{
+      const selected = b.dataset.s === view.severity;
+      b.classList.toggle("on", selected);
+      b.setAttribute("aria-pressed", String(selected));
+    }});
+    document.querySelectorAll("#codes thead th[data-k]").forEach(th => {{
+      const selected = th.dataset.k === view.sortKey;
+      if (selected) th.setAttribute("aria-sort", view.ascending ? "ascending" : "descending");
+      else th.removeAttribute("aria-sort");
+      th.querySelector(".arr")?.remove();
+      if (selected) {{
+        const marker = document.createElement("span");
+        marker.className = "arr";
+        marker.setAttribute("aria-hidden", "true");
+        marker.textContent = view.ascending ? " ▲" : " ▼";
+        th.appendChild(marker);
+      }}
+    }});
+  }}
+
   function apply(){{
-    let vis = rows.filter(r => (!sevF || r.dataset.sev === sevF)
-      && (!query || r.textContent.toLowerCase().includes(query)));
+    const vis = rows.filter(r => (!view.severity || r.dataset.sev === view.severity)
+      && (!view.query || r.textContent.toLowerCase().includes(view.query)));
     vis.sort((a, b) => {{
       let x, y;
-      if (sortK === "code" || sortK === "sev") {{
-        x = a.dataset[sortK]; y = b.dataset[sortK];
-        return asc ? x.localeCompare(y) : y.localeCompare(x);
+      if (view.sortKey === "code" || view.sortKey === "sev") {{
+        x = a.dataset[view.sortKey]; y = b.dataset[view.sortKey];
+        return view.ascending ? x.localeCompare(y) : y.localeCompare(x);
       }}
-      x = parseFloat(a.dataset[sortK]); y = parseFloat(b.dataset[sortK]);
-      return asc ? x - y : y - x;
+      x = parseFloat(a.dataset[view.sortKey]); y = parseFloat(b.dataset[view.sortKey]);
+      return view.ascending ? x - y : y - x;
     }});
     const frag = document.createDocumentFragment();
     vis.forEach(r => frag.append(r));
@@ -490,23 +517,83 @@ scrollq-health --root &lt;volume&gt;</code></div>
     tb.append(frag);
     const count = document.querySelector("#resultCount");
     if (count) count.textContent = vis.length + (vis.length === 1 ? " code" : " codes");
+    updateControls();
   }}
+
+  function restoreView(){{
+    const params = new URLSearchParams(window.location.search);
+    const sort = params.get("sort"), severity = params.get("sev"), dir = params.get("dir");
+    if (SORT_KEYS.has(sort)) view.sortKey = sort;
+    if (SEVERITIES.has(severity)) view.severity = severity;
+    if (dir === "asc" || dir === "desc") view.ascending = dir === "asc";
+    const query = params.get("q");
+    if (query !== null) {{ search.value = query; view.query = query.trim().toLowerCase(); }}
+  }}
+
+  function persistView(){{
+    try {{
+      const url = new URL(window.location.href);
+      ["sort", "dir", "sev", "q"].forEach(k => url.searchParams.delete(k));
+      if (view.sortKey !== DEFAULT.sortKey) url.searchParams.set("sort", view.sortKey);
+      if (view.sortKey !== DEFAULT.sortKey || view.ascending !== DEFAULT.ascending)
+        url.searchParams.set("dir", view.ascending ? "asc" : "desc");
+      if (view.severity) url.searchParams.set("sev", view.severity);
+      if (view.query) url.searchParams.set("q", view.query);
+      if (url.href !== window.location.href)
+        window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    }} catch {{
+      // Still usable in local previews or browsers denying history writes.
+    }}
+  }}
+
+  function transition(kind, value){{
+    switch (kind) {{
+      case "sort":
+        if (!SORT_KEYS.has(value)) return;
+        if (view.sortKey === value) view.ascending = !view.ascending;
+        else {{ view.sortKey = value; view.ascending = value === "code" || value === "sev"; }}
+        break;
+      case "severity":
+        if (!SEVERITIES.has(value)) return;
+        view.severity = value;
+        break;
+      case "query":
+        view.query = String(value).trim().toLowerCase();
+        break;
+      case "reset":
+        Object.assign(view, DEFAULT);
+        search.value = "";
+        break;
+      default:
+        throw new Error("Unrecognized dashboard transition: " + kind);
+    }}
+    apply();
+    persistView();
+  }}
+
   document.querySelectorAll("#codes thead th[data-k]").forEach(th => {{
-    th.addEventListener("click", () => {{
-      const k = th.dataset.k;
-      if (sortK === k) asc = !asc; else {{ sortK = k; asc = (k === "code" || k === "sev"); }}
-      document.querySelectorAll("#codes thead th .arr").forEach(e => e.remove());
-      const s = document.createElement("span"); s.className = "arr";
-      s.textContent = asc ? " ▲" : " ▼"; th.appendChild(s);
-      apply();
+    th.tabIndex = 0;
+    th.title = "Press Enter or Space to sort";
+    const activate = () => transition("sort", th.dataset.k);
+    th.addEventListener("click", activate);
+    th.addEventListener("keydown", e => {{
+      if (e.key === "Enter" || e.key === " ") {{ e.preventDefault(); activate(); }}
     }});
   }});
-  document.querySelectorAll(".sevbtn").forEach(b => b.addEventListener("click", () => {{
-    document.querySelectorAll(".sevbtn").forEach(x => x.classList.remove("on"));
-    b.classList.add("on"); sevF = b.dataset.s; apply();
-  }}));
-  const search = document.querySelector("#codeSearch");
-  if (search) search.addEventListener("input", () => {{ query = search.value.trim().toLowerCase(); apply(); }});
+  document.querySelectorAll(".sevbtn[data-s]").forEach(b =>
+    b.addEventListener("click", () => transition("severity", b.dataset.s)));
+  search.addEventListener("input", e => transition("query", e.target.value));
+  document.getElementById("resetCodes").addEventListener("click", () => transition("reset"));
+  document.addEventListener("keydown", e => {{
+    const tag = document.activeElement?.tagName;
+    if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA") {{
+      e.preventDefault(); search.focus();
+    }} else if (e.key === "Escape" && (view.query || view.severity ||
+        view.sortKey !== DEFAULT.sortKey || view.ascending !== DEFAULT.ascending)) {{
+      transition("reset"); search.blur();
+    }}
+  }});
+  restoreView();
   apply();
 }})();
 </script>
